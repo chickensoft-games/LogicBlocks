@@ -142,10 +142,10 @@ You can find the latest version of LogicBlocks on [nuget][logic-blocks-nuget].
 dotnet add package Chickensoft.LogicBlocks
 ```
 
-To use the LogicBlocks source generator, add the following to your `.csproj` file. Make sure to replace `1.0.0` with the latest version of the [LogicBlocks generator from nuget][logic-blocks-gen-nuget].
+To use the LogicBlocks source generator, add the following to your `.csproj` file. Make sure to replace `1.1.0` with the latest version of the [LogicBlocks generator from nuget][logic-blocks-gen-nuget].
 
 ```xml
-  <PackageReference Include="Chickensoft.LogicBlocks.Generator" Version="1.0.0" PrivateAssets="all" OutputItemType="analyzer" />
+  <PackageReference Include="Chickensoft.LogicBlocks.Generator" Version="1.1.0" PrivateAssets="all" OutputItemType="analyzer" />
 ```
 
 ## 🙋‍♀️ How to Use LogicBlocks
@@ -360,28 +360,6 @@ That'll do. Now, somewhere in our app or game's code, we can create a new instan
   tempSensor.UpdateReading(64);
 ```
 
-## Credits
-
-Conceptually, logic blocks draw from a number of inspirations:
-
-- 📊 [Statecharts][statecharts]
-
-  Logic blocks borrow the idea of ["actions"](https://statecharts.dev/glossary/action.html) from statecharts. To avoid confusion with C#'s Action delegates, statechart actions are known as "outputs" within logic blocks.
-
-  Outputs provide a way of communicating with the world outside the logic block without introducing strong coupling between the logic block and whatever is listening to it (like a game engine component or a view).
-
-  Logic block states can also use normal object-oriented programming patterns like inheritance and composition to recreate the nested or hierarchical nature of state charts.
-
-- 🧊 [Bloc][bloc]
-
-  Logic blocks borrow heavily from the conventions put forth by bloc: notably, `On<TInput>`-style input handlers, inheritance-based states, `AddError`, `OnError`, and asynchronous input processing.
-
-- 🎰 [Finite state machines][state-machines].
-
-  The logic blocks API is heavily inspired by [Moore] and [Mealy] state machines.
-
-  Defining logic in terms of transitions is the definition of a Mealy state machine (see above). Unfortunately, requiring developers to create logic in terms of transitions is a bit clunky. Oftentimes, many transitions share common code which must be factored out. Forgetting to call the shared code from each relevant transition introduces serious logic errors. Instead, the logic blocks API embraces self-contained states that are invoked when entered and exited. Logic blocks do, however, provide a way to monitor transitions so that you can produce outputs when certain transitions occur, but they do not permit you to change the state while observing a transition.
-
 ## 🖼 Generating State Diagrams
 
 The LogicBlocks generator can generate UML code that can be used to visualize the statechart that your code represents.
@@ -458,6 +436,28 @@ java -jar /opt/homebrew/Cellar/plantuml/1.2023.9/libexec/plantuml.jar -picoweb
 ```
 
 Once the server is running, you can preview the diagram by opening the VSCode command menu and selecting "PlantUML: Preview Current Diagram".
+
+## 📺 Credits
+
+Conceptually, logic blocks draw from a number of inspirations:
+
+- 📊 [Statecharts][statecharts]
+
+  Logic blocks borrow the idea of ["actions"](https://statecharts.dev/glossary/action.html) from statecharts. To avoid confusion with C#'s Action delegates, statechart actions are known as "outputs" within logic blocks.
+
+  Outputs provide a way of communicating with the world outside the logic block without introducing strong coupling between the logic block and whatever is listening to it (like a game engine component or a view).
+
+  Logic block states can also use normal object-oriented programming patterns like inheritance and composition to recreate the nested or hierarchical nature of state charts.
+
+- 🧊 [Bloc][bloc]
+
+  Logic blocks borrow heavily from the conventions put forth by bloc: notably, `On<TInput>`-style input handlers, inheritance-based states, `AddError`, `OnError`, and asynchronous input processing.
+
+- 🎰 [Finite state machines][state-machines].
+
+  The logic blocks API is heavily inspired by [Moore] and [Mealy] state machines.
+
+  Defining logic in terms of transitions is the definition of a Mealy state machine (see above). Unfortunately, requiring developers to create logic in terms of transitions is a bit clunky. Oftentimes, many transitions share common code which must be factored out. Forgetting to call the shared code from each relevant transition introduces serious logic errors. Instead, the logic blocks API embraces self-contained states that are invoked when entered and exited. Logic blocks do, however, provide a way to monitor transitions so that you can produce outputs when certain transitions occur, but they do not permit you to change the state while observing a transition.
 
 [chickensoft-badge]: https://raw.githubusercontent.com/chickensoft-games/chickensoft_site/main/static/img/badges/chickensoft_badge.svg
 [chickensoft-website]: https://chickensoft.games
