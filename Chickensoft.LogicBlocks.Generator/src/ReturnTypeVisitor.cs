@@ -38,6 +38,13 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
     ObjectCreationExpressionSyntax node
   ) => AddExpressionToReturnTypes(node);
 
+  public override void VisitReturnStatement(ReturnStatementSyntax node)
+    => AddExpressionToReturnTypes(node.Expression);
+
+  public override void VisitArrowExpressionClause(
+    ArrowExpressionClauseSyntax node
+  ) => AddExpressionToReturnTypes(node.Expression);
+
   private void AddExpressionToReturnTypes(ExpressionSyntax? expression) {
     if (expression is not ExpressionSyntax expressionSyntax) {
       return;
