@@ -1,0 +1,12 @@
+Chickensoft.LogicBlocks/nupkg/
+
+Chickensoft.LogicBlocks.Tests/coverage/*
+!Chickensoft.LogicBlocks.Tests/coverage/.gdignore
+
+.godot/
+bin/
+obj/
+.generated/
+.vs/
+.DS_Store
+*.g.puml

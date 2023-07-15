@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+
+    <!-- To show generated files -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>.generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
+
+    <ProjectReference Include="../Chickensoft.LogicBlocks.Generator/Chickensoft.LogicBlocks.Generator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <LangVersion>preview</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Nullable>enable</Nullable>
+    <CopyAllFiles>true</CopyAllFiles>
+    <RootNamespace>Chickensoft.LogicBlocks</RootNamespace>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <OutputPath>./nupkg</OutputPath>
+    <DebugType>portable</DebugType>
+
+    <Title>LogicBlocks</Title>
+    <Version>1.0.0</Version>
+    <Description>State management in a box.</Description>
+    <Copyright>© 2023 Chickensoft</Copyright>
+    <Authors>Chickensoft</Authors>
+    <Company>Chickensoft</Company>
+
+    <PackageId>Chickensoft.LogicBlocks</PackageId>
+    <PackageReleaseNotes>LogicBlocks release.</PackageReleaseNotes>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>state management;bloc;godot;game;state machine</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/chickensoft-games/LogicBlocks</PackageProjectUrl>
+
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>git@github.com:chickensoft-games/LogicBlocks.git</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+    <None Include="../LICENSE" Pack="true" PackagePath="\" />
+    <None Include="./icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Dependencies go here. -->
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="SauceControl.InheritDoc" Version="1.3.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="System.Reactive.Linq" Version="5.0.0" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+    <PackageReference Include="ThomasLevesque.WeakEvent" Version="4.1.0" />
+    <PackageReference Include="IsExternalInit" Version="1.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>

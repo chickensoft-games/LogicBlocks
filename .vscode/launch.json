@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Example",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/Chickensoft.LogicBlocks.Example/bin/Debug/net6.0/Chickensoft.LogicBlocks.Example.dll",
+      "args": [
+        // "${input:args}"
+      ],
+      "cwd": "${workspaceFolder}/Chickensoft.LogicBlocks.Example",
+      "console": "integratedTerminal",
+      "stopAtEntry": false,
+      "internalConsoleOptions": "neverOpen"
+    },
+  ]
+}
