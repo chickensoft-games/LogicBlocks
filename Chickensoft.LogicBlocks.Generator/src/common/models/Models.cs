@@ -31,6 +31,11 @@ public sealed record LogicBlockGraph(
     string baseId
   ) : this(id, name, baseId, new(), new(), new()) { }
 
+  public string UmlId => Id
+    .Replace("global::", "")
+    .Replace(':', '_')
+    .Replace('.', '_');
+
   public override string ToString() => Describe(0);
 
   public string Describe(int level) {

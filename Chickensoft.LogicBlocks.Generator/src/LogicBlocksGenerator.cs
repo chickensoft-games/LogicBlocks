@@ -326,8 +326,8 @@ public class LogicBlocksGenerator :
         foreach (var destStateId in inputToStates.Value) {
           var dest = implementation.StatesById[destStateId];
           transitions.Add(
-            $"{state.Name} --> " +
-            $"{dest.Name} : {implementation.Inputs[inputId].Name}"
+            $"{state.UmlId} --> " +
+            $"{dest.UmlId} : {implementation.Inputs[inputId].Name}"
           );
         }
       }
@@ -337,7 +337,7 @@ public class LogicBlocksGenerator :
 
     var initialStateString = implementation.InitialStateId != null
       ? "[*] --> " +
-        $"{implementation.StatesById[implementation.InitialStateId].Name}"
+        $"{implementation.StatesById[implementation.InitialStateId].UmlId}"
       : "";
 
     var text = Format($"""
@@ -372,18 +372,18 @@ public class LogicBlocksGenerator :
     if (isMultilineState) {
       if (isRoot) {
         lines.Add(
-          $"{Tab(t)}state \"{impl.Name} {graph.Name}\" as {graph.Name} {{"
+          $"{Tab(t)}state \"{impl.Name}\" as {graph.Name} {{"
         );
       }
       else {
-        lines.Add($"{Tab(t)}state {graph.Name} {{");
+        lines.Add($"{Tab(t)}state \"{graph.Name}\" as {graph.UmlId} {{");
       }
     }
     else if (isRoot) {
       lines.Add($"{Tab(t)}state \"{impl.Name} {graph.Name}\" as {graph.Name}");
     }
     else {
-      lines.Add($"{Tab(t)}state {graph.Name}");
+      lines.Add($"{Tab(t)}state \"{graph.Name}\" as {graph.UmlId}");
     }
 
     foreach (var child in graph.Children) {
@@ -400,7 +400,7 @@ public class LogicBlocksGenerator :
         .OrderBy(output => output);
       var line = string.Join(", ", outputs);
       lines.Add(
-        $"{Tab(t + 1)}{graph.Name} : {outputContext.DisplayName} → {line}"
+        $"{Tab(t + 1)}{graph.UmlId} : {outputContext.DisplayName} → {line}"
       );
     }
 
