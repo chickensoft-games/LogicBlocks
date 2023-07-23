@@ -11,31 +11,31 @@ public class GeneratorTest {
 
     result.Outputs["ToasterOven.puml.g.cs"].ShouldBe("""
     @startuml ToasterOven
-    state "ToasterOven State" as State {
-      state Heating {
-        state Toasting {
-          Toasting : OnEnter → SetTimer
-          Toasting : OnExit → ResetTimer
+    state "ToasterOven" as State {
+      state "Heating" as Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Heating {
+        state "Toasting" as Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Toasting {
+          Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Toasting : OnEnter → SetTimer
+          Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Toasting : OnExit → ResetTimer
         }
-        state Baking {
-          Baking : OnEnter → SetTemperature
-          Baking : OnExit → SetTemperature
+        state "Baking" as Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Baking {
+          Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Baking : OnEnter → SetTemperature
+          Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Baking : OnExit → SetTemperature
         }
-        Heating : OnEnter → TurnHeaterOn
-        Heating : OnExit → TurnHeaterOff
+        Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Heating : OnEnter → TurnHeaterOn
+        Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Heating : OnExit → TurnHeaterOff
       }
-      state DoorOpen {
-        DoorOpen : OnEnter → TurnLampOn
-        DoorOpen : OnExit → TurnLampOff
+      state "DoorOpen" as Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_DoorOpen {
+        Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_DoorOpen : OnEnter → TurnLampOn
+        Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_DoorOpen : OnExit → TurnLampOff
       }
     }
 
-    Baking --> Toasting : StartToasting
-    DoorOpen --> Toasting : CloseDoor
-    Heating --> DoorOpen : OpenDoor
-    Toasting --> Baking : StartBaking
+    Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Baking --> Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Toasting : StartToasting
+    Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_DoorOpen --> Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Toasting : CloseDoor
+    Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Heating --> Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_DoorOpen : OpenDoor
+    Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Toasting --> Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Baking : StartBaking
 
-    [*] --> Toasting
+    [*] --> Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Toasting
     @enduml
     """.Clean());
   }
