@@ -1,4 +1,4 @@
-﻿namespace Chickensoft.LogicBlocks.Generator;
+namespace Chickensoft.LogicBlocks.Generator;
 
 using System;
 using System.Collections.Generic;
@@ -25,6 +25,13 @@ public class LogicBlocksGenerator :
   // #pragma warning restore CS0414, IDE0052
 
   public void Initialize(IncrementalGeneratorInitializationContext context) {
+    // If you need to debug the source generator, uncomment the following line
+    // and use Visual Studio 2022 on Windows to attach to debugging next time
+    // the source generator process is started by running `dotnet build` in
+    // the project consuming the source generator
+    //
+    // Debugger.Launch();
+
     // Add post initialization sources
     // (source code that is always generated regardless)
     foreach (var postInitSource in Constants.PostInitializationSources) {
