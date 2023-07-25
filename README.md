@@ -142,10 +142,10 @@ You can find the latest version of LogicBlocks on [nuget][logic-blocks-nuget].
 dotnet add package Chickensoft.LogicBlocks
 ```
 
-To use the LogicBlocks source generator, add the following to your `.csproj` file. Make sure to replace `1.1.0` with the latest version of the [LogicBlocks generator from nuget][logic-blocks-gen-nuget].
+To use the LogicBlocks source generator, add the following to your `.csproj` file. Make sure to replace `1.3.0` with the latest version of the [LogicBlocks generator from nuget][logic-blocks-gen-nuget].
 
 ```xml
-  <PackageReference Include="Chickensoft.LogicBlocks.Generator" Version="1.1.0" PrivateAssets="all" OutputItemType="analyzer" />
+  <PackageReference Include="Chickensoft.LogicBlocks.Generator" Version="1.3.0" PrivateAssets="all" OutputItemType="analyzer" />
 ```
 
 ## 🙋‍♀️ How to Use LogicBlocks
