@@ -35,7 +35,8 @@ public abstract partial class Logic<
     public void Output(TOutput output) => Logic.OutputValue(output);
 
     /// <summary>
-    /// Registers an entrance handler for the logic block state.
+    /// Registers an entrance handler for the logic block state that receives
+    /// the previous state.
     /// </summary>
     /// <param name="handler">Callback to be invoked when the state is
     /// entered.</param>
@@ -46,7 +47,8 @@ public abstract partial class Logic<
         Logic.AddOnEnterCallback<TStateType>(handler);
 
     /// <summary>
-    /// Registers an exit handler for the logic block state.
+    /// Registers an exit handler for the logic block state that receives the
+    /// next state.
     /// </summary>
     /// <param name="handler">Callback to be invoked when the state is
     /// exited.</param>

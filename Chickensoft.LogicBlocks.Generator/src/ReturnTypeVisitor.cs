@@ -49,7 +49,7 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
     if (expression is not ExpressionSyntax expressionSyntax) {
       return;
     }
-    var type = Model.GetTypeInfo(expression, Token).Type;
+    var type = GetModel(expression).GetTypeInfo(expression, Token).Type;
     if (type is not ITypeSymbol typeSymbol) {
       return;
     }
@@ -65,4 +65,7 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
 
     _returnTypes.Add(returnTypeId);
   }
+
+  private SemanticModel GetModel(SyntaxNode node) =>
+    Model.Compilation.GetSemanticModel(node.SyntaxTree);
 }

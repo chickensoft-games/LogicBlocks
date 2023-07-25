@@ -41,21 +41,16 @@ public class OutputVisitor : CSharpSyntaxWalker {
   public override void VisitInvocationExpression(
     InvocationExpressionSyntax node
   ) {
-    LogicBlocksGenerator.Log.Print($"Found potential output expression {node}");
-
     if (node.Expression is not MemberAccessExpressionSyntax memberAccess) {
       return;
     }
 
     var id = memberAccess.Expression;
-    if (id is not IdentifierNameSyntax identifierName) {
-      return;
-    }
+    if (id is not IdentifierNameSyntax identifierName) { return; }
 
-    var lhsType = Model.GetTypeInfo(identifierName, Token).Type;
-    if (lhsType is null) {
-      return;
-    }
+    var lhsType =
+      GetModel(identifierName).GetTypeInfo(identifierName, Token).Type;
+    if (lhsType is null) { return; }
 
     var lhsTypeId = CodeService.GetNameFullyQualifiedWithoutGenerics(
       lhsType, lhsType.Name
@@ -85,8 +80,6 @@ public class OutputVisitor : CSharpSyntaxWalker {
       return;
     }
 
-    LogicBlocksGenerator.Log.Print($"Found output expression {methodName} {memberAccess.Expression}");
-
     var args = node.ArgumentList.Arguments;
 
     if (args.Count != 1) {
@@ -94,7 +87,7 @@ public class OutputVisitor : CSharpSyntaxWalker {
     }
 
     var rhs = node.ArgumentList.Arguments[0].Expression;
-    var rhsType = Model.GetTypeInfo(rhs, Token).Type;
+    var rhsType = GetModel(rhs).GetTypeInfo(rhs, Token).Type;
 
     if (rhsType is null) {
       return;
@@ -117,4 +110,7 @@ public class OutputVisitor : CSharpSyntaxWalker {
 
     outputs.Add(outputId);
   }
+
+  private SemanticModel GetModel(SyntaxNode node) =>
+    Model.Compilation.GetSemanticModel(node.SyntaxTree);
 }
