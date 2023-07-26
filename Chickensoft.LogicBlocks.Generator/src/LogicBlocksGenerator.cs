@@ -329,11 +329,11 @@ public class LogicBlocksGenerator :
     var graph = implementation.Graph;
 
     var transitions = new List<string>();
-    foreach (var stateId in implementation.StatesById) {
+    foreach (var stateId in implementation.StatesById.OrderBy(id => id.Key)) {
       var state = stateId.Value;
-      foreach (var inputToStates in state.InputToStates) {
+      foreach (var inputToStates in state.InputToStates.OrderBy(id => id.Key)) {
         var inputId = inputToStates.Key;
-        foreach (var destStateId in inputToStates.Value) {
+        foreach (var destStateId in inputToStates.Value.OrderBy(id => id)) {
           var dest = implementation.StatesById[destStateId];
           transitions.Add(
             $"{state.UmlId} --> " +
@@ -347,7 +347,9 @@ public class LogicBlocksGenerator :
 
     var initialStates = new List<string>();
 
-    foreach (var initialStateId in implementation.InitialStateIds) {
+    foreach (
+      var initialStateId in implementation.InitialStateIds.OrderBy(id => id)
+    ) {
       initialStates.Add(
         "[*] --> " + implementation.StatesById[initialStateId].UmlId
       );
