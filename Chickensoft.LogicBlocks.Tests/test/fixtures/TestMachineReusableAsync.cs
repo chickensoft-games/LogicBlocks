@@ -1,9 +1,15 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
+using Chickensoft.LogicBlocks.Generator;
 
 #pragma warning disable CS1998
 
-public partial class TestMachineAsync :
-  LogicBlockAsync<TestMachineAsync.Input, TestMachineAsync.State, TestMachineAsync.Output> {
+[StateMachine]
+public partial class TestMachineReusableAsync :
+  LogicBlockAsync<
+  TestMachineReusableAsync.Input,
+  TestMachineReusableAsync.State,
+  TestMachineReusableAsync.Output
+> {
   public abstract record Input {
     public record Activate(SecondaryState Secondary) : Input;
     public record Deactivate() : Input;
@@ -15,8 +21,8 @@ public partial class TestMachineAsync :
       await Task.Delay(5);
 
       return input.Secondary switch {
-        SecondaryState.Blooped => new Activated.Blooped(Context),
-        SecondaryState.Bopped => new Activated.Bopped(Context),
+        SecondaryState.Blooped => Context.Get<Activated.Blooped>(),
+        SecondaryState.Bopped => Context.Get<Activated.Bopped>(),
         _ => throw new ArgumentException("Unrecognized secondary state.")
       };
     }
@@ -38,7 +44,7 @@ public partial class TestMachineAsync :
       }
 
       public async Task<State> On(Input.Deactivate input) =>
-        new Deactivated(Context);
+        Context.Get<Deactivated>();
 
       public record Blooped : Activated {
         public Blooped(Context context) : base(context) {
@@ -104,8 +110,16 @@ public partial class TestMachineAsync :
     public record BoppedCleanUp() : Output;
   }
 
-  public override State GetInitialState(Context context) =>
-    new State.Deactivated(context);
+  public TestMachineReusableAsync() {
+    Set(new State.Activated.Blooped(Context));
+    Set(new State.Activated.Bopped(Context));
+  }
+
+  public override State GetInitialState(Context context) {
+    var deactivated = new State.Deactivated(Context);
+    Set(deactivated);
+    return deactivated;
+  }
 }
 
 #pragma warning restore CS1998

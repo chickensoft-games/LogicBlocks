@@ -52,26 +52,25 @@ public class Heater :
       ) {
         var tempSensor = context.Get<ITemperatureSensor>();
 
-        context.OnEnter<Heating>(
+        OnEnter<Heating>(
           (previous) => tempSensor.OnTemperatureChanged += OnTemperatureChanged
         );
 
-        context.OnExit<Heating>(
+        OnExit<Heating>(
           (next) => tempSensor.OnTemperatureChanged -= OnTemperatureChanged
         );
       }
 
-      State IGet<Input.TurnOff>.On(Input.TurnOff input)
-        => new Off(Context, TargetTemp);
+      public State On(Input.TurnOff input) => new Off(Context, TargetTemp);
 
-      State IGet<Input.AirTempSensorChanged>.On(
-        Input.AirTempSensorChanged input
-      ) => input.AirTemp >= TargetTemp
-        ? new Idle(Context, TargetTemp)
-        : this;
+      public State On(Input.AirTempSensorChanged input) =>
+        input.AirTemp >= TargetTemp
+          ? new Idle(Context, TargetTemp)
+          : this;
 
-      State IGet<Input.TargetTempChanged>.On(Input.TargetTempChanged input)
-        => this with { TargetTemp = input.Temp };
+      public State On(Input.TargetTempChanged input) => this with {
+        TargetTemp = input.Temp
+      };
 
       private void OnTemperatureChanged(double airTemp) {
         Context.Input(new Input.AirTempSensorChanged(airTemp));

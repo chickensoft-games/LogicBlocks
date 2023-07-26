@@ -2,14 +2,13 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using Chickensoft.LogicBlocks.Generator;
 
-public enum SecondaryState {
-  Blooped,
-  Bopped
-}
-
 [StateMachine]
-public partial class TestMachine :
-  LogicBlock<TestMachine.Input, TestMachine.State, TestMachine.Output> {
+public partial class TestMachineReusable :
+  LogicBlock<
+    TestMachineReusable.Input,
+    TestMachineReusable.State,
+    TestMachineReusable.Output
+  > {
   public abstract record Input {
     public record Activate(SecondaryState Secondary) : Input;
     public record Deactivate() : Input;
@@ -19,8 +18,8 @@ public partial class TestMachine :
     IGet<Input.Activate> {
     public State On(Input.Activate input) =>
       input.Secondary switch {
-        SecondaryState.Blooped => new Activated.Blooped(Context),
-        SecondaryState.Bopped => new Activated.Bopped(Context),
+        SecondaryState.Blooped => Context.Get<Activated.Blooped>(),
+        SecondaryState.Bopped => Context.Get<Activated.Bopped>(),
         _ => throw new ArgumentException("Unrecognized secondary state.")
       };
 
@@ -34,7 +33,7 @@ public partial class TestMachine :
         );
       }
 
-      public State On(Input.Deactivate input) => new Deactivated(Context);
+      public State On(Input.Deactivate input) => Context.Get<Deactivated>();
 
       public record Blooped : Activated {
         public Blooped(Context context) : base(context) {
@@ -82,6 +81,14 @@ public partial class TestMachine :
     public record BoppedCleanUp() : Output;
   }
 
-  public override State GetInitialState(Context context) =>
-    new State.Deactivated(context);
+  public TestMachineReusable() {
+    Set(new State.Activated.Blooped(Context));
+    Set(new State.Activated.Bopped(Context));
+  }
+
+  public override State GetInitialState(Context context) {
+    var deactivated = new State.Deactivated(Context);
+    Set(deactivated);
+    return deactivated;
+  }
 }

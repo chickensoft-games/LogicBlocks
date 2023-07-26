@@ -5,57 +5,66 @@ using System.Collections.Generic;
 #pragma warning disable CS1998
 
 public partial class FakeLogicBlockAsync {
-  public interface IInput {
-    public record struct InputOne(int Value1, int Value2) : IInput;
-    public record struct InputTwo(string Value1, string Value2)
-      : IInput;
-    public record struct InputError() : IInput;
-    public record struct InputUnknown() : IInput;
-    public record struct GetString() : IInput;
-    public record struct NoNewState() : IInput;
-    public record struct InputCallback(
+  public abstract record Input {
+    public record InputOne(int Value1, int Value2) : Input;
+    public record InputTwo(string Value1, string Value2)
+      : Input;
+    public record InputError() : Input;
+    public record InputUnknown() : Input;
+    public record GetString() : Input;
+    public record NoNewState() : Input;
+    public record SelfInput(Input Input) : Input;
+    public record InputCallback(
       Action Callback,
       Func<Context, State> Next
-    ) : IInput;
-    public record struct Custom(Func<Context, State> Next) : IInput;
+    ) : Input;
+    public record Custom(Func<Context, State> Next) : Input;
   }
 
   public abstract record State(Context Context) : StateLogic(Context),
-    IGet<IInput.InputOne>,
-    IGet<IInput.InputTwo>,
-    IGet<IInput.InputError>,
-    IGet<IInput.NoNewState>,
-    IGet<IInput.InputCallback>,
-    IGet<IInput.GetString>,
-    IGet<IInput.Custom> {
-    public async Task<State> On(IInput.InputOne input) {
-      Context.Output(new IOutput.OutputOne(1));
+    IGet<Input.InputOne>,
+    IGet<Input.InputTwo>,
+    IGet<Input.InputError>,
+    IGet<Input.NoNewState>,
+    IGet<Input.InputCallback>,
+    IGet<Input.GetString>,
+    IGet<Input.SelfInput>,
+    IGet<Input.Custom> {
+    public async Task<State> On(Input.InputOne input) {
+      Context.Output(new Output.OutputOne(1));
       return new StateA(Context, input.Value1, input.Value2);
     }
 
-    public async Task<State> On(IInput.InputTwo input) {
-      Context.Output(new IOutput.OutputTwo("2"));
+    public async Task<State> On(Input.InputTwo input) {
+      Context.Output(new Output.OutputTwo("2"));
       return new StateB(Context, input.Value1, input.Value2);
     }
 
-    public async Task<State> On(IInput.InputError input)
+    public async Task<State> On(Input.InputError input)
       => throw new InvalidOperationException();
 
-    public async Task<State> On(IInput.NoNewState input) {
-      Context.Output(new IOutput.OutputOne(1));
+    public async Task<State> On(Input.NoNewState input) {
+      Context.Output(new Output.OutputOne(1));
       return this;
     }
 
-    public async Task<State> On(IInput.InputCallback input) {
+    public async Task<State> On(Input.InputCallback input) {
       input.Callback();
       return input.Next(Context);
     }
 
-    public async Task<State> On(IInput.Custom input) => input.Next(Context);
+    public async Task<State> On(Input.Custom input) => input.Next(Context);
 
-    public async Task<State> On(IInput.GetString input) => new StateC(
+    public async Task<State> On(Input.GetString input) => new StateC(
       Context, Context.Get<string>()
     );
+
+    public async Task<State> On(Input.SelfInput input) {
+      // Can't await input in an async logic block — would deadlock.
+      Context.Input(input.Input);
+      // Return our current state in the meantime.
+      return this;
+    }
 
     public record StateA(Context Context, int Value1, int Value2) :
       State(Context);
@@ -69,17 +78,24 @@ public partial class FakeLogicBlockAsync {
         setupCallback(context);
       }
     }
+
+    public record OnEnterState : State {
+      public OnEnterState(Context context, Func<State, Task> onEnter) :
+        base(context) {
+        OnEnter<OnEnterState>(onEnter);
+      }
+    }
   }
 
-  public interface IOutput {
-    public record struct OutputOne(int Value) : IOutput;
-    public record struct OutputTwo(string Value) : IOutput;
+  public abstract record Output {
+    public record OutputOne(int Value) : Output;
+    public record OutputTwo(string Value) : Output;
   }
 }
 
 public partial class FakeLogicBlockAsync
   : LogicBlockAsync<
-    FakeLogicBlockAsync.IInput, FakeLogicBlockAsync.State, FakeLogicBlockAsync.IOutput
+    FakeLogicBlockAsync.Input, FakeLogicBlockAsync.State, FakeLogicBlockAsync.Output
   > {
   public Func<Context, State>? InitialState { get; init; }
 

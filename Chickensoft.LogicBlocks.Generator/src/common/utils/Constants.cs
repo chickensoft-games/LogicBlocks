@@ -10,8 +10,8 @@ public class Constants {
   public const string LOGIC_BLOCK_GET_INITIAL_STATE = "GetInitialState";
   public const string LOGIC_BLOCK_CONTEXT_ID = "global::Chickensoft.LogicBlocks.Logic.Context";
   public const string LOGIC_BLOCK_CONTEXT_OUTPUT = "Output";
-  public const string LOGIC_BLOCK_CONTEXT_ON_ENTER = "OnEnter";
-  public const string LOGIC_BLOCK_CONTEXT_ON_EXIT = "OnExit";
+  public const string LOGIC_BLOCK_STATE_LOGIC_ON_ENTER = "OnEnter";
+  public const string LOGIC_BLOCK_STATE_LOGIC_ON_EXIT = "OnExit";
   public const string LOGIC_BLOCK_CLASS_ID = "global::Chickensoft.LogicBlocks.Logic";
   public const string LOGIC_BLOCK_INPUT_INTERFACE_ID = "global::Chickensoft.LogicBlocks.LogicBlock.IGet";
   public const string LOGIC_BLOCK_INPUT_ASYNC_INTERFACE_ID = "global::Chickensoft.LogicBlocks.LogicBlockAsync.IGet";

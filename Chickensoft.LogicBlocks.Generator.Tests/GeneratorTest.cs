@@ -11,7 +11,7 @@ public class GeneratorTest {
 
     result.Outputs["ToasterOven.puml.g.cs"].ShouldBe("""
     @startuml ToasterOven
-    state "ToasterOven" as State {
+    state "ToasterOven State" as Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State {
       state "Heating" as Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Heating {
         state "Toasting" as Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Toasting {
           Chickensoft_LogicBlocks_Generator_Tests_ToasterOven_State_Toasting : OnEnter → SetTimer

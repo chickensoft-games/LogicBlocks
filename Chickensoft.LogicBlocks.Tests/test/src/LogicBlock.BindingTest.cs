@@ -31,7 +31,7 @@ public class BlocGlueTests {
     callA1.ShouldBe(0);
     callA2.ShouldBe(0);
 
-    block.Input(new FakeLogicBlock.IInput.InputOne(a1, a2));
+    block.Input(new FakeLogicBlock.Input.InputOne(a1, a2));
 
     callA1.ShouldBe(1);
     callA2.ShouldBe(1);
@@ -39,14 +39,14 @@ public class BlocGlueTests {
     // Make sure the same values don't trigger the actions again
 
     a1 = 5;
-    block.Input(new FakeLogicBlock.IInput.InputOne(a1, a2));
+    block.Input(new FakeLogicBlock.Input.InputOne(a1, a2));
 
     callA1.ShouldBe(2);
     callA2.ShouldBe(1);
 
     // Make sure unrelated events don't trigger the actions
 
-    block.Input(new FakeLogicBlock.IInput.InputTwo("a", "b"));
+    block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
 
     callA1.ShouldBe(2);
     callA2.ShouldBe(1);
@@ -54,7 +54,7 @@ public class BlocGlueTests {
     // Make sure that previous unrelated states cause actions for new state
     // to be called
 
-    block.Input(new FakeLogicBlock.IInput.InputOne(a1, a2));
+    block.Input(new FakeLogicBlock.Input.InputOne(a1, a2));
 
     callA1.ShouldBe(3);
     callA2.ShouldBe(2);
@@ -68,20 +68,20 @@ public class BlocGlueTests {
     var callEffect1 = 0;
     var callEffect2 = 0;
 
-    glue.Handle<FakeLogicBlock.IOutput.OutputOne>(
+    glue.Handle<FakeLogicBlock.Output.OutputOne>(
       (effect) => { callEffect1++; effect.Value.ShouldBe(1); }
-    ).Handle<FakeLogicBlock.IOutput.OutputTwo>(
+    ).Handle<FakeLogicBlock.Output.OutputTwo>(
       (effect) => { callEffect2++; effect.Value.ShouldBe("2"); }
     );
 
     // Effects should get handled each time, regardless of if they are
     // identical to the previous one.
 
-    block.Input(new FakeLogicBlock.IInput.InputOne(1, 2));
-    block.Input(new FakeLogicBlock.IInput.InputOne(1, 2));
+    block.Input(new FakeLogicBlock.Input.InputOne(1, 2));
+    block.Input(new FakeLogicBlock.Input.InputOne(1, 2));
 
-    block.Input(new FakeLogicBlock.IInput.InputTwo("a", "b"));
-    block.Input(new FakeLogicBlock.IInput.InputTwo("a", "b"));
+    block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
+    block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
 
     callEffect1.ShouldBe(2);
     callEffect2.ShouldBe(2);
@@ -108,31 +108,31 @@ public class BlocGlueTests {
     block.Value.ShouldBe(block.GetInitialState(context));
 
     // State is StateA initially, so switch to State B
-    block.Input(new FakeLogicBlock.IInput.InputTwo("a", "b"));
+    block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
 
     callStateA.ShouldBe(0);
     callStateB.ShouldBe(1);
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
 
-    block.Input(new FakeLogicBlock.IInput.InputTwo("a", "b"));
+    block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
 
     callStateA.ShouldBe(0);
     callStateB.ShouldBe(1);
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
 
-    block.Input(new FakeLogicBlock.IInput.InputTwo("c", "d"));
+    block.Input(new FakeLogicBlock.Input.InputTwo("c", "d"));
 
     callStateA.ShouldBe(0);
     callStateB.ShouldBe(1);
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
 
-    block.Input(new FakeLogicBlock.IInput.InputOne(1, 2));
+    block.Input(new FakeLogicBlock.Input.InputOne(1, 2));
 
     callStateA.ShouldBe(1);
     callStateB.ShouldBe(1);
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateA>();
 
-    block.Input(new FakeLogicBlock.IInput.InputTwo("a", "b"));
+    block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
 
     callStateA.ShouldBe(1);
     callStateB.ShouldBe(2);
@@ -153,18 +153,18 @@ public class BlocGlueTests {
         to: (value1) => callStateUpdate++
       );
 
-    glue.Handle<FakeLogicBlock.IOutput.OutputOne>(
+    glue.Handle<FakeLogicBlock.Output.OutputOne>(
       (effect) => callSideEffectHandler++
     );
 
-    block.Input(new FakeLogicBlock.IInput.InputOne(4, 5));
+    block.Input(new FakeLogicBlock.Input.InputOne(4, 5));
 
     callStateUpdate.ShouldBe(1);
     callSideEffectHandler.ShouldBe(1);
 
     glue.Dispose();
 
-    block.Input(new FakeLogicBlock.IInput.InputOne(5, 6));
+    block.Input(new FakeLogicBlock.Input.InputOne(5, 6));
 
     callStateUpdate.ShouldBe(1);
     callSideEffectHandler.ShouldBe(1);

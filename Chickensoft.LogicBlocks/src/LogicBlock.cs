@@ -30,6 +30,11 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
   >.IStateLogic
   where TOutput : notnull {
   /// <summary>
+  /// The context provided to the states of the logic block.
+  /// </summary>
+  public new Context Context { get; private set; } = default!;
+
+  /// <summary>
   /// Whether or not the logic block is processing inputs.
   /// </summary>
   public override bool IsProcessing => _isProcessing;
@@ -37,8 +42,10 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
   private bool _isProcessing;
 
   /// <inheritdoc />
-  public sealed override TState GetInitialState() =>
-    GetInitialState(new Context(this));
+  public sealed override TState GetInitialState() {
+    Context = new(this);
+    return GetInitialState(Context);
+  }
 
   /// <summary>
   /// Returns the initial state of the logic block. Implementations must
@@ -59,55 +66,42 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
       var handler = pendingInput.GetHandler();
       var input = pendingInput.Input;
 
-      // Save previous enter callbacks in case we can't change states and need
-      // to restore them. This does it without allocating a new list.
-      Flip();
-
-      // Get next state. This triggers the next state to register its
-      // OnEnter and OnExit callbacks.
+      // Get next state.
       var state = handler(input);
 
       AnnounceInput(input);
 
       if (!CanChangeState(state)) {
-        // Don't save registered callbacks from the state we couldn't change to.
-        ExitCallbacks.Clear();
-        EnterCallbacks.Clear();
-        Flip(); // Restore previous enter/exit callbacks.
+        // The only time we can't change states is if the new state is
+        // equivalent to the old state (determined by the default equality
+        // comparer)
         continue;
       }
 
-      // Restore previous enter/exit callbacks.
-      Flip();
-
       var previous = Value;
 
-      // Call previously registered OnExit callbacks.
-      foreach (var onExit in ExitCallbacks) {
-        if (onExit.IsType(state)) {
-          // Not actually leaving this state type.
-          continue;
+      // Call OnExit callbacks for StateLogic states.
+      if (previous is StateLogic previousLogic) {
+        foreach (var onExit in previousLogic.InternalState.ExitCallbacks) {
+          if (onExit.IsType(state)) {
+            // Not actually leaving this state type.
+            continue;
+          }
+          RunSafe(() => onExit.Callback(state));
         }
-        RunSafe(() => onExit.Callback(state));
       }
-
-      // Now that exit callbacks have run, clear them.
-      ExitCallbacks.Clear();
-      // The previous state already had its enter callbacks run.
-      EnterCallbacks.Clear();
 
       SetState(state);
 
-      // Use new state's enter callbacks right now.
-      Flip();
-
-      // Call newly registered OnEnter callbacks.
-      foreach (var onEnter in EnterCallbacks) {
-        if (onEnter.IsType(previous)) {
-          // Already entered this state type.
-          continue;
+      // Call OnEnter callbacks for StateLogic states.
+      if (state is StateLogic stateLogic) {
+        foreach (var onEnter in stateLogic.InternalState.EnterCallbacks) {
+          if (onEnter.IsType(previous)) {
+            // Already entered this state type.
+            continue;
+          }
+          RunSafe(() => onEnter.Callback(previous));
         }
-        RunSafe(() => onEnter.Callback(previous));
       }
 
       FinalizeStateChange(state);

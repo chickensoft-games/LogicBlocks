@@ -22,7 +22,7 @@ public class LogicBlockTest {
     // Can't change values once set.
     Should.Throw<ArgumentException>(() => block.PublicSet("other"));
     Should.Throw<KeyNotFoundException>(() => block.Get<int>());
-    block.Input(new FakeLogicBlock.IInput.GetString());
+    block.Input(new FakeLogicBlock.Input.GetString());
     block.Value.ShouldBe(new FakeLogicBlock.State.StateC(context, "data"));
   }
 
@@ -31,21 +31,21 @@ public class LogicBlockTest {
     var block = new FakeLogicBlock();
 
     var called = 0;
-    var input = new FakeLogicBlock.IInput.InputOne(2, 3);
+    var input = new FakeLogicBlock.Input.InputOne(2, 3);
 
-    void handler(object? block, FakeLogicBlock.IInput input) {
+    void handler(object? block, FakeLogicBlock.Input input) {
       input.ShouldBe(input);
       called++;
     }
 
     block.OnInput += handler;
 
-    block.Input(new FakeLogicBlock.IInput.InputOne(2, 3));
+    block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
     called.ShouldBe(1);
 
     block.OnInput -= handler;
 
-    block.Input(new FakeLogicBlock.IInput.InputOne(2, 3));
+    block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
     called.ShouldBe(1);
   }
 
@@ -54,21 +54,21 @@ public class LogicBlockTest {
     var block = new FakeLogicBlock();
 
     var called = 0;
-    var output = new FakeLogicBlock.IOutput.OutputOne(2);
+    var output = new FakeLogicBlock.Output.OutputOne(2);
 
-    void handler(object? block, FakeLogicBlock.IOutput output) {
+    void handler(object? block, FakeLogicBlock.Output output) {
       output.ShouldBe(output);
       called++;
     }
 
     block.OnOutput += handler;
 
-    block.Input(new FakeLogicBlock.IInput.InputOne(2, 3));
+    block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
     called.ShouldBe(1);
 
     block.OnOutput -= handler;
 
-    block.Input(new FakeLogicBlock.IInput.InputOne(2, 3));
+    block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
     called.ShouldBe(1);
   }
 
@@ -89,7 +89,7 @@ public class LogicBlockTest {
 
     called.ShouldBe(1);
 
-    block.Input(new FakeLogicBlock.IInput.InputOne(2, 3));
+    block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
     called.ShouldBe(2);
 
     block.OnState -= handler;
@@ -112,7 +112,7 @@ public class LogicBlockTest {
 
     called.ShouldBe(0);
 
-    block.Input(new FakeLogicBlock.IInput.InputOne(2, 3));
+    block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
     called.ShouldBe(1);
 
     block.OnNextState -= handler;
@@ -129,7 +129,7 @@ public class LogicBlockTest {
     block.OnNextError += handler;
 
     block.Exceptions.ShouldBeEmpty();
-    block.Input(new FakeLogicBlock.IInput.InputError());
+    block.Input(new FakeLogicBlock.Input.InputError());
     block.Exceptions.ShouldNotBeEmpty();
 
     called.ShouldBe(1);
@@ -141,7 +141,7 @@ public class LogicBlockTest {
   public void DoesNothingOnUnhandledInput() {
     var block = new FakeLogicBlock();
     var context = new FakeLogicBlock.Context(block);
-    block.Input(new FakeLogicBlock.IInput.InputUnknown());
+    block.Input(new FakeLogicBlock.Input.InputUnknown());
     block.Value.ShouldBe(block.GetInitialState(context));
   }
 
@@ -197,14 +197,65 @@ public class LogicBlockTest {
   }
 
   [Fact]
+  public void CallsEnterAndExitOnStatesInProperOrderForReusedStates() {
+    var logic = new TestMachineReusable();
+    var context = new TestMachineReusable.Context(logic);
+
+    var outputs = new List<TestMachineReusable.Output>();
+
+    void onOutput(object? block, TestMachineReusable.Output output) =>
+      outputs.Add(output);
+
+    logic.OnOutput += onOutput;
+
+    logic.Value.ShouldBeOfType<TestMachineReusable.State.Deactivated>();
+    logic.Input(
+      new TestMachineReusable.Input.Activate(SecondaryState.Blooped)
+    );
+    logic.Input(
+      new TestMachineReusable.Input.Deactivate()
+    );
+    logic.Input(
+      new TestMachineReusable.Input.Activate(SecondaryState.Bopped)
+    );
+    // Repeating previous state should do nothing.
+    logic.Input(
+      new TestMachineReusable.Input.Activate(SecondaryState.Bopped)
+    );
+    logic.Input(
+      new TestMachineReusable.Input.Activate(SecondaryState.Blooped)
+    );
+    logic.Input(
+      new TestMachineReusable.Input.Deactivate()
+    );
+
+    outputs.ShouldBe(new TestMachineReusable.Output[] {
+      new TestMachineReusable.Output.DeactivatedCleanUp(),
+      new TestMachineReusable.Output.Activated(),
+      new TestMachineReusable.Output.Blooped(),
+      new TestMachineReusable.Output.BloopedCleanUp(),
+      new TestMachineReusable.Output.ActivatedCleanUp(),
+      new TestMachineReusable.Output.Deactivated(),
+      new TestMachineReusable.Output.DeactivatedCleanUp(),
+      new TestMachineReusable.Output.Activated(),
+      new TestMachineReusable.Output.Bopped(),
+      new TestMachineReusable.Output.BoppedCleanUp(),
+      new TestMachineReusable.Output.Blooped(),
+      new TestMachineReusable.Output.BloopedCleanUp(),
+      new TestMachineReusable.Output.ActivatedCleanUp(),
+      new TestMachineReusable.Output.Deactivated(),
+    });
+  }
+
+  [Fact]
   public void ReturnsCurrentValueIfProcessingInputs() {
     var block = new FakeLogicBlock();
     var context = new FakeLogicBlock.Context(block);
     var called = false;
-    var value = block.Input(new FakeLogicBlock.IInput.InputCallback(
+    var value = block.Input(new FakeLogicBlock.Input.InputCallback(
       () => {
         // This gets run from the input handler of InputCallback.
-        var value = block.Input(new FakeLogicBlock.IInput.InputTwo("a", "b"));
+        var value = block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
         value.ShouldBe(block.GetInitialState(context));
         called = true;
       },
@@ -224,13 +275,11 @@ public class LogicBlockTest {
     block.OnNextError += handler;
 
     block.Exceptions.ShouldBeEmpty();
-    block.Input(new FakeLogicBlock.IInput.Custom(
-      (context) => new FakeLogicBlock.State.Custom(
+    block.Input(new FakeLogicBlock.Input.Custom(
+      (context) => new FakeLogicBlock.State.OnEnterState(
           context,
-          (context) => context.OnEnter<FakeLogicBlock.State.Custom>(
-            (previous) =>
-              throw new InvalidOperationException("Error from OnEnter")
-          )
+          (previous) =>
+            throw new InvalidOperationException("Error from OnEnter")
         )
       )
     );
@@ -266,7 +315,7 @@ public class LogicBlockTest {
       }
     );
 
-    logic.Input(new FakeLogicBlock.IInput.InputTwo("a", "b"));
+    logic.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
 
     Should.Throw<ArgumentException>(
       () => logic.PublicOnTransition<
@@ -275,5 +324,15 @@ public class LogicBlockTest {
     );
 
     called.ShouldBeTrue();
+  }
+
+  [Fact]
+  public void StateCanAddInputUsingContext() {
+    var logic = new FakeLogicBlock();
+    var input = new FakeLogicBlock.Input.InputOne(5, 6);
+
+    logic.Input(new FakeLogicBlock.Input.SelfInput(input));
+
+    logic.Value.ShouldBeOfType<FakeLogicBlock.State.StateA>();
   }
 }

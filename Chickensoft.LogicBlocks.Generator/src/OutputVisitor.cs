@@ -41,28 +41,73 @@ public class OutputVisitor : CSharpSyntaxWalker {
   public override void VisitInvocationExpression(
     InvocationExpressionSyntax node
   ) {
-    if (node.Expression is not MemberAccessExpressionSyntax memberAccess) {
+    var methodName = "";
+    if (node.Expression is MemberAccessExpressionSyntax memberAccess) {
+      var id = memberAccess.Expression;
+      if (id is not IdentifierNameSyntax identifierName) {
+        base.VisitInvocationExpression(node);
+        return;
+      }
+
+      var lhsType =
+        GetModel(identifierName).GetTypeInfo(identifierName, Token).Type;
+      if (lhsType is null) {
+        base.VisitInvocationExpression(node);
+        return;
+      }
+
+      var lhsTypeId = CodeService.GetNameFullyQualifiedWithoutGenerics(
+        lhsType, lhsType.Name
+      );
+      methodName = memberAccess.Name.Identifier.ValueText;
+
+      if (
+        lhsTypeId != Constants.LOGIC_BLOCK_CONTEXT_ID ||
+        methodName != Constants.LOGIC_BLOCK_CONTEXT_OUTPUT
+      ) {
+        base.VisitInvocationExpression(node);
+        return;
+      }
+
+      var args = node.ArgumentList.Arguments;
+
+      if (args.Count != 1) {
+        base.VisitInvocationExpression(node);
+        return;
+      }
+
+      var rhs = node.ArgumentList.Arguments[0].Expression;
+      var rhsType = GetModel(rhs).GetTypeInfo(rhs, Token).Type;
+
+      if (rhsType is null) {
+        base.VisitInvocationExpression(node);
+        return;
+      }
+
+      var rhsTypeId = CodeService.GetNameFullyQualifiedWithoutGenerics(
+        rhsType, rhsType.Name
+      );
+
+      AddOutput(rhsTypeId);
+
       return;
     }
 
-    var id = memberAccess.Expression;
-    if (id is not IdentifierNameSyntax identifierName) { return; }
+    if (node.Expression is not GenericNameSyntax genericName) {
+      base.VisitInvocationExpression(node);
+      return;
+    }
 
-    var lhsType =
-      GetModel(identifierName).GetTypeInfo(identifierName, Token).Type;
-    if (lhsType is null) { return; }
+    // void log(string message) => LogicBlocksGenerator.Log.Print(message);
 
-    var lhsTypeId = CodeService.GetNameFullyQualifiedWithoutGenerics(
-      lhsType, lhsType.Name
-    );
-    var methodName = memberAccess.Name.Identifier.ValueText;
+    methodName = genericName.Identifier.ValueText;
 
     var pushedContext = false;
-    if (methodName == Constants.LOGIC_BLOCK_CONTEXT_ON_ENTER) {
+    if (methodName == Constants.LOGIC_BLOCK_STATE_LOGIC_ON_ENTER) {
       _outputContexts.Push(OutputContexts.OnEnter);
       pushedContext = true;
     }
-    else if (methodName == Constants.LOGIC_BLOCK_CONTEXT_ON_EXIT) {
+    else if (methodName == Constants.LOGIC_BLOCK_STATE_LOGIC_ON_EXIT) {
       _outputContexts.Push(OutputContexts.OnExit);
       pushedContext = true;
     }
@@ -72,32 +117,6 @@ public class OutputVisitor : CSharpSyntaxWalker {
     if (pushedContext) {
       _outputContexts.Pop();
     }
-
-    if (
-      lhsTypeId != Constants.LOGIC_BLOCK_CONTEXT_ID ||
-      methodName != Constants.LOGIC_BLOCK_CONTEXT_OUTPUT
-    ) {
-      return;
-    }
-
-    var args = node.ArgumentList.Arguments;
-
-    if (args.Count != 1) {
-      return;
-    }
-
-    var rhs = node.ArgumentList.Arguments[0].Expression;
-    var rhsType = GetModel(rhs).GetTypeInfo(rhs, Token).Type;
-
-    if (rhsType is null) {
-      return;
-    }
-
-    var rhsTypeId = CodeService.GetNameFullyQualifiedWithoutGenerics(
-      rhsType, rhsType.Name
-    );
-
-    AddOutput(rhsTypeId);
   }
 
   public override void VisitClassDeclaration(ClassDeclarationSyntax node) { }

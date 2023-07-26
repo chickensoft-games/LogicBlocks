@@ -15,10 +15,10 @@ public class ToasterOven :
   public abstract record State(Context Context) : StateLogic(Context) {
     public record Heating : State, IGet<Input.OpenDoor> {
       public Heating(Context context) : base(context) {
-        Context.OnEnter<Heating>(
+        OnEnter<Heating>(
           (previous) => Context.Output(new Output.TurnHeaterOn())
         );
-        Context.OnExit<Heating>(
+        OnExit<Heating>(
           (next) => Context.Output(new Output.TurnHeaterOff())
         );
       }
@@ -32,10 +32,10 @@ public class ToasterOven :
       public Toasting(Context context, int toastColor) : base(context) {
         ToastColor = toastColor;
 
-        Context.OnEnter<Toasting>(
+        OnEnter<Toasting>(
           (previous) => Context.Output(new Output.SetTimer(ToastColor))
         );
-        Context.OnExit<Toasting>(
+        OnExit<Toasting>(
           (next) => Context.Output(new Output.ResetTimer())
         );
       }
@@ -51,10 +51,10 @@ public class ToasterOven :
       public Baking(Context context, int temperature) : base(context) {
         Temperature = temperature;
 
-        Context.OnEnter<Baking>(
+        OnEnter<Baking>(
           (previous) => Context.Output(new Output.SetTemperature(Temperature))
         );
-        Context.OnExit<Baking>(
+        OnExit<Baking>(
           (next) => Context.Output(new Output.SetTemperature(0))
         );
       }
@@ -66,10 +66,10 @@ public class ToasterOven :
 
     public record DoorOpen : State, IGet<Input.CloseDoor> {
       public DoorOpen(Context context) : base(context) {
-        Context.OnEnter<DoorOpen>(
+        OnEnter<DoorOpen>(
           (previous) => Context.Output(new Output.TurnLampOn())
         );
-        Context.OnExit<DoorOpen>(
+        OnExit<DoorOpen>(
           (next) => Context.Output(new Output.TurnLampOff())
         );
       }

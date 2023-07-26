@@ -71,7 +71,7 @@ public sealed record LogicBlockImplementation(
   string FilePath,
   string Id,
   string Name,
-  string? InitialStateId,
+  ImmutableHashSet<string> InitialStateIds,
   LogicBlockGraph Graph,
   ImmutableDictionary<string, ILogicBlockSubclass> Inputs,
   ImmutableDictionary<string, ILogicBlockSubclass> Outputs,
