@@ -9,4 +9,3 @@ obj/
 .generated/
 .vs/
 .DS_Store
-*.g.puml
