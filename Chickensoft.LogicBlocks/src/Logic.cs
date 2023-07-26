@@ -2,7 +2,6 @@ namespace Chickensoft.LogicBlocks;
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using WeakEvent;
 
 /// <summary>
@@ -128,20 +127,6 @@ public abstract partial class Logic<
   private readonly WeakEventSource<TState> _stateEventSource = new();
   private readonly WeakEventSource<Exception> _errorEventSource = new();
   private readonly WeakEventSource<TOutput> _outputEventSource = new();
-  private readonly Queue<UpdateCallback> _enterCallbacksA = new();
-  private readonly Queue<UpdateCallback> _enterCallbacksB = new();
-  private readonly Stack<UpdateCallback> _exitCallbacksA = new();
-  private readonly Stack<UpdateCallback> _exitCallbacksB = new();
-  internal Queue<UpdateCallback> EnterCallbacks => _flipped
-    ? _enterCallbacksB
-    : _enterCallbacksA;
-  internal Stack<UpdateCallback> ExitCallbacks => _flipped
-    ? _exitCallbacksB
-    : _exitCallbacksA;
-  private bool _flipped;
-
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  internal void Flip() => _flipped = !_flipped;
 
   /// <summary>
   /// <para>Creates a new LogicBlock.</para>
@@ -270,16 +255,6 @@ public abstract partial class Logic<
       (TStateTypeA)a, (TStateTypeB)b
     );
   }
-
-  internal void AddOnEnterCallback<TStateType>(TUpdate callback)
-    where TStateType : TState => EnterCallbacks.Enqueue(
-      new UpdateCallback(callback, (dynamic state) => state is TStateType)
-    );
-
-  internal void AddOnExitCallback<TStateType>(TUpdate callback)
-    where TStateType : TState => ExitCallbacks.Push(
-      new UpdateCallback(callback, (dynamic state) => state is TStateType)
-    );
 
   /// <summary>
   /// <para>

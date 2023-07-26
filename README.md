@@ -250,11 +250,11 @@ In the case of `Off`, we only need to handle the `TurnOn` event. Input handlers 
       ) {
         var tempSensor = context.Get<ITemperatureSensor>();
 
-        context.OnEnter<Heating>(
+        OnEnter<Heating>(
           (previous) => tempSensor.OnTemperatureChanged += OnTemperatureChanged
         );
 
-        context.OnExit<Heating>(
+        OnExit<Heating>(
           (next) => tempSensor.OnTemperatureChanged -= OnTemperatureChanged
         );
       }

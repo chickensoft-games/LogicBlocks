@@ -65,6 +65,58 @@ public class LogicBlockAsyncTest {
   }
 
   [Fact]
+  public async Task CallsEnterAndExitOnStatesInProperOrderForReusedStates() {
+    var logic = new TestMachineReusableAsync();
+    var context = new TestMachineReusableAsync.Context(logic);
+
+    var outputs = new List<TestMachineReusableAsync.Output>();
+
+    void onOutput(object? block, TestMachineReusableAsync.Output output) =>
+      outputs.Add(output);
+
+    logic.OnOutput += onOutput;
+
+    logic.Value.ShouldBeOfType<TestMachineReusableAsync.State.Deactivated>();
+    var taskA = logic.Input(
+      new TestMachineReusableAsync.Input.Activate(SecondaryState.Blooped)
+    );
+    var taskB = logic.Input(
+      new TestMachineReusableAsync.Input.Deactivate()
+    );
+    taskA.ShouldBeSameAs(taskB);
+    await logic.Input(
+      new TestMachineReusableAsync.Input.Activate(SecondaryState.Bopped)
+    );
+    // Repeating previous state should do nothing.
+    await logic.Input(
+      new TestMachineReusableAsync.Input.Activate(SecondaryState.Bopped)
+    );
+    await logic.Input(
+      new TestMachineReusableAsync.Input.Activate(SecondaryState.Blooped)
+    );
+    await logic.Input(
+      new TestMachineReusableAsync.Input.Deactivate()
+    );
+
+    outputs.ShouldBe(new TestMachineReusableAsync.Output[] {
+      new TestMachineReusableAsync.Output.DeactivatedCleanUp(),
+      new TestMachineReusableAsync.Output.Activated(),
+      new TestMachineReusableAsync.Output.Blooped(),
+      new TestMachineReusableAsync.Output.BloopedCleanUp(),
+      new TestMachineReusableAsync.Output.ActivatedCleanUp(),
+      new TestMachineReusableAsync.Output.Deactivated(),
+      new TestMachineReusableAsync.Output.DeactivatedCleanUp(),
+      new TestMachineReusableAsync.Output.Activated(),
+      new TestMachineReusableAsync.Output.Bopped(),
+      new TestMachineReusableAsync.Output.BoppedCleanUp(),
+      new TestMachineReusableAsync.Output.Blooped(),
+      new TestMachineReusableAsync.Output.BloopedCleanUp(),
+      new TestMachineReusableAsync.Output.ActivatedCleanUp(),
+      new TestMachineReusableAsync.Output.Deactivated(),
+    });
+  }
+
+  [Fact]
   public async Task InvokesErrorEventFromUpdateHandler() {
     var block = new FakeLogicBlockAsync();
 
@@ -75,13 +127,11 @@ public class LogicBlockAsyncTest {
     block.OnNextError += handler;
 
     block.Exceptions.ShouldBeEmpty();
-    await block.Input(new FakeLogicBlockAsync.IInput.Custom(
-      (context) => new FakeLogicBlockAsync.State.Custom(
+    await block.Input(new FakeLogicBlockAsync.Input.Custom(
+      (context) => new FakeLogicBlockAsync.State.OnEnterState(
           context,
-          (context) => context.OnEnter<FakeLogicBlockAsync.State.Custom>(
-            (previous) =>
-              throw new InvalidOperationException("Error from OnEnter")
-          )
+          (previous) =>
+            throw new InvalidOperationException("Error from OnEnter")
         )
       )
     );
@@ -96,7 +146,7 @@ public class LogicBlockAsyncTest {
   public async Task DoesNothingOnUnhandledInput() {
     var block = new FakeLogicBlockAsync();
     var context = new FakeLogicBlockAsync.Context(block);
-    await block.Input(new FakeLogicBlockAsync.IInput.InputUnknown());
+    await block.Input(new FakeLogicBlockAsync.Input.InputUnknown());
     block.Value.ShouldBe(block.GetInitialState(context));
   }
 
@@ -111,11 +161,21 @@ public class LogicBlockAsyncTest {
     block.OnNextError += handler;
 
     block.Exceptions.ShouldBeEmpty();
-    await block.Input(new FakeLogicBlockAsync.IInput.InputError());
+    await block.Input(new FakeLogicBlockAsync.Input.InputError());
     block.Exceptions.ShouldNotBeEmpty();
 
     called.ShouldBe(1);
 
     block.OnNextError -= handler;
+  }
+
+  [Fact]
+  public async Task StateCanAddInputUsingContext() {
+    var logic = new FakeLogicBlockAsync();
+    var input = new FakeLogicBlockAsync.Input.InputOne(5, 6);
+
+    await logic.Input(new FakeLogicBlockAsync.Input.SelfInput(input));
+
+    logic.Value.ShouldBeOfType<FakeLogicBlockAsync.State.StateA>();
   }
 }

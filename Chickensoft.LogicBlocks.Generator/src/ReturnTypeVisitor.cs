@@ -49,7 +49,21 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
     if (expression is not ExpressionSyntax expressionSyntax) {
       return;
     }
+
     var type = GetModel(expression).GetTypeInfo(expression, Token).Type;
+
+    if (expression is ConditionalExpressionSyntax conditional) {
+      AddExpressionToReturnTypes(conditional.WhenTrue);
+      AddExpressionToReturnTypes(conditional.WhenFalse);
+      return;
+    }
+
+    if (expression is BinaryExpressionSyntax binary) {
+      AddExpressionToReturnTypes(binary.Left);
+      AddExpressionToReturnTypes(binary.Right);
+      return;
+    }
+
     if (type is not ITypeSymbol typeSymbol) {
       return;
     }

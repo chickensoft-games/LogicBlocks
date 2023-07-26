@@ -17,7 +17,7 @@ public partial class VendingMachine {
     public record Idle : State,
       IGet<Input.SelectionEntered>, IGet<Input.PaymentReceived> {
       public Idle(Context context) : base(context) {
-        context.OnEnter<Idle>((previous) => context.Output(
+        OnEnter<Idle>((previous) => context.Output(
           new Output.ClearTransactionTimeOutTimer()
         ));
       }
@@ -55,7 +55,7 @@ public partial class VendingMachine {
         Price = price;
         AmountReceived = amountReceived;
 
-        Context.OnEnter<TransactionActive>(
+        OnEnter<TransactionActive>(
          (previous) => Context.Output(
            new Output.RestartTransactionTimeOutTimer()
          )
@@ -97,7 +97,7 @@ public partial class VendingMachine {
         public Started(
           Context context, ItemType type, int price, int amountReceived
         ) : base(context, type, price, amountReceived) {
-          context.OnEnter<Started>(
+          OnEnter<Started>(
             (previous) => context.Output(new Output.TransactionStarted())
           );
         }
@@ -128,7 +128,7 @@ public partial class VendingMachine {
         Type = type;
         Price = price;
 
-        context.OnEnter<Vending>(
+        OnEnter<Vending>(
           (previous) => Context.Output(new Output.BeginVending())
         );
       }

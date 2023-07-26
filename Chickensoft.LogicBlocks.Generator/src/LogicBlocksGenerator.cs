@@ -3,6 +3,7 @@ namespace Chickensoft.LogicBlocks.Generator;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -30,7 +31,7 @@ public class LogicBlocksGenerator :
     // the source generator process is started by running `dotnet build` in
     // the project consuming the source generator
     //
-    // Debugger.Launch();
+    Debugger.Launch();
 
     // Add post initialization sources
     // (source code that is always generated regardless)
@@ -235,20 +236,22 @@ public class LogicBlocksGenerator :
           member.Name == Constants.LOGIC_BLOCK_GET_INITIAL_STATE
       );
 
-    string? initialStateId = null;
+    HashSet<string> initialStateIds = new();
 
     if (
       getInitialStateMethod is IMethodSymbol initialStateMethod &&
-      initialStateMethod
-        .DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(token) is
-      SyntaxNode initialStateMethodNode
+      initialStateMethod.DeclaringSyntaxReferences.Select(
+        (syntaxRef) => syntaxRef.GetSyntax(token)
+      ).OfType<MethodDeclarationSyntax>() is
+        IEnumerable<MethodDeclarationSyntax> initialStateMethodSyntaxes
     ) {
-      var initialStateVisitor = new ReturnTypeVisitor(
-        model, token, CodeService, stateBaseType
-      );
-      initialStateVisitor.Visit(initialStateMethodNode);
-      initialStateId = initialStateVisitor.ReturnTypes.FirstOrDefault();
-      Log.Print($"Initial state type: {initialStateId}");
+      foreach (var initialStateMethodSyntax in initialStateMethodSyntaxes) {
+        var initialStateVisitor = new ReturnTypeVisitor(
+          model, token, CodeService, stateBaseType
+        );
+        initialStateVisitor.Visit(initialStateMethodSyntax);
+        initialStateIds.UnionWith(initialStateVisitor.ReturnTypes);
+      }
     }
 
     // Convert the subtypes into a graph by recursively building the graph
@@ -302,7 +305,7 @@ public class LogicBlocksGenerator :
       FilePath: destFile,
       Id: CodeService.GetNameFullyQualified(symbol, symbol.Name),
       Name: symbol.Name,
-      InitialStateId: initialStateId,
+      InitialStateIds: initialStateIds.ToImmutableHashSet(),
       Graph: root,
       Inputs: inputs.ToImmutableDictionary(),
       Outputs: outputs.ToImmutableDictionary(),
@@ -342,10 +345,13 @@ public class LogicBlocksGenerator :
 
     transitions.Sort();
 
-    var initialStateString = implementation.InitialStateId != null
-      ? "[*] --> " +
-        $"{implementation.StatesById[implementation.InitialStateId].UmlId}"
-      : "";
+    var initialStates = new List<string>();
+
+    foreach (var initialStateId in implementation.InitialStateIds) {
+      initialStates.Add(
+        "[*] --> " + implementation.StatesById[initialStateId].UmlId
+      );
+    }
 
     var text = Format($"""
     @startuml {implementation.Name}
@@ -353,7 +359,7 @@ public class LogicBlocksGenerator :
 
     {transitions}
 
-    {initialStateString}
+    {initialStates}
     @enduml
     """);
 
@@ -379,7 +385,7 @@ public class LogicBlocksGenerator :
     if (isMultilineState) {
       if (isRoot) {
         lines.Add(
-          $"{Tab(t)}state \"{impl.Name}\" as {graph.Name} {{"
+          $"{Tab(t)}state \"{impl.Name} State\" as {graph.UmlId} {{"
         );
       }
       else {
@@ -387,7 +393,7 @@ public class LogicBlocksGenerator :
       }
     }
     else if (isRoot) {
-      lines.Add($"{Tab(t)}state \"{impl.Name} {graph.Name}\" as {graph.Name}");
+      lines.Add($"{Tab(t)}state \"{impl.Name} State\" as {graph.UmlId}");
     }
     else {
       lines.Add($"{Tab(t)}state \"{graph.Name}\" as {graph.UmlId}");
@@ -443,11 +449,11 @@ public class LogicBlocksGenerator :
   }
 
   public StatesAndOutputs GetStatesAndOutputs(
-    INamedTypeSymbol type,
-    SemanticModel model,
-    CancellationToken token,
-    INamedTypeSymbol stateBaseType
-  ) {
+      INamedTypeSymbol type,
+      SemanticModel model,
+      CancellationToken token,
+      INamedTypeSymbol stateBaseType
+    ) {
     // type is the state type
 
     var inputToStatesBuilder = ImmutableDictionary
@@ -477,12 +483,6 @@ public class LogicBlocksGenerator :
       .SelectMany(syntaxNode => syntaxNode.ChildNodes())
       .OfType<ConstructorDeclarationSyntax>().ToList();
 
-    var handledInputInterfaceSyntaxes = handledInputInterfaces
-      .SelectMany(
-        interfaceType => interfaceType.DeclaringSyntaxReferences
-          .Select(syntaxRef => syntaxRef.GetSyntax(token))
-      );
-
     var inputHandlerMethods = new List<MethodDeclarationSyntax>();
 
     var outputVisitor = new OutputVisitor(
@@ -507,38 +507,46 @@ public class LogicBlocksGenerator :
       if (implementation is not IMethodSymbol methodSymbol) {
         continue;
       }
-      var handlerMethodSyntax = methodSymbol
+
+      var handlerMethodSyntaxes = methodSymbol
         .DeclaringSyntaxReferences
-        .FirstOrDefault()?
-        .GetSyntax(token) as MethodDeclarationSyntax;
-      if (handlerMethodSyntax is not MethodDeclarationSyntax methodSyntax) {
+        .Select(syntaxRef => syntaxRef.GetSyntax(token))
+        .OfType<MethodDeclarationSyntax>()
+        .ToImmutableArray();
+
+      if (handlerMethodSyntaxes.Length == 0) {
         continue;
       }
-      inputHandlerMethods.Add(methodSyntax);
-      var inputId = CodeService.GetNameFullyQualifiedWithoutGenerics(
-        inputType, inputType.Name
-      );
-      var outputContext = OutputContexts.OnInput(inputType.Name);
-      var returnTypeVisitor = new ReturnTypeVisitor(
-        model, token, CodeService, stateBaseType
-      );
-      outputVisitor = new OutputVisitor(
-        model, token, CodeService, outputContext
-      );
 
-      returnTypeVisitor.Visit(methodSyntax);
-      outputVisitor.Visit(methodSyntax);
+      foreach (var methodSyntax in handlerMethodSyntaxes) {
+        inputHandlerMethods.Add(methodSyntax);
+        var inputId = CodeService.GetNameFullyQualifiedWithoutGenerics(
+          inputType, inputType.Name
+        );
+        var outputContext = OutputContexts.OnInput(inputType.Name);
+        var modelForSyntax =
+          model.Compilation.GetSemanticModel(methodSyntax.SyntaxTree);
+        var returnTypeVisitor = new ReturnTypeVisitor(
+          modelForSyntax, token, CodeService, stateBaseType
+        );
+        outputVisitor = new OutputVisitor(
+          modelForSyntax, token, CodeService, outputContext
+        );
 
-      if (outputVisitor.OutputTypes.ContainsKey(outputContext)) {
-        outputsBuilder.Add(
-          outputContext, outputVisitor.OutputTypes[outputContext]
+        returnTypeVisitor.Visit(methodSyntax);
+        outputVisitor.Visit(methodSyntax);
+
+        if (outputVisitor.OutputTypes.ContainsKey(outputContext)) {
+          outputsBuilder.Add(
+            outputContext, outputVisitor.OutputTypes[outputContext]
+          );
+        }
+
+        inputToStatesBuilder.Add(
+          inputId,
+          returnTypeVisitor.ReturnTypes
         );
       }
-
-      inputToStatesBuilder.Add(
-        inputId,
-        returnTypeVisitor.ReturnTypes
-      );
     }
 
     // find methods on type that aren't input handlers or constructors
@@ -553,8 +561,12 @@ public class LogicBlocksGenerator :
       Log.Print("Examining method: " + otherMethod.Identifier.Text);
       var outputContext = OutputContexts.Method(otherMethod.Identifier.Text);
 
+      var modelForSyntax = model.Compilation.GetSemanticModel(
+        otherMethod.SyntaxTree
+      );
+
       outputVisitor = new OutputVisitor(
-        model, token, CodeService, outputContext
+        modelForSyntax, token, CodeService, outputContext
       );
       outputVisitor.Visit(otherMethod);
 

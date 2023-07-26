@@ -8,6 +8,8 @@ public partial class PartialLogic :
         Context.Output(new Output.OutputA());
         return new B(Context);
       }
+
+      public void DoSomething() => Context.Output(new Output.OutputSomething());
     }
   }
 }

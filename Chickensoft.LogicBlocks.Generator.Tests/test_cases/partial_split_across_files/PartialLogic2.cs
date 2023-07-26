@@ -5,10 +5,10 @@ public partial class PartialLogic :
   public abstract partial record State : StateLogic {
     public partial record A : State, IGet<Input.One> {
       public A(Context context) : base(context) {
-        Context.OnEnter<A>(
+        OnEnter<A>(
           (previous) => Context.Output(new Output.OutputEnterA())
         );
-        Context.OnExit<A>(
+        OnExit<A>(
           (next) => Context.Output(new Output.OutputExitA())
         );
       }

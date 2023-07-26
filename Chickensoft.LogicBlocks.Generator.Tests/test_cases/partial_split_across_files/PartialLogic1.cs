@@ -16,5 +16,6 @@ public partial class PartialLogic :
     public record OutputA : Output;
     public record OutputEnterA : Output;
     public record OutputExitA : Output;
+    public record OutputSomething : Output;
   }
 }
