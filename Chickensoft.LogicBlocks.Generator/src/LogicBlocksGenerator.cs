@@ -285,9 +285,12 @@ public class LogicBlocksGenerator :
       return graph;
     }
 
-    root.Children.AddRange(subtypesByBaseType[root.BaseId]
-      .Select((stateType) => buildGraph(stateType, stateBaseType))
-    );
+    if (subtypesByBaseType.ContainsKey(root.BaseId)) {
+      // Only try to build graph of subtypes if there are any.
+      root.Children.AddRange(subtypesByBaseType[root.BaseId]
+        .Select((stateType) => buildGraph(stateType, stateBaseType))
+      );
+    }
 
     foreach (var state in stateGraphsById.Values) {
       var statesAndOutputs = GetStatesAndOutputs(
