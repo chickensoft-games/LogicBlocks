@@ -37,11 +37,11 @@ public class LightSwitch :
 
   public abstract record State(Context Context) : StateLogic(Context) {
     public record On(Context Context) : State(Context), IGet<Input.Toggle> {
-      State IGet<Input.Toggle>.On(Input.Toggle input) => new Off(Context);
+      public State On(Input.Toggle input) => new Off(Context);
     }
 
     public record Off(Context Context) : State(Context), IGet<Input.Toggle> {
-      State IGet<Input.Toggle>.On(Input.Toggle input) => new On(Context);
+      public State On(Input.Toggle input) => new On(Context);
     }
   }
 
@@ -66,15 +66,18 @@ Finally, the logic blocks source generator can be used to produce a UML diagram 
 
 ## 👩‍🏫 Examples
 
-- [**`LightSwitch.cs`**](Chickensoft.LogicBlocks.Generator.Tests/LightSwitch.cs)
+- [**`LightSwitch.cs`**](Chickensoft.LogicBlocks.Generator.Tests/test_cases/LightSwitch.cs)
 
   ![LightSwitch state diagram](docs/light_switch.png)
-- [**`Heater.cs`**](Chickensoft.LogicBlocks.Generator.Tests/Heater.cs)
 
-  ![Heater State Diagram](docs/heater.png)
-- [**`ToasterOven.cs`**](Chickensoft.LogicBlocks.Generator.Tests/ToasterOven.cs)
+- [**`Heater.cs`**](Chickensoft.LogicBlocks.Generator.Tests/test_cases/Heater.cs)
+
+  ![Heater  State Diagram](docs/heater.png)
+
+- [**`ToasterOven.cs`**](Chickensoft.LogicBlocks.Generator.Tests/test_cases/ToasterOven.cs)
 
   ![Toaster Oven State Diagram](docs/toaster_oven.png)
+
 - [**`VendingMachine.cs`**](Chickensoft.LogicBlocks.Example/VendingMachine.cs)
 
   The Vending Machine example shows a fully built CLI app that simulates a vending machine, complete with timers, inventory, and cash return.
@@ -142,10 +145,10 @@ You can find the latest version of LogicBlocks on [nuget][logic-blocks-nuget].
 dotnet add package Chickensoft.LogicBlocks
 ```
 
-To use the LogicBlocks source generator, add the following to your `.csproj` file. Make sure to replace `2.0.0` with the latest version of the [LogicBlocks generator from nuget][logic-blocks-gen-nuget].
+To use the LogicBlocks source generator, add the following to your `.csproj` file. Make sure to replace `2.0.1` with the latest version of the [LogicBlocks generator from nuget][logic-blocks-gen-nuget].
 
 ```xml
-  <PackageReference Include="Chickensoft.LogicBlocks.Generator" Version="2.0.0" PrivateAssets="all" OutputItemType="analyzer" />
+  <PackageReference Include="Chickensoft.LogicBlocks.Generator" Version="2.0.1" PrivateAssets="all" OutputItemType="analyzer" />
 ```
 
 Once you have both packages installed, you can force diagram generation with the following command in your project:
@@ -230,8 +233,7 @@ We'll go ahead and write out the first two states, `Off` and `Idle`:
     public record Off(
       Context Context, double TargetTemp
     ) : State(Context, TargetTemp), IGet<Input.TurnOn> {
-      State IGet<Input.TurnOn>.On(Input.TurnOn input) =>
-        new Heating(Context, TargetTemp);
+      public State On(Input.TurnOn input) => new Heating(Context, TargetTemp);
     }
 
     public record Idle(Context Context, double TargetTemp) :
@@ -265,17 +267,15 @@ In the case of `Off`, we only need to handle the `TurnOn` event. Input handlers 
         );
       }
 
-      State IGet<Input.TurnOff>.On(Input.TurnOff input)
-        => new Off(Context, TargetTemp);
+      public State On(Input.TurnOff input) => new Off(Context, TargetTemp);
 
-      State IGet<Input.AirTempSensorChanged>.On(
-        Input.AirTempSensorChanged input
-      ) => input.AirTemp >= TargetTemp
+      public State On(Input.AirTempSensorChanged input) => input.AirTemp >= TargetTemp
         ? new Idle(Context, TargetTemp)
         : this;
 
-      State IGet<Input.TargetTempChanged>.On(Input.TargetTempChanged input)
-        => this with { TargetTemp = input.Temp };
+      public State On(Input.TargetTempChanged input) => this with {
+        TargetTemp = input.Temp
+      };
 
       private void OnTemperatureChanged(double airTemp) {
         Context.Input(new Input.AirTempSensorChanged(airTemp));
@@ -316,7 +316,7 @@ Finally, we have to override the method that returns the initial state of the lo
 
 ### Using Our LogicBlock
 
-In case you missed it above, the completed space heater example is available  in [`Heater.cs`](Chickensoft.LogicBlocks.Generator.Tests/Heater.cs).
+In case you missed it above, the completed space heater example is available  in [`Heater.cs`](Chickensoft.LogicBlocks.Generator.Tests/test_cases/Heater.cs).
 
 To use our logic block, we'd have to first make a temperature sensor that conforms to the `ITemperatureSensor` interface that we never showed.
 
