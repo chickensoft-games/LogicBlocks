@@ -122,6 +122,22 @@ public class LogicBlockTest {
   }
 
   [Fact]
+  public void StateCanCallAddErrorFromContext() {
+    Exception? error = null;
+
+    var exception = new InvalidOperationException();
+
+    var block = new FakeLogicBlock((e) => error = e);
+
+    block.Input(new FakeLogicBlock.Input.Custom((context) => {
+      context.AddError(exception);
+      return block.GetInitialState();
+    }));
+
+    error.ShouldBe(exception);
+  }
+
+  [Fact]
   public void DoesNothingOnUnhandledInput() {
     var block = new FakeLogicBlock();
     var context = new FakeLogicBlock.Context(block);
@@ -280,32 +296,6 @@ public class LogicBlockTest {
     logic.Value.ShouldBeOfType<NonEquatable.State.A>();
     logic.Input(new NonEquatable.Input.GoToB());
     logic.Value.ShouldBeOfType<NonEquatable.State.B>();
-  }
-
-  [Fact]
-  public void OnTransitionCalledWhenTransitioning() {
-    var logic = new FakeLogicBlock();
-    var called = false;
-
-    logic.PublicOnTransition<
-      FakeLogicBlock.State.StateA, FakeLogicBlock.State.StateB
-    >(
-      (previous, state) => {
-        previous.ShouldBeOfType<FakeLogicBlock.State.StateA>();
-        state.ShouldBeOfType<FakeLogicBlock.State.StateB>();
-        called = true;
-      }
-    );
-
-    logic.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
-
-    Should.Throw<ArgumentException>(
-      () => logic.PublicOnTransition<
-        FakeLogicBlock.State.StateA, FakeLogicBlock.State.StateB
-      >((previous, state) => { })
-    );
-
-    called.ShouldBeTrue();
   }
 
   [Fact]

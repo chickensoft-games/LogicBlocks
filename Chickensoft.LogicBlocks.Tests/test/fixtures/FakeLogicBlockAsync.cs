@@ -107,11 +107,6 @@ public partial class FakeLogicBlockAsync
 
   public List<Exception> Exceptions { get; } = new();
 
-  public void PublicOnTransition<TStateTypeA, TStateTypeB>(
-    Transition<TStateTypeA, TStateTypeB> transitionCallback
-  ) where TStateTypeA : State where TStateTypeB : State =>
-    OnTransition(transitionCallback);
-
   public override State GetInitialState(Context context) =>
     InitialState?.Invoke(context) ?? new State.StateA(context, 1, 2);
 

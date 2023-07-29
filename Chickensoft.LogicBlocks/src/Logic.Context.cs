@@ -1,5 +1,7 @@
 namespace Chickensoft.LogicBlocks;
 
+using System;
+
 public abstract partial class Logic<
   TInput, TState, TOutput, THandler, TInputReturn, TUpdate
 > {
@@ -52,5 +54,12 @@ public abstract partial class Logic<
     /// <returns>The requested value.</returns>
     public TDataType Get<TDataType>() where TDataType : notnull =>
       Logic.Get<TDataType>();
+
+    /// <summary>
+    /// Adds an error to a logic block. Errors are immediately processed by the
+    /// logic block's <see cref="HandleError(Exception)"/> callback.
+    /// </summary>
+    /// <param name="e">Exception to add.</param>
+    public void AddError(Exception e) => Logic.AddError(e);
   }
 }

@@ -109,11 +109,6 @@ public partial class FakeLogicBlock
 
   public void PublicSet<T>(T value) where T : notnull => Set(value);
 
-  public void PublicOnTransition<TStateTypeA, TStateTypeB>(
-    Transition<TStateTypeA, TStateTypeB> transitionCallback
-  ) where TStateTypeA : State where TStateTypeB : State =>
-    OnTransition(transitionCallback);
-
   public override State GetInitialState(Context context) =>
     InitialState?.Invoke(context) ?? new State.StateA(context, 1, 2);
 
