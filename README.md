@@ -165,7 +165,7 @@ Since LogicBlocks are based on statecharts, it helps to understand the basics of
 - [Statecharts.dev][statecharts]
 - [UML State Machine (Wikipedia)][uml-state-machine]
 
-### Creating a LogicBlock
+### ✨ Creating a LogicBlock
 
 To make a logic block, you'll need an idea for a state machine or statechart. Drawing one out from a diagram (or implementing an existing diagram) is a great way to get started.
 
@@ -195,7 +195,7 @@ The `IStateLogic` interface requires your state to have a `Context` property. Th
 
 We've added the `[StateMachine]` attribute to our logic block class to tell the LogicBlock source generator about our machine. This means the generator will be able to find the types and generate the diagram code so we can see what our machine looks like.
 
-### Defining Inputs and Outputs
+### ⤵️ Defining Inputs and Outputs
 
 Once we have a basic LogicBlock implementation in place, we can define our inputs and outputs.
 
@@ -220,7 +220,7 @@ In statecharts terminology, inputs are analogous to statechart `events`, and out
 
 Each of our inputs represent something that has happened related to the machine we're designing. Since we're modeling a space heater, we've provided inputs for all the things that might happen, such as turning it on and off, changing the target temperature, and receiving a new reading from the air temperature sensor.
 
-### Defining States
+### 💡 Defining States
 
 We know our space heater will be in one of three states: `Off`, `Idle`, and `Heating`. Since our imaginary space heater has a knob that controls the desired room temperature (the target temperature), we know that all of our states should have a `TargetTemp` property.
 
@@ -314,7 +314,7 @@ We provide values to the logic block's *blackboard* of values by calling the `Se
 
 Finally, we have to override the method that returns the initial state of the logic block, `GetInitialState`. We simply return the `Off` state with a target temperature of 72 degrees (fahrenheit).
 
-### Using Our LogicBlock
+### 🪢 Binding to the LogicBlock
 
 In case you missed it above, the completed space heater example is available  in [`Heater.cs`](Chickensoft.LogicBlocks.Generator.Tests/test_cases/Heater.cs).
 
@@ -364,6 +364,122 @@ That'll do. Now, somewhere in our app or game's code, we can create a new instan
   // update itself if it's in the heating state. We don't have to care about 
   // what state it's in to manipulate the temperature sensor, either!
   tempSensor.UpdateReading(64);
+```
+
+A logic block's binding is disposable, so you'll need to retain a reference to it for the life of the logic block. That typically just means adding another property next to wherever you store your logic block and disposing of the binding when you're done with it.
+
+Bindings will not re-run callbacks if the state or selected data from the state have not changed. To do this, bindings cache the previous state and any previously selected values by making a copy of the reference to the state or data. Caching the data enables you to safely re-use states when excessive memory allocation is a concern.
+
+## 🔮 Additional Tips
+
+### ♻️ Reusing Inputs, States and Outputs
+
+If you need to write performant code that avoids heap allocations in memory, you can reuse inputs, states, and outputs instead of allocating new ones each time.
+
+For ease of use, consider passing any dependencies your states will need into the constructor of your logic block. Then, in the constructor, create states and outputs and add them to the blackboard. Finally, in your `GetInitialState` method, return the initial state by looking it up in the blackboard.
+
+```csharp
+namespace Chickensoft.LogicBlocks.Tests.Fixtures;
+
+using Chickensoft.LogicBlocks.Generator;
+
+[StateMachine]
+public partial class MyLogicBlock :
+  LogicBlock<MyLogicBlock.Input, MyLogicBlock.State, MyLogicBlock.Output> {
+  public abstract record Input { ... }
+  public abstract record State(Context Context) : StateLogic(Context) { ... }
+  public abstract record Output { ... }
+
+  public MyLogicBlock(IMyDependency dependency) {
+    // Add dependencies and pre-created states to the blackboard so that states
+    // can reuse them.
+    Set(dependency);
+
+    // Add pre-created states to the blackboard so that states can look them up
+    // instead of having to create them.
+    Set(new State.MyFirstState(Context));
+    Set(new State.MySecondState(Context));
+
+    // Add pre-created outputs:
+    Set(new State.Output.MyOutput());
+  }
+
+  // Return the initial state by looking it up in the blackboard.
+  public override State GetInitialState(Context context) =>
+    Context.Get<MyFirstState>();
+}
+```
+
+### 🎤 Events
+
+You can manually subscribe to a logic block's events if you need total control of a logic block. Manually subscribing to events can allow you to create a custom binding system or monitor inputs, outputs, and errors.
+
+LogicBlocks uses the [`WeakEvent`][weak-event] library to avoid memory leaks when subscribing to events. As a best practice, you should still unsubscribe to events when you're done, but if you miss one accidentally it shouldn't cause a memory leak.
+
+The first event parameter is always an `object?` that is actually a reference to the logic block firing the event, so casting it to the type of your logic block is perfectly safe. Meanwhile, the second parameter is the data from the event.
+
+```csharp
+var logic = new MyLogicBlock();
+
+logic.OnInput += (object? logicBlock, MyLogicBlock.Input input) =>
+  Console.WriteLine($"Input being processed: {input}");
+
+logic.OnState += (object? logicBlock, MyLogicBlock.State state) =>
+  Console.WriteLine($"State changed: {state}");
+
+logic.OnOutput += (object? logicBlock, MyLogicBlock.Output output) =>
+  Console.WriteLine($"Output: {output}");
+
+logic.OnError += (object? logicBlock, Exception error) =>
+  Console.WriteLine($"Error occurred: {error}");
+```
+
+### 📛 Error Handling
+
+By default, exceptions thrown in states do not cause the logic block to stop processing inputs. Instead, the logic block will invoke the `OnError` event and continue processing inputs.
+
+There are two ways to add errors to a logic block. The first is to throw an exception in a state. The second is to call the `AddError(Exception e)` method on the context. Regardless of which way you choose, both methods will cause the logic block to invoke its `HandleError` method.
+
+```csharp
+// Somewhere inside your logic block...
+
+public record MyState(Context) : State(Context), IGet<Input.SomeInput> {
+  public void On(Input.SomeInput input) {
+    // Add an error to the logic block.
+    Context.AddError(new InvalidOperationException("Oops."));
+
+    // Same as above, but breaks out of the method.
+    throw new InvalidOperationException("Oops.");
+
+    // Use Context.AddError if you need to continue execution inside your 
+    // state method. Otherwise, feel free to throw.
+  }
+}
+```
+
+In situations where you want to have manual control over whether thrown exceptions stop the application (or not), you can override the `HandleError` method in your logic block.
+
+```csharp
+namespace Chickensoft.LogicBlocks.Tests.Fixtures;
+
+using Chickensoft.LogicBlocks.Generator;
+
+[StateMachine]
+public partial class MyLogicBlock :
+  LogicBlock<MyLogicBlock.Input, MyLogicBlock.State, MyLogicBlock.Output> {
+  public abstract record Input { ... }
+  public abstract record State(Context Context) : StateLogic(Context) { ... }
+  public abstract record Output { ... }
+
+  ...
+
+  protected override void HandleError(Exception e) {
+    // This is a great place to log errors.
+
+    // Or you can stop execution on any exception that occurs inside a state.
+    throw e; 
+  }
+}
 ```
 
 ## 🖼 Generating State Diagrams
@@ -494,3 +610,4 @@ Conceptually, logic blocks draw from a number of inspirations:
 [primary constructor]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/record
 [nested types]: https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/nested-types
 [PlantText]: https://www.planttext.com/
+[weak-event]: https://github.com/thomaslevesque/WeakEvent
