@@ -105,6 +105,8 @@ public partial class FakeLogicBlock
   > {
   public Func<Context, State>? InitialState { get; init; }
 
+  public List<Exception> Exceptions { get; } = new();
+
   public void PublicSet<T>(T value) where T : notnull => Set(value);
 
   public void PublicOnTransition<TStateTypeA, TStateTypeB>(
@@ -115,5 +117,17 @@ public partial class FakeLogicBlock
   public override State GetInitialState(Context context) =>
     InitialState?.Invoke(context) ?? new State.StateA(context, 1, 2);
 
+  private readonly Action<Exception>? _onError;
+
+  public FakeLogicBlock(Action<Exception>? onError = null) {
+    _onError = onError;
+  }
+
   ~FakeLogicBlock() { }
+
+  protected override void HandleError(Exception e) {
+    Exceptions.Add(e);
+    _onError?.Invoke(e);
+    base.HandleError(e);
+  }
 }

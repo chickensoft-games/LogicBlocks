@@ -105,6 +105,8 @@ public partial class FakeLogicBlockAsync
   > {
   public Func<Context, State>? InitialState { get; init; }
 
+  public List<Exception> Exceptions { get; } = new();
+
   public void PublicOnTransition<TStateTypeA, TStateTypeB>(
     Transition<TStateTypeA, TStateTypeB> transitionCallback
   ) where TStateTypeA : State where TStateTypeB : State =>
@@ -113,7 +115,19 @@ public partial class FakeLogicBlockAsync
   public override State GetInitialState(Context context) =>
     InitialState?.Invoke(context) ?? new State.StateA(context, 1, 2);
 
+  private readonly Action<Exception>? _onError;
+
+  public FakeLogicBlockAsync(Action<Exception>? onError = null) {
+    _onError = onError;
+  }
+
   ~FakeLogicBlockAsync() { }
+
+  protected override void HandleError(Exception e) {
+    Exceptions.Add(e);
+    _onError?.Invoke(e);
+    base.HandleError(e);
+  }
 }
 
 #pragma warning restore CS1998

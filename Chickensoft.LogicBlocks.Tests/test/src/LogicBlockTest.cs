@@ -73,7 +73,7 @@ public class LogicBlockTest {
   }
 
   [Fact]
-  public void InvokesNextStateEvent() {
+  public void InvokesStateEvent() {
     var block = new FakeLogicBlock();
     var context = new FakeLogicBlock.Context(block);
 
@@ -110,6 +110,15 @@ public class LogicBlockTest {
     called.ShouldBe(1);
 
     block.OnError -= handler;
+  }
+
+  [Fact]
+  public void ThrowingFromHandleErrorStopsExecution() {
+    var block = new FakeLogicBlock((e) => throw e);
+
+    Should.Throw<InvalidOperationException>(
+      () => block.Input(new FakeLogicBlock.Input.InputError())
+    );
   }
 
   [Fact]

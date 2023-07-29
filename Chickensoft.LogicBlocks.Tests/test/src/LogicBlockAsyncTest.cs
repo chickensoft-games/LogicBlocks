@@ -164,6 +164,17 @@ public class LogicBlockAsyncTest {
   }
 
   [Fact]
+  public async Task ThrowingFromHandleErrorStopsExecution() {
+    var block = new FakeLogicBlockAsync((e) => throw e);
+
+    var e = await Should.ThrowAsync<Exception>(
+      async () => await block.Input(new FakeLogicBlockAsync.Input.InputError())
+    );
+
+    e.InnerException.ShouldBeOfType<InvalidOperationException>();
+  }
+
+  [Fact]
   public async Task StateCanAddInputUsingContext() {
     var logic = new FakeLogicBlockAsync();
     var input = new FakeLogicBlockAsync.Input.InputOne(5, 6);

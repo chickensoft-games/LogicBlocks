@@ -186,8 +186,18 @@ public abstract partial class Logic<
   /// event and re-throw the error if you want to stop execution.
   /// </summary>
   /// <param name="e">Exception to add.</param>
-  protected virtual void AddError(Exception e) =>
+  protected virtual void AddError(Exception e) {
     _errorEventSource.Raise(this, e);
+    HandleError(e);
+  }
+
+  /// <summary>
+  /// Called when the logic block encounters an error. Overriding this method
+  /// allows you to customize how errors are handled. If you throw the error
+  /// again from this method, you can make errors stop execution.
+  /// </summary>
+  /// <param name="e">Exception that occurred.</param>
+  protected virtual void HandleError(Exception e) { }
 
   /// <summary>
   /// Produces an output. Outputs are one-shot side effects that allow you

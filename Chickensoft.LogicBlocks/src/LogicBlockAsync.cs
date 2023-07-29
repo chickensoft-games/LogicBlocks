@@ -73,7 +73,19 @@ public abstract partial class LogicBlockAsync<TInput, TState, TOutput> :
       return _processTask.Task;
     }
 
-    ProcessInputs().ContinueWith((_) => _processTask.SetResult(Value));
+    ProcessInputs().ContinueWith((task) => {
+      if (task.IsFaulted) {
+        // Logic blocks are designed to catch all errors in state changes,
+        // so if this happens it means the logic block overrode HandleError
+        // and re-threw the exception.
+        //
+        // In that case, we want to respect the decision to stop execution and
+        // end the task with the exception.
+        _processTask.SetException(task.Exception!);
+        return;
+      }
+      _processTask.SetResult(Value);
+    });
 
     return _processTask.Task;
   }
