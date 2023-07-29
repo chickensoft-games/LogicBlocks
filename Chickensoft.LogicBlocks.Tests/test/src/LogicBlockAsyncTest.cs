@@ -67,8 +67,6 @@ public class LogicBlockAsyncTest {
   [Fact]
   public async Task CallsEnterAndExitOnStatesInProperOrderForReusedStates() {
     var logic = new TestMachineReusableAsync();
-    var context = new TestMachineReusableAsync.Context(logic);
-
     var outputs = new List<TestMachineReusableAsync.Output>();
 
     void onOutput(object? block, TestMachineReusableAsync.Output output) =>

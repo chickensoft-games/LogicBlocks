@@ -54,7 +54,7 @@ public abstract partial class LogicBlockAsync<TInput, TState, TOutput> :
   /// </summary>
   protected LogicBlockAsync() {
     Context = new(this);
-    _processTask.SetResult(Value);
+    _processTask.SetResult(default!);
   }
 
   /// <inheritdoc />
