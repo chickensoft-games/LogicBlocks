@@ -113,13 +113,11 @@ public partial class TestMachineReusableAsync :
   public TestMachineReusableAsync() {
     Set(new State.Activated.Blooped(Context));
     Set(new State.Activated.Bopped(Context));
+    Set(new State.Deactivated(Context));
   }
 
-  public override State GetInitialState(Context context) {
-    var deactivated = new State.Deactivated(Context);
-    Set(deactivated);
-    return deactivated;
-  }
+  public override State GetInitialState(Context context) =>
+    context.Get<State.Deactivated>();
 }
 
 #pragma warning restore CS1998

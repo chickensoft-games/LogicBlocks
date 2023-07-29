@@ -40,7 +40,7 @@ public abstract partial class LogicBlockAsync<TInput, TState, TOutput> :
   /// <summary>
   /// The context provided to the states of the logic block.
   /// </summary>
-  public new Context Context { get; private set; } = default!;
+  public new Context Context { get; }
 
   /// <summary>
   /// Whether or not the logic block is processing inputs.
@@ -52,15 +52,13 @@ public abstract partial class LogicBlockAsync<TInput, TState, TOutput> :
   /// <summary>
   /// Creates a new asynchronous logic block.
   /// </summary>
-  public LogicBlockAsync() {
-    _processTask.SetResult(Value);
+  protected LogicBlockAsync() {
+    Context = new(this);
+    _processTask.SetResult(default!);
   }
 
   /// <inheritdoc />
-  public sealed override TState GetInitialState() {
-    Context = new(this);
-    return GetInitialState(new Context(this));
-  }
+  public sealed override TState GetInitialState() => GetInitialState(Context);
 
   /// <summary>
   /// Returns the initial state of the logic block. Implementations must
@@ -75,7 +73,19 @@ public abstract partial class LogicBlockAsync<TInput, TState, TOutput> :
       return _processTask.Task;
     }
 
-    ProcessInputs().ContinueWith((_) => _processTask.SetResult(Value));
+    ProcessInputs().ContinueWith((task) => {
+      if (task.IsFaulted) {
+        // Logic blocks are designed to catch all errors in state changes,
+        // so if this happens it means the logic block overrode HandleError
+        // and re-threw the exception.
+        //
+        // In that case, we want to respect the decision to stop execution and
+        // end the task with the exception.
+        _processTask.SetException(task.Exception!);
+        return;
+      }
+      _processTask.SetResult(Value);
+    });
 
     return _processTask.Task;
   }

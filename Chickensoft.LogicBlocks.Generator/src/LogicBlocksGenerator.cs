@@ -48,7 +48,7 @@ public class LogicBlocksGenerator :
       predicate: static (SyntaxNode node, CancellationToken _) =>
         IsLogicBlockCandidate(node),
       transform: (GeneratorSyntaxContext context, CancellationToken token) =>
-        DiscoverStateGraph(
+        GetStateGraph(
           (ClassDeclarationSyntax)context.Node, context.SemanticModel, token
         )
     ).Where(logicBlockImplementation => logicBlockImplementation is not null)
@@ -119,6 +119,20 @@ public class LogicBlocksGenerator :
       .Any(attribute => attribute.Name.ToString() ==
         Constants.STATE_MACHINE_ATTRIBUTE_NAME
       );
+
+  public LogicBlockImplementation? GetStateGraph(
+    ClassDeclarationSyntax logicBlockClassDecl,
+    SemanticModel model,
+    CancellationToken token
+  ) {
+    try {
+      return DiscoverStateGraph(logicBlockClassDecl, model, token);
+    }
+    catch (Exception e) {
+      Log.Print($"Exception occurred: {e}");
+      return null;
+    }
+  }
 
   /// <summary>
   /// Looks at a logic block subclass, finds the logic block type in its

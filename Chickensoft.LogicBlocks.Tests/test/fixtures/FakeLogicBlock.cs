@@ -1,6 +1,5 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
-using System.Collections.Generic;
 using Chickensoft.LogicBlocks.Generator;
 
 [StateMachine]
@@ -8,6 +7,8 @@ public partial class FakeLogicBlock {
   public abstract record Input {
     public record InputOne(int Value1, int Value2) : Input;
     public record InputTwo(string Value1, string Value2)
+      : Input;
+    public record InputThree(string Value1, string Value2)
       : Input;
     public record InputError() : Input;
     public record InputUnknown() : Input;
@@ -24,6 +25,7 @@ public partial class FakeLogicBlock {
   public abstract record State(Context Context) : StateLogic(Context),
     IGet<Input.InputOne>,
     IGet<Input.InputTwo>,
+    IGet<Input.InputThree>,
     IGet<Input.InputError>,
     IGet<Input.NoNewState>,
     IGet<Input.InputCallback>,
@@ -39,6 +41,10 @@ public partial class FakeLogicBlock {
       Context.Output(new Output.OutputTwo("2"));
       return new StateB(Context, input.Value1, input.Value2);
     }
+
+    public State On(Input.InputThree input) => new StateD(
+      Context, input.Value1, input.Value2
+    );
 
     public State On(Input.InputError input)
       => throw new InvalidOperationException();
@@ -66,6 +72,8 @@ public partial class FakeLogicBlock {
     public record StateB(Context Context, string Value1, string Value2) :
       State(Context);
     public record StateC(Context Context, string Value) :
+      State(Context);
+    public record StateD(Context Context, string Value1, string Value2) :
       State(Context);
 
     public record NothingState(Context Context) : State(Context);
@@ -101,18 +109,20 @@ public partial class FakeLogicBlock
 
   public void PublicSet<T>(T value) where T : notnull => Set(value);
 
-  public void PublicOnTransition<TStateTypeA, TStateTypeB>(
-    Transition<TStateTypeA, TStateTypeB> transitionCallback
-  ) where TStateTypeA : State where TStateTypeB : State =>
-    OnTransition(transitionCallback);
-
-  protected override void OnError(Exception e) {
-    Exceptions.Add(e);
-    base.OnError(e);
-  }
-
   public override State GetInitialState(Context context) =>
     InitialState?.Invoke(context) ?? new State.StateA(context, 1, 2);
 
+  private readonly Action<Exception>? _onError;
+
+  public FakeLogicBlock(Action<Exception>? onError = null) {
+    _onError = onError;
+  }
+
   ~FakeLogicBlock() { }
+
+  protected override void HandleError(Exception e) {
+    Exceptions.Add(e);
+    _onError?.Invoke(e);
+    base.HandleError(e);
+  }
 }

@@ -68,28 +68,15 @@ public abstract partial class Logic<
   }
 
   /// <summary>Event invoked whenever the state is updated.</summary>
-  public event EventHandler<TState> OnNextState {
-    add => _stateEventSource.Subscribe(value);
-    remove => _stateEventSource.Unsubscribe(value);
-  }
-
-  /// <summary>
-  /// Event invoked whenever the state is updated or a new listener subscribes
-  /// to state updates using this event.
-  /// </summary>
   public event EventHandler<TState> OnState {
-    add {
-      _stateEventSource.Subscribe(value);
-      // Invoke the event with the current state when a listener is added.
-      _stateEventSource.Raise(this, Value);
-    }
+    add => _stateEventSource.Subscribe(value);
     remove => _stateEventSource.Unsubscribe(value);
   }
 
   /// <summary>
   /// Event invoked whenever an error occurs in an input handler.
   /// </summary>
-  public event EventHandler<Exception> OnNextError {
+  public event EventHandler<Exception> OnError {
     add => _errorEventSource.Subscribe(value);
     remove => _errorEventSource.Unsubscribe(value);
   }
@@ -103,26 +90,18 @@ public abstract partial class Logic<
   }
 
   /// <summary>Current state of the logic block.</summary>
-  public TState Value { get; private set; }
+  public TState Value => _value ??= GetInitialState();
+
+  private TState? _value;
 
   /// <summary>
   /// Whether or not the logic block is currently processing inputs.
   /// </summary>
   public abstract bool IsProcessing { get; }
 
-  /// <summary>
-  /// Transition callbacks. These closures are associated with a starting and
-  /// ending state and are invoked whenever the logic block transitions from
-  /// the starting state to the ending state.
-  /// </summary>
-  private readonly Dictionary<
-    Type, Dictionary<Type, Action<dynamic, dynamic>>
-  > _transitions = new();
-
   private readonly Queue<PendingInput> _inputs = new();
   private readonly Dictionary<Type, dynamic> _blackboard = new();
 
-  private TState? _previous;
   private readonly WeakEventSource<TInput> _inputEventSource = new();
   private readonly WeakEventSource<TState> _stateEventSource = new();
   private readonly WeakEventSource<Exception> _errorEventSource = new();
@@ -137,9 +116,7 @@ public abstract partial class Logic<
   /// machine.
   /// </para>
   /// </summary>
-  internal Logic() {
-    Value = GetInitialState();
-  }
+  internal Logic() { }
 
   /// <summary>
   /// Returns the initial state of the logic block. Implementations must
@@ -192,15 +169,25 @@ public abstract partial class Logic<
   }
 
   /// <summary>
-  /// Adds an error to the logic block. Call this from your input handlers to
-  /// add non-fatal errors. You may override <see cref="OnError"/> to customize
-  /// error handling for your logic block.
+  /// Adds an error to the logic block. Call this from your states to
+  /// register errors that occur. Logic blocks are designed to be resilient
+  /// to errors, so registering errors instead of stopping execution is
+  /// preferred in most cases. You can subscribe to the <see cref="OnError"/>
+  /// event and re-throw the error if you want to stop execution.
   /// </summary>
   /// <param name="e">Exception to add.</param>
-  protected virtual void AddError(Exception e) {
+  internal virtual void AddError(Exception e) {
     _errorEventSource.Raise(this, e);
-    OnError(e);
+    HandleError(e);
   }
+
+  /// <summary>
+  /// Called when the logic block encounters an error. Overriding this method
+  /// allows you to customize how errors are handled. If you throw the error
+  /// again from this method, you can make errors stop execution.
+  /// </summary>
+  /// <param name="e">Exception that occurred.</param>
+  protected virtual void HandleError(Exception e) { }
 
   /// <summary>
   /// Produces an output. Outputs are one-shot side effects that allow you
@@ -210,51 +197,6 @@ public abstract partial class Logic<
   /// <param name="output">Output value.</param>
   internal virtual void OutputValue(TOutput output) =>
     _outputEventSource.Raise(this, output);
-
-  /// <summary>
-  /// Method invoked whenever an error occurs when executing an input handler.
-  /// Override this method to customize error handling inside your logic block.
-  /// </summary>
-  /// <param name="e">Exception that occurred.</param>
-  protected virtual void OnError(Exception e) { }
-
-  /// <summary>
-  /// <para>
-  /// Registers a state transition callback to be invoked whenever a
-  /// transition  occurs from one type of state to the next. Transitions are
-  /// one-way.
-  /// </para>
-  /// <para>
-  /// Registering a callback for a transition from state A to state B does not
-  /// automatically register a callback for the reverse transition from state
-  /// B to state A.
-  /// </para>
-  /// </summary>
-  /// <param name="transitionCallback">State transition callback.</param>
-  /// <typeparam name="TStateTypeA">Starting state.</typeparam>
-  /// <typeparam name="TStateTypeB">Ending state.</typeparam>
-  /// <exception cref="ArgumentException" />
-  protected void OnTransition<TStateTypeA, TStateTypeB>(
-    Transition<TStateTypeA, TStateTypeB> transitionCallback
-  ) where TStateTypeA : TState where TStateTypeB : TState {
-    var typeA = typeof(TStateTypeA);
-    var typeB = typeof(TStateTypeB);
-
-    if (!_transitions.ContainsKey(typeA)) {
-      _transitions.Add(typeA, new());
-    }
-
-    if (_transitions[typeA].ContainsKey(typeB)) {
-      throw new ArgumentException(
-        $"{GetType().Name}: Another transition was already registered for " +
-        $"the state transition {typeA.FullName} -> {typeB.FullName}."
-      );
-    }
-
-    _transitions[typeA][typeB] = (a, b) => transitionCallback(
-      (TStateTypeA)a, (TStateTypeB)b
-    );
-  }
 
   /// <summary>
   /// <para>
@@ -294,25 +236,11 @@ public abstract partial class Logic<
     return false;
   }
 
-  internal void SetState(TState state) {
-    _previous = Value;
-    Value = state;
-  }
+  internal void SetState(TState state) => _value = state;
 
-  internal void FinalizeStateChange(TState state) {
-    // Invoke any registered transition callback after the state has been
-    // updated.
-    if (
-      _previous is TState previous &&
-      _transitions.TryGetValue(previous.GetType(), out var transitions) &&
-      transitions.TryGetValue(state.GetType(), out var transition)
-    ) {
-      transition(previous, state);
-    }
-
-    // Announce state change.
+  // Announce state change.
+  internal void FinalizeStateChange(TState state) =>
     _stateEventSource.Raise(this, state);
-  }
 
   internal void AnnounceInput(TInput input) =>
     _inputEventSource.Raise(this, input);

@@ -67,8 +67,6 @@ public class LogicBlockAsyncTest {
   [Fact]
   public async Task CallsEnterAndExitOnStatesInProperOrderForReusedStates() {
     var logic = new TestMachineReusableAsync();
-    var context = new TestMachineReusableAsync.Context(logic);
-
     var outputs = new List<TestMachineReusableAsync.Output>();
 
     void onOutput(object? block, TestMachineReusableAsync.Output output) =>
@@ -124,9 +122,8 @@ public class LogicBlockAsyncTest {
 
     void handler(object? _, Exception e) => called++;
 
-    block.OnNextError += handler;
+    block.OnError += handler;
 
-    block.Exceptions.ShouldBeEmpty();
     await block.Input(new FakeLogicBlockAsync.Input.Custom(
       (context) => new FakeLogicBlockAsync.State.OnEnterState(
           context,
@@ -135,11 +132,10 @@ public class LogicBlockAsyncTest {
         )
       )
     );
-    block.Exceptions.ShouldNotBeEmpty();
 
     called.ShouldBe(1);
 
-    block.OnNextError -= handler;
+    block.OnError -= handler;
   }
 
   [Fact]
@@ -158,15 +154,24 @@ public class LogicBlockAsyncTest {
 
     void handler(object? _, Exception e) => called++;
 
-    block.OnNextError += handler;
+    block.OnError += handler;
 
-    block.Exceptions.ShouldBeEmpty();
     await block.Input(new FakeLogicBlockAsync.Input.InputError());
-    block.Exceptions.ShouldNotBeEmpty();
 
     called.ShouldBe(1);
 
-    block.OnNextError -= handler;
+    block.OnError -= handler;
+  }
+
+  [Fact]
+  public async Task ThrowingFromHandleErrorStopsExecution() {
+    var block = new FakeLogicBlockAsync((e) => throw e);
+
+    var e = await Should.ThrowAsync<Exception>(
+      async () => await block.Input(new FakeLogicBlockAsync.Input.InputError())
+    );
+
+    e.InnerException.ShouldBeOfType<InvalidOperationException>();
   }
 
   [Fact]

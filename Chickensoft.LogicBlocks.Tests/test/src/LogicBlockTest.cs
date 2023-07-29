@@ -87,35 +87,12 @@ public class LogicBlockTest {
 
     block.OnState += handler;
 
-    called.ShouldBe(1);
-
-    block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
-    called.ShouldBe(2);
-
-    block.OnState -= handler;
-  }
-
-  [Fact]
-  public void InvokesNextStateEvent() {
-    var block = new FakeLogicBlock();
-    var context = new FakeLogicBlock.Context(block);
-
-    var called = 0;
-    var state = new FakeLogicBlock.State.StateA(context, 2, 3);
-
-    void handler(object? block, FakeLogicBlock.State state) {
-      state.ShouldBe(state);
-      called++;
-    }
-
-    block.OnNextState += handler;
-
     called.ShouldBe(0);
 
     block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
     called.ShouldBe(1);
 
-    block.OnNextState -= handler;
+    block.OnState -= handler;
   }
 
   [Fact]
@@ -126,15 +103,38 @@ public class LogicBlockTest {
 
     void handler(object? _, Exception e) => called++;
 
-    block.OnNextError += handler;
+    block.OnError += handler;
 
-    block.Exceptions.ShouldBeEmpty();
     block.Input(new FakeLogicBlock.Input.InputError());
-    block.Exceptions.ShouldNotBeEmpty();
 
     called.ShouldBe(1);
 
-    block.OnNextError -= handler;
+    block.OnError -= handler;
+  }
+
+  [Fact]
+  public void ThrowingFromHandleErrorStopsExecution() {
+    var block = new FakeLogicBlock((e) => throw e);
+
+    Should.Throw<InvalidOperationException>(
+      () => block.Input(new FakeLogicBlock.Input.InputError())
+    );
+  }
+
+  [Fact]
+  public void StateCanCallAddErrorFromContext() {
+    Exception? error = null;
+
+    var exception = new InvalidOperationException();
+
+    var block = new FakeLogicBlock((e) => error = e);
+
+    block.Input(new FakeLogicBlock.Input.Custom((context) => {
+      context.AddError(exception);
+      return block.GetInitialState();
+    }));
+
+    error.ShouldBe(exception);
   }
 
   [Fact]
@@ -199,7 +199,7 @@ public class LogicBlockTest {
   [Fact]
   public void CallsEnterAndExitOnStatesInProperOrderForReusedStates() {
     var logic = new TestMachineReusable();
-    var context = new TestMachineReusable.Context(logic);
+    var context = logic.Context;
 
     var outputs = new List<TestMachineReusable.Output>();
 
@@ -272,9 +272,8 @@ public class LogicBlockTest {
 
     void handler(object? _, Exception e) => called++;
 
-    block.OnNextError += handler;
+    block.OnError += handler;
 
-    block.Exceptions.ShouldBeEmpty();
     block.Input(new FakeLogicBlock.Input.Custom(
       (context) => new FakeLogicBlock.State.OnEnterState(
           context,
@@ -283,11 +282,10 @@ public class LogicBlockTest {
         )
       )
     );
-    block.Exceptions.ShouldNotBeEmpty();
 
     called.ShouldBe(1);
 
-    block.OnNextError -= handler;
+    block.OnError -= handler;
   }
 
   [Fact]
@@ -298,32 +296,6 @@ public class LogicBlockTest {
     logic.Value.ShouldBeOfType<NonEquatable.State.A>();
     logic.Input(new NonEquatable.Input.GoToB());
     logic.Value.ShouldBeOfType<NonEquatable.State.B>();
-  }
-
-  [Fact]
-  public void OnTransitionCalledWhenTransitioning() {
-    var logic = new FakeLogicBlock();
-    var called = false;
-
-    logic.PublicOnTransition<
-      FakeLogicBlock.State.StateA, FakeLogicBlock.State.StateB
-    >(
-      (previous, state) => {
-        previous.ShouldBeOfType<FakeLogicBlock.State.StateA>();
-        state.ShouldBeOfType<FakeLogicBlock.State.StateB>();
-        called = true;
-      }
-    );
-
-    logic.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
-
-    Should.Throw<ArgumentException>(
-      () => logic.PublicOnTransition<
-        FakeLogicBlock.State.StateA, FakeLogicBlock.State.StateB
-      >((previous, state) => { })
-    );
-
-    called.ShouldBeTrue();
   }
 
   [Fact]
