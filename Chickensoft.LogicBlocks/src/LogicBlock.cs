@@ -32,7 +32,7 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
   /// <summary>
   /// The context provided to the states of the logic block.
   /// </summary>
-  public new Context Context { get; private set; } = default!;
+  public new Context Context { get; }
 
   /// <summary>
   /// Whether or not the logic block is processing inputs.
@@ -41,11 +41,13 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
 
   private bool _isProcessing;
 
-  /// <inheritdoc />
-  public sealed override TState GetInitialState() {
+  /// <summary>Creates a new logic block.</summary>
+  protected LogicBlock() {
     Context = new(this);
-    return GetInitialState(Context);
   }
+
+  /// <inheritdoc />
+  public sealed override TState GetInitialState() => GetInitialState(Context);
 
   /// <summary>
   /// Returns the initial state of the logic block. Implementations must

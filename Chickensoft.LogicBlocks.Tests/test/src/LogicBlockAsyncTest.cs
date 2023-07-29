@@ -124,9 +124,8 @@ public class LogicBlockAsyncTest {
 
     void handler(object? _, Exception e) => called++;
 
-    block.OnNextError += handler;
+    block.OnError += handler;
 
-    block.Exceptions.ShouldBeEmpty();
     await block.Input(new FakeLogicBlockAsync.Input.Custom(
       (context) => new FakeLogicBlockAsync.State.OnEnterState(
           context,
@@ -135,11 +134,10 @@ public class LogicBlockAsyncTest {
         )
       )
     );
-    block.Exceptions.ShouldNotBeEmpty();
 
     called.ShouldBe(1);
 
-    block.OnNextError -= handler;
+    block.OnError -= handler;
   }
 
   [Fact]
@@ -158,15 +156,13 @@ public class LogicBlockAsyncTest {
 
     void handler(object? _, Exception e) => called++;
 
-    block.OnNextError += handler;
+    block.OnError += handler;
 
-    block.Exceptions.ShouldBeEmpty();
     await block.Input(new FakeLogicBlockAsync.Input.InputError());
-    block.Exceptions.ShouldNotBeEmpty();
 
     called.ShouldBe(1);
 
-    block.OnNextError -= handler;
+    block.OnError -= handler;
   }
 
   [Fact]

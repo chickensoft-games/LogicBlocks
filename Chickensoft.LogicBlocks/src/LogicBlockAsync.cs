@@ -40,7 +40,7 @@ public abstract partial class LogicBlockAsync<TInput, TState, TOutput> :
   /// <summary>
   /// The context provided to the states of the logic block.
   /// </summary>
-  public new Context Context { get; private set; } = default!;
+  public new Context Context { get; }
 
   /// <summary>
   /// Whether or not the logic block is processing inputs.
@@ -52,15 +52,13 @@ public abstract partial class LogicBlockAsync<TInput, TState, TOutput> :
   /// <summary>
   /// Creates a new asynchronous logic block.
   /// </summary>
-  public LogicBlockAsync() {
+  protected LogicBlockAsync() {
+    Context = new(this);
     _processTask.SetResult(Value);
   }
 
   /// <inheritdoc />
-  public sealed override TState GetInitialState() {
-    Context = new(this);
-    return GetInitialState(new Context(this));
-  }
+  public sealed override TState GetInitialState() => GetInitialState(Context);
 
   /// <summary>
   /// Returns the initial state of the logic block. Implementations must

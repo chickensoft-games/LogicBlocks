@@ -68,28 +68,15 @@ public abstract partial class Logic<
   }
 
   /// <summary>Event invoked whenever the state is updated.</summary>
-  public event EventHandler<TState> OnNextState {
-    add => _stateEventSource.Subscribe(value);
-    remove => _stateEventSource.Unsubscribe(value);
-  }
-
-  /// <summary>
-  /// Event invoked whenever the state is updated or a new listener subscribes
-  /// to state updates using this event.
-  /// </summary>
   public event EventHandler<TState> OnState {
-    add {
-      _stateEventSource.Subscribe(value);
-      // Invoke the event with the current state when a listener is added.
-      _stateEventSource.Raise(this, Value);
-    }
+    add => _stateEventSource.Subscribe(value);
     remove => _stateEventSource.Unsubscribe(value);
   }
 
   /// <summary>
   /// Event invoked whenever an error occurs in an input handler.
   /// </summary>
-  public event EventHandler<Exception> OnNextError {
+  public event EventHandler<Exception> OnError {
     add => _errorEventSource.Subscribe(value);
     remove => _errorEventSource.Unsubscribe(value);
   }
@@ -103,7 +90,9 @@ public abstract partial class Logic<
   }
 
   /// <summary>Current state of the logic block.</summary>
-  public TState Value { get; private set; }
+  public TState Value => _value ??= GetInitialState();
+
+  private TState? _value;
 
   /// <summary>
   /// Whether or not the logic block is currently processing inputs.
@@ -137,9 +126,7 @@ public abstract partial class Logic<
   /// machine.
   /// </para>
   /// </summary>
-  internal Logic() {
-    Value = GetInitialState();
-  }
+  internal Logic() { }
 
   /// <summary>
   /// Returns the initial state of the logic block. Implementations must
@@ -192,15 +179,15 @@ public abstract partial class Logic<
   }
 
   /// <summary>
-  /// Adds an error to the logic block. Call this from your input handlers to
-  /// add non-fatal errors. You may override <see cref="OnError"/> to customize
-  /// error handling for your logic block.
+  /// Adds an error to the logic block. Call this from your states to
+  /// register errors that occur. Logic blocks are designed to be resilient
+  /// to errors, so registering errors instead of stopping execution is
+  /// preferred in most cases. You can subscribe to the <see cref="OnError"/>
+  /// event and re-throw the error if you want to stop execution.
   /// </summary>
   /// <param name="e">Exception to add.</param>
-  protected virtual void AddError(Exception e) {
+  protected virtual void AddError(Exception e) =>
     _errorEventSource.Raise(this, e);
-    OnError(e);
-  }
 
   /// <summary>
   /// Produces an output. Outputs are one-shot side effects that allow you
@@ -210,13 +197,6 @@ public abstract partial class Logic<
   /// <param name="output">Output value.</param>
   internal virtual void OutputValue(TOutput output) =>
     _outputEventSource.Raise(this, output);
-
-  /// <summary>
-  /// Method invoked whenever an error occurs when executing an input handler.
-  /// Override this method to customize error handling inside your logic block.
-  /// </summary>
-  /// <param name="e">Exception that occurred.</param>
-  protected virtual void OnError(Exception e) { }
 
   /// <summary>
   /// <para>
@@ -296,7 +276,7 @@ public abstract partial class Logic<
 
   internal void SetState(TState state) {
     _previous = Value;
-    Value = state;
+    _value = state;
   }
 
   internal void FinalizeStateChange(TState state) {

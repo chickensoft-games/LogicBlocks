@@ -9,9 +9,34 @@ public class BlocGlueTests {
   public static bool WasFinalized { get; set; }
 
   [Fact]
+  public void DoesNotUpdateIfStateIsSameState() { }
+
+  [Fact]
+  public void DoesNotUpdateIfSelectedDataIsSameObject() {
+    var block = new FakeLogicBlock();
+    using var binding = block.Bind();
+
+    var count = 0;
+    var value1Count = 0;
+    binding.When<FakeLogicBlock.State.StateB>()
+      .Call(state => count++)
+      .Use(
+        data: (state) => state.Value1,
+        to: (value1) => value1Count++
+      );
+
+    var a = "a";
+    var b = "b";
+    block.Input(new FakeLogicBlock.Input.InputTwo(a, b));
+    block.Input(new FakeLogicBlock.Input.InputTwo(a, "c"));
+
+    count.ShouldBe(1);
+  }
+
+  [Fact]
   public void UpdatesCorrectly() {
     var block = new FakeLogicBlock();
-    using var glue = block.Bind();
+    using var binding = block.Bind();
 
     var callA1 = 0;
     var callA2 = 0;
@@ -19,7 +44,7 @@ public class BlocGlueTests {
     var a1 = 3;
     var a2 = 4;
 
-    glue.When<FakeLogicBlock.State.StateA>()
+    binding.When<FakeLogicBlock.State.StateA>()
       .Use(
         data: (state) => state.Value1,
         to: (value1) => { callA1++; value1.ShouldBe(a1); })
@@ -63,12 +88,12 @@ public class BlocGlueTests {
   [Fact]
   public void HandlesEffects() {
     var block = new FakeLogicBlock();
-    using var glue = block.Bind();
+    using var binding = block.Bind();
 
     var callEffect1 = 0;
     var callEffect2 = 0;
 
-    glue.Handle<FakeLogicBlock.Output.OutputOne>(
+    binding.Handle<FakeLogicBlock.Output.OutputOne>(
       (effect) => { callEffect1++; effect.Value.ShouldBe(1); }
     ).Handle<FakeLogicBlock.Output.OutputTwo>(
       (effect) => { callEffect2++; effect.Value.ShouldBe("2"); }
@@ -92,15 +117,15 @@ public class BlocGlueTests {
     var block = new FakeLogicBlock();
     var context = new FakeLogicBlock.Context(block);
 
-    using var glue = block.Bind();
+    using var binding = block.Bind();
 
     var callStateA = 0;
     var callStateB = 0;
 
-    glue.When<FakeLogicBlock.State.StateA>()
+    binding.When<FakeLogicBlock.State.StateA>()
       .Call((state) => callStateA++);
 
-    glue.When<FakeLogicBlock.State.StateB>()
+    binding.When<FakeLogicBlock.State.StateB>()
       .Call((state) => callStateB++);
 
     callStateA.ShouldBe(0);
@@ -145,15 +170,15 @@ public class BlocGlueTests {
     var callSideEffectHandler = 0;
 
     var block = new FakeLogicBlock();
-    var glue = block.Bind();
+    var binding = block.Bind();
 
-    glue.When<FakeLogicBlock.State.StateA>()
+    binding.When<FakeLogicBlock.State.StateA>()
       .Use(
         data: (state) => state.Value1,
         to: (value1) => callStateUpdate++
       );
 
-    glue.Handle<FakeLogicBlock.Output.OutputOne>(
+    binding.Handle<FakeLogicBlock.Output.OutputOne>(
       (effect) => callSideEffectHandler++
     );
 
@@ -162,7 +187,7 @@ public class BlocGlueTests {
     callStateUpdate.ShouldBe(1);
     callSideEffectHandler.ShouldBe(1);
 
-    glue.Dispose();
+    binding.Dispose();
 
     block.Input(new FakeLogicBlock.Input.InputOne(5, 6));
 
@@ -174,10 +199,10 @@ public class BlocGlueTests {
   public void Finalizes() {
     // Weak reference has to be created and cleared from a static function
     // or else the GC won't ever collect it :P
-    var weakRef = CreateWeakFakeLogicBlockGlueReference();
+    var weakRef = CreateWeakFakeLogicBlockBindingReference();
     Utils.ClearWeakReference(weakRef);
   }
 
-  public static WeakReference CreateWeakFakeLogicBlockGlueReference() =>
+  public static WeakReference CreateWeakFakeLogicBlockBindingReference() =>
     new(new FakeLogicBlock().Bind());
 }

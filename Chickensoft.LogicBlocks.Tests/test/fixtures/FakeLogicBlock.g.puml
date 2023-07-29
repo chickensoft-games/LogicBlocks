@@ -3,6 +3,7 @@ state "FakeLogicBlock State" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogic
   state "StateA" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateA
   state "StateB" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateB
   state "StateC" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateC
+  state "StateD" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateD
   state "NothingState" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_NothingState
   state "Custom" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_Custom
   state "OnEnterState" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_OnEnterState
@@ -18,6 +19,7 @@ Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State --> Chickensoft_Logi
 Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateA : InputOne
 Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateB : InputTwo
 Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateC : GetString
+Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateD : InputThree
 
 [*] --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State
 [*] --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateA

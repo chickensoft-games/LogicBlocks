@@ -2,7 +2,6 @@ namespace Chickensoft.LogicBlocks;
 
 using System;
 using System.Collections.Generic;
-using Chickensoft.LogicBlocks.Extensions;
 
 public abstract partial class Logic<
   TInput, TState, TOutput, THandler, TInputReturn, TUpdate
@@ -10,16 +9,15 @@ public abstract partial class Logic<
   /// <summary>
   /// Creates a binding to a logic block.
   /// </summary>
-  /// <returns>A new <see cref="Binding" />
-  /// </returns>
+  /// <returns>Logic block binding.</returns>
   public Binding Bind() => new(this);
 
   /// <summary>
   /// <para>State bindings for a logic block.</para>
   /// <para>
   /// A binding allows you to select data from a logic block's state, invoke
-  /// methods when certain states occur, and handle outputs. Using glue
-  /// enables you to write more declarative code and prevent unnecessary
+  /// methods when certain states occur, and handle outputs. Using bindings
+  /// enable you to write more declarative code and prevent unnecessary
   /// updates when a state has changed but the relevant data within it has not.
   /// </para>
   /// </summary>
@@ -31,223 +29,263 @@ public abstract partial class Logic<
 
     private TState _previousState;
 
-    private readonly Dictionary<Type, List<IGlue>> _stateGlues =
-      new();
-    private readonly Dictionary<Type, List<Action<TState, dynamic>>> _invokers =
-      new();
-    private readonly Dictionary<Type, Action<TOutput>> _outputHandlers = new();
+    // List of functions that receive a TState and return whether the binding
+    // with the same index in the _whenBindingRunners should be run.
+    private readonly List<Func<TState, bool>> _whenBindingCheckers;
+    // List of functions that receive a TState and invoke the relevant binding
+    // when a particular type of state is encountered.
+    private readonly List<Action<TState, TState>> _whenBindingRunners;
+
+    // List of functions that receive a TState and return whether the binding
+    // with the same index in the _handledOutputRunners should be run.
+    private readonly List<Func<TOutput, bool>> _handledOutputCheckers;
+    // List of functions that receive a TOutput and invoke the relevant binding
+    // when a particular type of output is encountered.
+    private readonly List<Action<TOutput>> _handledOutputRunners;
 
     internal Binding(
       Logic<TInput, TState, TOutput, THandler, TInputReturn, TUpdate> logicBlock
     ) {
       LogicBlock = logicBlock;
       _previousState = logicBlock.Value;
-      LogicBlock.OnNextState += OnNextState;
+      _whenBindingRunners = new();
+      _whenBindingCheckers = new();
+      _handledOutputRunners = new();
+      _handledOutputCheckers = new();
+
+      LogicBlock.OnState += OnState;
       LogicBlock.OnOutput += OnOutput;
     }
 
+    // Registers a binding for a specific type of state.
     /// <summary>
-    /// Register a handler for a specific type of state.
+    /// Create a bindings group that allows you to register bindings for a
+    /// specific type of state. Bindings are callbacks that only run when the
+    /// specific type of state you specify with
+    /// <typeparamref name="TStateType" /> is encountered.
     /// </summary>
-    /// <typeparam name="TSubstate">The type of state to glue to.</typeparam>
-    /// <returns>A <see cref="GlueInvoker{TSubstate}" /> that
-    /// allows bindings to be registered for selected data within the state.
-    /// </returns>
-    public Glue<TSubstate> When<TSubstate>()
-      where TSubstate : TState {
-      var type = typeof(TSubstate);
-      var stateGlue = new GlueInvoker<TSubstate>();
-
-      _stateGlues.AddIfNotPresent(type, new());
-      _invokers.AddIfNotPresent(type, new());
-
-      _stateGlues[type].Add(stateGlue);
-      _invokers[type].Add(
-        (state, prev) => stateGlue.Invoke((TSubstate)state, (TState)prev)
+    /// <typeparam name="TStateType">Type of state to bind to.</typeparam>
+    /// <returns>The new binding group.</returns>
+    public WhenBinding<TStateType> When<TStateType>()
+      where TStateType : TState {
+      var whenBinding = new WhenBinding<TStateType>();
+      // Add a closure to the list of when binding runners that invokes
+      // the captured generic binding with the captured generic type.
+      _whenBindingRunners.Add(
+        (state, previous) => whenBinding.Run((TStateType)state, previous)
       );
+      // Let the when binding itself decide if it should handle the state.
+      _whenBindingCheckers.Add(whenBinding.ShouldRun);
 
-      return new Glue<TSubstate>(stateGlue);
+      return whenBinding;
     }
 
     /// <summary>
-    /// Registers an output handler for the logic block.
+    /// Register a callback to be invoked whenever an output type of
+    /// <typeparamref name="TOutputType" /> is encountered.
     /// </summary>
-    /// <typeparam name="TOutputType">Output subtype to handle.</typeparam>
-    /// <param name="handler">Action which handles an instance of the output.
-    /// </param>
+    /// <param name="handler">Output callback handler.</param>
+    /// <typeparam name="TOutputType">Type of output to register a handler
+    /// for.</typeparam>
+    /// <returns>The current binding.</returns>
     public Binding Handle<TOutputType>(
       Action<TOutputType> handler
     ) where TOutputType : TOutput {
-      var type = typeof(TOutputType);
-      _outputHandlers[type] = (TOutput output) => handler((TOutputType)output!);
+      _handledOutputCheckers.Add((output) => output is TOutputType);
+      _handledOutputRunners.Add((output) => handler((TOutputType)output));
+
       return this;
     }
 
-    private void Cleanup() {
-      foreach (var stateGlueList in _stateGlues.Values) {
-        foreach (var stateGlue in stateGlueList) {
-          stateGlue.Cleanup();
-        }
-      }
-      _stateGlues.Clear();
-      _invokers.Clear();
-      _outputHandlers.Clear();
-    }
+    /// <summary>
+    /// Clean up registered bindings for all states and stop listening
+    /// for state changes.
+    /// </summary>
+    public void Dispose() => Dispose(true);
 
-    private void OnNextState(object? _, TState state) {
-      var type = state.GetType();
-      if (_invokers.TryGetValue(type, out var glues)) {
-        for (var i = 0; i < glues.Count; i++) {
-          var glue = glues[i];
-          _invokers[state.GetType()][i](state, _previousState);
+    private void OnState(object? _, TState state) {
+      // Run each when binding that should be run.
+      for (var i = 0; i < _whenBindingCheckers.Count; i++) {
+        var checker = _whenBindingCheckers[i];
+        var runner = _whenBindingRunners[i];
+        if (checker(state)) {
+          // If the binding handles this type of state, run it!
+          runner(state, _previousState);
         }
       }
 
       _previousState = state;
     }
-
     private void OnOutput(object? _, TOutput output) {
-      var type = output.GetType();
-      if (_outputHandlers.TryGetValue(type, out var handler)) {
-        handler(output);
+      // Run each handled output binding that should be run.
+      for (var i = 0; i < _handledOutputCheckers.Count; i++) {
+        var checker = _handledOutputCheckers[i];
+        var runner = _handledOutputRunners[i];
+        if (checker(output)) {
+          // If the binding handles this type of output, run it!
+          runner(output);
+        }
       }
     }
-
-    /// <summary>
-    /// Clean up registered glue bindings for all states and stop listening
-    /// for state changes.
-    /// </summary>
-    public void Dispose() => Dispose(true);
 
     private void Dispose(bool disposing) {
       if (disposing) {
         LogicBlock.OnOutput -= OnOutput;
-        LogicBlock.OnNextState -= OnNextState;
+        LogicBlock.OnState -= OnState;
         Cleanup();
       }
+    }
+
+    private void Cleanup() {
+      _whenBindingCheckers.Clear();
+      _whenBindingRunners.Clear();
+      _handledOutputCheckers.Clear();
+      _handledOutputRunners.Clear();
     }
 
     /// <summary>Glue finalizer.</summary>
     ~Binding() {
       Dispose(false);
     }
+  }
+
+  /// <summary>
+  /// A bindings group that allows you to register bindings for a specific type
+  /// of state. Bindings are callbacks that only run when the specific type of
+  /// state you specify with <typeparamref name="TStateType" /> is encountered.
+  /// </summary>
+  /// <typeparam name="TStateType">Type of state to bind to.</typeparam>
+  public sealed class WhenBinding<TStateType> {
+    // Selected data bindings checkers registered with .Use()
+    // These callbacks receive the current state, the previous state, the
+    // selected data from the current state and the
+    // last selected data from the previous state and return true if the
+    // binding should be run.
+    private readonly List<Func<dynamic, TState, dynamic, dynamic, bool>>
+      _bindingCheckers = new();
+    private readonly List<Func<dynamic, dynamic>> _bindingSelectors = new();
+    // Callbacks that run a binding. The index of this list and the
+    // _bindingCheckers refers to the same binding.
+    private readonly List<Action<dynamic>> _bindingRunners = new();
+    // Cached values of the selected data bindings.
+    // Caching the selected data prevents the bindings from breaking when
+    // logic block states are reused to avoid unnecessary allocations.
+    // The index of this list and the _bindingCheckers refers to the same
+    // binding.
+    private readonly List<dynamic?> _bindingValues = new();
+    // Callbacks for this state type registered with .Call()
+    private readonly List<Action<dynamic, TState>> _callbacks = new();
+
+    internal WhenBinding() { }
 
     /// <summary>
-    /// Glue for a specific type of state.
+    /// Determines if this binding should run for a given state.
     /// </summary>
-    internal interface IGlue {
-      /// <summary>
-      /// Invoke all registered glue bindings for a specific type of state. Used
-      /// by <see cref="Binding" />.
-      /// </summary>
-      /// <param name="state">Current state of the logic block.</param>
-      /// <param name="previous">Previous state of the logic block.</param>
-      /// <typeparam name="TOtherSubstate">Specific type of the logic block's
-      /// current state.</typeparam>
-      void Invoke<TOtherSubstate>(TOtherSubstate state, TState previous)
-        where TOtherSubstate : TState;
+    /// <param name="state">The current state in question.</param>
+    /// <returns>True if this binding handles the given type of state, false
+    /// otherwise.</returns>
+    internal bool ShouldRun(TState state) => state is TStateType;
 
-      /// <summary>
-      /// Clean up registered glue bindings for a specific type of state.
-      /// </summary>
-      void Cleanup();
-    }
-
-    internal class GlueInvoker<TSubstate>
-      : IGlue where TSubstate : TState {
-      private readonly List<Action<dynamic, TState>> _bindings = new();
-
-      /// <inheritdoc />
-      public void Invoke<TOtherSubstate>(TOtherSubstate state, TState previous)
-        where TOtherSubstate : TState {
-        foreach (var action in _bindings) {
-          action(state, previous);
+    /// <summary>
+    /// Runs all the registered bindings inside this binding that handle the
+    /// given type of state.
+    /// </summary>
+    /// <param name="state">Current state.</param>
+    /// <param name="previous">Previous state.</param>
+    internal void Run(TState state, TState previous) {
+      for (var i = 0; i < _bindingCheckers.Count; i++) {
+        var checker = _bindingCheckers[i];
+        var selector = _bindingSelectors[i];
+        // get current selected data
+        var selectedData = selector(state);
+        // get previously selected data (if any)
+        var previousData = _bindingValues[i];
+        if (checker(state, previous, selectedData, previousData)) {
+          // Binding should be run.
+          var runner = _bindingRunners[i];
+          runner(selectedData);
+          _bindingValues[i] = selectedData;
         }
       }
 
-      public GlueInvoker<TSubstate> Call(Action<TSubstate> action) {
-        var handler = (dynamic state, TState previous) => {
-          if (previous is TSubstate) {
-            // Overall state hasn't changed. No need to update.
-            return;
-          }
-          action((TSubstate)state);
-        };
-
-        _bindings.Add(handler);
-
-        return this;
+      if (previous is TStateType) {
+        // Overall state hasn't changed types. No need to run callbacks.
+        return;
       }
 
-      public GlueInvoker<TSubstate> Use<TSelected>(
-        Func<TSubstate, TSelected> data, Action<TSelected> to
-      ) {
-        var handler = (dynamic state, TState previous) => {
-          var selectedData = data((TSubstate)state);
-          if (previous is TSubstate previousSubstate) {
-            var previousData = data(previousSubstate);
-            if (
-              EqualityComparer<TSelected>.Default.Equals(
-                selectedData, previousData
-              )
-            ) {
-              // Selected data hasn't changed. No need to update!
-              return;
-            }
-          }
-
-          to(selectedData);
-        };
-
-        _bindings.Add(handler);
-
-        return this;
+      foreach (var callback in _callbacks) {
+        callback(state, previous);
       }
-
-      /// <inheritdoc />
-      public void Cleanup() => _bindings.Clear();
     }
 
     /// <summary>
-    /// Glue for a specific type of state.
+    /// Use data from the state to invoke a method that receives the data. This
+    /// allows you to "select" data from a given type of state and invoke a
+    /// callback only when the selected data actually changes (as determined by
+    /// reference equality and the default equality comparer).
     /// </summary>
-    /// <typeparam name="TSubstate">The type of state that is glued.</typeparam>
-    public class Glue<TSubstate> where TSubstate : TState {
-      internal GlueInvoker<TSubstate> StateGlue { get; }
+    /// <param name="data">Data to select from the state type
+    /// <typeparamref name="TStateType" />.</param>
+    /// <param name="to">Callback that receives the selected data and runs
+    /// only when the selected data has changed after a state update.</param>
+    /// <typeparam name="TSelectedData">Type of data to select from the state.
+    /// </typeparam>
+    /// <returns>The current when-binding clause so that you can continue to use
+    /// data from the state or register callbacks.</returns>
+    public WhenBinding<TStateType> Use<TSelectedData>(
+      Func<TStateType, TSelectedData> data, Action<TSelectedData> to
+    ) where TSelectedData : notnull {
+      var checker = (
+        dynamic state,
+        TState previous,
+        dynamic selectedData,
+        dynamic previousData
+      ) => {
+        // If previous data is null, it indicates that we don't have any
+        // previous data because the binding hadn't been run before. So we don't
+        // try to compare the previous data.
+        if (previous is TStateType previousState && previousData is not null) {
+          // If the previous state is the same type as the current state,
+          // check if the selected data has changed.
+          if (
+            ReferenceEquals(selectedData, previousData) ||
+            EqualityComparer<TSelectedData>.Default.Equals(
+              selectedData, previousData
+            )
+          ) {
+            // Selected data hasn't changed. No need to update!
+            return false;
+          }
+        }
+        return true;
+      };
 
-      internal Glue(
-        GlueInvoker<TSubstate> stateGlue
-      ) {
-        StateGlue = stateGlue;
-      }
+      var selector = (dynamic state) => data((TStateType)state) as dynamic;
+      var runner = (dynamic value) => to((TSelectedData)value);
 
-      /// <summary>
-      /// Selects data from the state and performs an action whenever the
-      /// selected data changes.
-      /// </summary>
-      /// <param name="data">Data selected from the logic block's state.</param>
-      /// <param name="to">Action to perform when selected data changes.</param>
-      /// <typeparam name="TSelected">Type of the selected data.</typeparam>
-      public Glue<TSubstate> Use<TSelected>(
-        Func<TSubstate, TSelected> data, Action<TSelected> to
-      ) {
-        StateGlue.Use(data, to);
-        return this;
-      }
+      _bindingCheckers.Add(checker);
+      _bindingSelectors.Add(selector);
+      _bindingRunners.Add(runner);
+      _bindingValues.Add(default);
 
-      /// <summary>
-      /// Calls an action whenever the state changes into an instance of
-      /// <typeparamref name="TSubstate" />. If the state is already an instance
-      /// of <typeparamref name="TSubstate" />, nothing happens, guaranteeing
-      /// that the action is only called when changing into a
-      /// <typeparamref name="TSubstate" />.
-      /// </summary>
-      /// <param name="action">Action to invoke when the state changes into
-      /// a <typeparamref name="TSubstate" />.</param>
-      public Glue<TSubstate> Call(Action<TSubstate> action) {
-        StateGlue.Call(action);
-        return this;
-      }
+      return this;
+    }
+
+    /// <summary>
+    /// Register a callback to be invoked whenever the state changes to the
+    /// state type <typeparamref name="TStateType" />.
+    /// </summary>
+    /// <param name="callback">Callback invoked whenever the state changes to
+    /// the state type <typeparamref name="TStateType" />.</param>
+    /// <returns>The current when-binding clause so that you can continue to use
+    /// data from the state or register callbacks.</returns>
+    public WhenBinding<TStateType> Call(Action<TStateType> callback) {
+      var handler =
+        (dynamic state, TState previous) => callback((TStateType)state);
+
+      _callbacks.Add(handler);
+
+      return this;
     }
   }
 }

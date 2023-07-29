@@ -1,13 +1,12 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
-
-using System.Collections.Generic;
-
 #pragma warning disable CS1998
 
 public partial class FakeLogicBlockAsync {
   public abstract record Input {
     public record InputOne(int Value1, int Value2) : Input;
     public record InputTwo(string Value1, string Value2)
+      : Input;
+    public record InputThree(string Value1, string Value2)
       : Input;
     public record InputError() : Input;
     public record InputUnknown() : Input;
@@ -24,6 +23,7 @@ public partial class FakeLogicBlockAsync {
   public abstract record State(Context Context) : StateLogic(Context),
     IGet<Input.InputOne>,
     IGet<Input.InputTwo>,
+    IGet<Input.InputThree>,
     IGet<Input.InputError>,
     IGet<Input.NoNewState>,
     IGet<Input.InputCallback>,
@@ -39,6 +39,10 @@ public partial class FakeLogicBlockAsync {
       Context.Output(new Output.OutputTwo("2"));
       return new StateB(Context, input.Value1, input.Value2);
     }
+
+    public async Task<State> On(Input.InputThree input) => new StateD(
+      Context, input.Value1, input.Value2
+    );
 
     public async Task<State> On(Input.InputError input)
       => throw new InvalidOperationException();
@@ -72,6 +76,8 @@ public partial class FakeLogicBlockAsync {
       State(Context);
     public record StateC(Context Context, string Value) :
       State(Context);
+    public record StateD(Context Context, string Value1, string Value2) :
+      State(Context);
     public record Custom : State {
       public Custom(Context context, Action<Context> setupCallback) :
         base(context) {
@@ -99,19 +105,10 @@ public partial class FakeLogicBlockAsync
   > {
   public Func<Context, State>? InitialState { get; init; }
 
-  public List<Exception> Exceptions { get; } = new();
-
-  public void PublicSet<T>(T value) where T : notnull => Set(value);
-
   public void PublicOnTransition<TStateTypeA, TStateTypeB>(
     Transition<TStateTypeA, TStateTypeB> transitionCallback
   ) where TStateTypeA : State where TStateTypeB : State =>
     OnTransition(transitionCallback);
-
-  protected override void OnError(Exception e) {
-    Exceptions.Add(e);
-    base.OnError(e);
-  }
 
   public override State GetInitialState(Context context) =>
     InitialState?.Invoke(context) ?? new State.StateA(context, 1, 2);
