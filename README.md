@@ -93,11 +93,7 @@ Logic blocks attempt to achieve the following goals:
 - 🎁
   **Self-contained states**.
   
-  Rather than writing and maintaining a transition table, logic blocks allow you to define states and optionally restrict what states they can transition to next. Restricting states can be done by overriding `bool CanGoTo<>(TState state)`. By default, this returns true for every state, allowing your state to transition to any other state. Restricting what states an individual state can go to will enable the logic block to prevent invalid state transitions.
-
-  Many state machine libraries require you to define state transition tables up-front and implement logic outside of the states themselves by examining the previous and next state. By treating states as self-contained, logic blocks should be easier to build, maintain, and reason about than traditional table-based systems.
-
-  The logic block API is modeled after [Moore machines][Moore], in that each state is considered self-contained and declares what states it can transition to. Conversely, logic blocks also benefit from the design of [Mealy machines][Mealy]: their states can examine the previous state when entering a state, as well as examine the next state when exiting a state. This, in my opinion, combines the "best of both worlds" and plays nicely with object-oriented programming.
+  The logic block API is modeled after [Moore machines][Moore]. Each state is a self-contained record (or class) and implicitly declares what states it can transition to by returning new states from input handlers. Conversely, logic blocks also benefit from the design of [Mealy machines][Mealy]: states can examine the previous state when entering a state, as well as examine the next state when exiting a state. This, in my opinion, combines the "best of both worlds" and plays nicely with object-oriented programming.
 
 - 💪 **Reliable execution, even when errors occur.**
 
@@ -121,7 +117,7 @@ Logic blocks attempt to achieve the following goals:
 
 - 📝 **Ordered input processing.**
 
-  All inputs are processed one-at-a-time, in order. If the current state does not have an input handler for the current input, the input is simply discarded.
+  All inputs are processed one-at-a-time in the order received. If the current state does not have an input handler for the current input, the input is simply discarded.
 
 - 👩‍💻 **Developer-friendly.**
 
