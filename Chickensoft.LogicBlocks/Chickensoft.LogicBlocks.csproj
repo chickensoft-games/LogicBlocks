@@ -13,7 +13,7 @@
     <DebugType>portable</DebugType>
 
     <Title>LogicBlocks</Title>
-    <Version>2.1.0</Version>
+    <Version>2.1.1</Version>
     <Description>State management in a box.</Description>
     <Copyright>© 2023 Chickensoft</Copyright>
     <Authors>Chickensoft</Authors>

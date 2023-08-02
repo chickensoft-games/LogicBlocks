@@ -58,6 +58,14 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
       return;
     }
 
+    if (expression is SwitchExpressionSyntax @switch) {
+      foreach (var arm in @switch.Arms) {
+        AddExpressionToReturnTypes(arm.Expression);
+      }
+
+      return;
+    }
+
     if (expression is BinaryExpressionSyntax binary) {
       AddExpressionToReturnTypes(binary.Left);
       AddExpressionToReturnTypes(binary.Right);
