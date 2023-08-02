@@ -18,6 +18,8 @@ state "TestMachineReusable State" as Chickensoft_LogicBlocks_Tests_Fixtures_Test
   }
 }
 
+Chickensoft_LogicBlocks_Tests_Fixtures_TestMachineReusable_State --> Chickensoft_LogicBlocks_Tests_Fixtures_TestMachineReusable_State_Activated_Blooped : Activate
+Chickensoft_LogicBlocks_Tests_Fixtures_TestMachineReusable_State --> Chickensoft_LogicBlocks_Tests_Fixtures_TestMachineReusable_State_Activated_Bopped : Activate
 Chickensoft_LogicBlocks_Tests_Fixtures_TestMachineReusable_State_Activated --> Chickensoft_LogicBlocks_Tests_Fixtures_TestMachineReusable_State_Deactivated : Deactivate
 
 [*] --> Chickensoft_LogicBlocks_Tests_Fixtures_TestMachineReusable_State_Deactivated

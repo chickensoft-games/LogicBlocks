@@ -1,0 +1,8 @@
+@startuml Patterns
+state "Patterns State" as Chickensoft_LogicBlocks_Generator_Tests_Patterns_State {
+  state "One" as Chickensoft_LogicBlocks_Generator_Tests_Patterns_State_One
+  state "Two" as Chickensoft_LogicBlocks_Generator_Tests_Patterns_State_Two
+  state "Three" as Chickensoft_LogicBlocks_Generator_Tests_Patterns_State_Three
+}
+[*] --> Chickensoft_LogicBlocks_Generator_Tests_Patterns_State_One
+@enduml

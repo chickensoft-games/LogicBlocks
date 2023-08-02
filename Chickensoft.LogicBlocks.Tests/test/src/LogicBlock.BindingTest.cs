@@ -9,7 +9,17 @@ public class BlocGlueTests {
   public static bool WasFinalized { get; set; }
 
   [Fact]
-  public void DoesNotUpdateIfStateIsSameState() { }
+  public void UpdatesForEveryState() {
+    var block = new FakeLogicBlock();
+    using var binding = block.Bind();
+
+    var called = 0;
+    binding.When<FakeLogicBlock.State>().Call((state) => called++);
+
+    block.Input(new FakeLogicBlock.Input.InputTwo("d", "e"));
+
+    called.ShouldBe(1);
+  }
 
   [Fact]
   public void DoesNotUpdateIfSelectedDataIsSameObject() {
@@ -30,7 +40,7 @@ public class BlocGlueTests {
     block.Input(new FakeLogicBlock.Input.InputTwo(a, b));
     block.Input(new FakeLogicBlock.Input.InputTwo(a, "c"));
 
-    count.ShouldBe(1);
+    count.ShouldBe(2);
   }
 
   [Fact]
@@ -148,19 +158,19 @@ public class BlocGlueTests {
     block.Input(new FakeLogicBlock.Input.InputTwo("c", "d"));
 
     callStateA.ShouldBe(0);
-    callStateB.ShouldBe(1);
+    callStateB.ShouldBe(2);
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
 
     block.Input(new FakeLogicBlock.Input.InputOne(1, 2));
 
     callStateA.ShouldBe(1);
-    callStateB.ShouldBe(1);
+    callStateB.ShouldBe(2);
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateA>();
 
     block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
 
     callStateA.ShouldBe(1);
-    callStateB.ShouldBe(2);
+    callStateB.ShouldBe(3);
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
   }
 

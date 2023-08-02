@@ -208,11 +208,6 @@ public abstract partial class Logic<
         }
       }
 
-      if (previous is TStateType) {
-        // Overall state hasn't changed types. No need to run callbacks.
-        return;
-      }
-
       foreach (var callback in _callbacks) {
         callback(state, previous);
       }
