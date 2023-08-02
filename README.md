@@ -49,7 +49,7 @@ public class LightSwitch :
 }
 ```
 
-Logic blocks come with a simple binding system that allows them to be observed easily.
+Logic blocks come with a simple binding system that allows them to be observed easily. You can create as many bindings as you need and simply dispose of them when you're done.
 
 ```csharp
 var lightSwitch = new LightSwitch();
@@ -60,6 +60,8 @@ binding.When<LightSwitch.State.On>()
 
 binding.When<LightSwitch.State.Off>()
   .Call((state) => Console.WriteLine("Light turned off."));
+
+binding.Dispose();
 ```
 
 Finally, the logic blocks source generator can be used to produce a UML diagram of the statechart your code represents.
