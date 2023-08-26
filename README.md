@@ -356,6 +356,16 @@ That'll do. Now, somewhere in our app or game's code, we can create a new instan
     (state) => Console.WriteLine("Heater is idle")
   );
 
+  // Run callbacks when certain types of errors occur.
+  binding.Catch<InvalidOperationException>((e) => {
+    Console.WriteLine($"Error occurred: {e}");
+  });
+
+  // Run callbacks when certain inputs are encountered.
+  binding.Watch<Heater.Input.TurnOn>((input) => {
+    Console.WriteLine("Turning on heater...");
+  });
+
   heater.Input(new Heater.Input.TurnOn());
 
   // Since the logic block subscribes to the temp sensor, it will automatically
