@@ -206,6 +206,43 @@ public class BlocGlueTests {
   }
 
   [Fact]
+  public void WatchesInputs() {
+    var block = new FakeLogicBlock();
+    var binding = block.Bind();
+
+    var inputOne = 0;
+    var inputTwo = 0;
+
+    binding
+      .Watch<FakeLogicBlock.Input.InputOne>((input) => inputOne++)
+      .Watch<FakeLogicBlock.Input.InputTwo>((input) => inputTwo++);
+
+    block.Input(new FakeLogicBlock.Input.InputOne(1, 2));
+    block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
+    block.Input(new FakeLogicBlock.Input.InputOne(3, 4));
+
+    inputOne.ShouldBe(2);
+    inputTwo.ShouldBe(1);
+  }
+
+  [Fact]
+  public void CatchesExceptions() {
+    var block = new FakeLogicBlock();
+    var binding = block.Bind();
+
+    var called = false;
+
+    binding.Catch<InvalidOperationException>((e) => {
+      called = true;
+      e.ShouldBeOfType<InvalidOperationException>();
+    });
+
+    block.Input(new FakeLogicBlock.Input.InputError());
+
+    called.ShouldBeTrue();
+  }
+
+  [Fact]
   public void Finalizes() {
     // Weak reference has to be created and cleared from a static function
     // or else the GC won't ever collect it :P
