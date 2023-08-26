@@ -29,6 +29,13 @@ public abstract partial class Logic<
 
     private TState _previousState;
 
+    // List of functions that receive a TInput and return whether the binding
+    // with the same index in the _inputRunners should be run.
+    private readonly List<Func<TInput, bool>> _inputCheckers = new();
+    // List of functions that receive a TInput and invoke the relevant binding
+    // when a particular type of input is encountered.
+    private readonly List<Action<TInput>> _inputRunners = new();
+
     // List of functions that receive a TState and return whether the binding
     // with the same index in the _whenBindingRunners should be run.
     private readonly List<Func<TState, bool>> _whenBindingCheckers;
@@ -43,6 +50,13 @@ public abstract partial class Logic<
     // when a particular type of output is encountered.
     private readonly List<Action<TOutput>> _handledOutputRunners;
 
+    // List of functions that receive an Exception and return whether the
+    // binding with the same index in the _errorRunners should be run.
+    private readonly List<Func<Exception, bool>> _errorCheckers;
+    // List of functions that receive an Exception and invoke the relevant
+    // binding when a particular type of error is encountered.
+    private readonly List<Action<Exception>> _errorRunners;
+
     internal Binding(
       Logic<TInput, TState, TOutput, THandler, TInputReturn, TUpdate> logicBlock
     ) {
@@ -52,9 +66,30 @@ public abstract partial class Logic<
       _whenBindingCheckers = new();
       _handledOutputRunners = new();
       _handledOutputCheckers = new();
+      _errorRunners = new();
+      _errorCheckers = new();
 
+      LogicBlock.OnInput += OnInput;
       LogicBlock.OnState += OnState;
       LogicBlock.OnOutput += OnOutput;
+      LogicBlock.OnError += OnError;
+    }
+
+    /// <summary>
+    /// Register a callback to be invoked whenever an input type of
+    /// <typeparamref name="TInputType" /> is encountered.
+    /// </summary>
+    /// <param name="handler">Input callback handler.</param>
+    /// <typeparam name="TInputType">Type of input to register a handler
+    /// for.</typeparam>
+    /// <returns>The current binding.</returns>
+    public Binding Watch<TInputType>(
+      Action<TInputType> handler
+    ) where TInputType : TInput {
+      _inputCheckers.Add((input) => input is TInputType);
+      _inputRunners.Add((input) => handler((TInputType)input));
+
+      return this;
     }
 
     // Registers a binding for a specific type of state.
@@ -98,10 +133,38 @@ public abstract partial class Logic<
     }
 
     /// <summary>
+    /// Register a callback to be invoked whenever an error type of
+    /// <typeparamref name="TException" /> is encountered.
+    /// </summary>
+    /// <param name="handler">Error callback handler.</param>
+    /// <typeparam name="TException">Type of exception to handle.</typeparam>
+    /// <returns>The current binding.</returns>
+    public Binding Catch<TException>(
+      Action<TException> handler
+    ) where TException : Exception {
+      _errorCheckers.Add((error) => error is TException);
+      _errorRunners.Add((error) => handler((TException)error));
+
+      return this;
+    }
+
+    /// <summary>
     /// Clean up registered bindings for all states and stop listening
     /// for state changes.
     /// </summary>
     public void Dispose() => Dispose(true);
+
+    private void OnInput(object? _, TInput input) {
+      // Run each input binding that should be run.
+      for (var i = 0; i < _inputCheckers.Count; i++) {
+        var checker = _inputCheckers[i];
+        var runner = _inputRunners[i];
+        if (checker(input)) {
+          // If the binding handles this type of input, run it!
+          runner(input);
+        }
+      }
+    }
 
     private void OnState(object? _, TState state) {
       // Run each when binding that should be run.
@@ -128,6 +191,18 @@ public abstract partial class Logic<
       }
     }
 
+    private void OnError(object? _, Exception error) {
+      // Run each error binding that should be run.
+      for (var i = 0; i < _errorCheckers.Count; i++) {
+        var checker = _errorCheckers[i];
+        var runner = _errorRunners[i];
+        if (checker(error)) {
+          // If the binding handles this type of error, run it!
+          runner(error);
+        }
+      }
+    }
+
     private void Dispose(bool disposing) {
       if (disposing) {
         LogicBlock.OnOutput -= OnOutput;
@@ -141,6 +216,10 @@ public abstract partial class Logic<
       _whenBindingRunners.Clear();
       _handledOutputCheckers.Clear();
       _handledOutputRunners.Clear();
+      _errorCheckers.Clear();
+      _errorRunners.Clear();
+      _inputCheckers.Clear();
+      _inputRunners.Clear();
     }
 
     /// <summary>Glue finalizer.</summary>
