@@ -182,7 +182,7 @@ public abstract partial class Logic<
   internal Logic() { }
 
   /// <inheritdoc />
-  public IBinding Bind() => new Binding(this);
+  public virtual IBinding Bind() => new Binding(this);
 
   /// <inheritdoc />
   public abstract TState GetInitialState();
