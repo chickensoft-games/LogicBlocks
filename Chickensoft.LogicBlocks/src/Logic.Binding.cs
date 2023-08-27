@@ -75,7 +75,7 @@ public abstract partial class Logic<
   /// updates when a state has changed but the relevant data within it has not.
   /// </para>
   /// </summary>
-  public sealed class Binding : IBinding {
+  internal sealed class Binding : IBinding {
     /// <inheritdoc />
     public Logic<
       TInput, TState, TOutput, THandler, TInputReturn, TUpdate
@@ -297,7 +297,7 @@ public abstract partial class Logic<
   /// state you specify with <typeparamref name="TStateType" /> is encountered.
   /// </summary>
   /// <typeparam name="TStateType">Type of state to bind to.</typeparam>
-  public sealed class WhenBinding<TStateType> : IWhenBinding<TStateType> {
+  internal sealed class WhenBinding<TStateType> : IWhenBinding<TStateType> {
     // Selected data bindings checkers registered with .Use()
     // These callbacks receive the current state, the previous state, the
     // selected data from the current state and the
