@@ -717,7 +717,7 @@ Conceptually, logic blocks draw from a number of inspirations:
 [read-the-docs-badge]: https://raw.githubusercontent.com/chickensoft-games/chickensoft_site/main/static/img/badges/read_the_docs_badge.svg
 [docs]: https://chickensoft.games/docs
 [branch-coverage]: Chickensoft.LogicBlocks.Tests/badges/branch_coverage.svg
-
+[line-coverage]: Chickensoft.LogicBlocks.Tests/badges/line_coverage.svg
 [bloc]: https://bloclibrary.dev/#/
 [bloc-pattern]: https://www.flutteris.com/blog/en/reactive-programming-streams-bloc
 [state-machines]: https://en.wikipedia.org/wiki/Finite-state_machine
