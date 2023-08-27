@@ -28,7 +28,7 @@ public abstract partial class Logic<
     /// <typeparam name="TInputType">Type of input to register a handler
     /// for.</typeparam>
     /// <returns>The current binding.</returns>
-    Binding Watch<TInputType>(
+    IBinding Watch<TInputType>(
       Action<TInputType> handler
     ) where TInputType : TInput;
 
@@ -52,7 +52,7 @@ public abstract partial class Logic<
     /// <typeparam name="TOutputType">Type of output to register a handler
     /// for.</typeparam>
     /// <returns>The current binding.</returns>
-    Binding Handle<TOutputType>(Action<TOutputType> handler)
+    IBinding Handle<TOutputType>(Action<TOutputType> handler)
         where TOutputType : TOutput;
 
     /// <summary>
@@ -62,7 +62,7 @@ public abstract partial class Logic<
     /// <param name="handler">Error callback handler.</param>
     /// <typeparam name="TException">Type of exception to handle.</typeparam>
     /// <returns>The current binding.</returns>
-    Binding Catch<TException>(Action<TException> handler)
+    IBinding Catch<TException>(Action<TException> handler)
       where TException : Exception;
   }
 
@@ -75,7 +75,7 @@ public abstract partial class Logic<
   /// updates when a state has changed but the relevant data within it has not.
   /// </para>
   /// </summary>
-  public sealed class Binding : IBinding {
+  internal sealed class Binding : IBinding {
     /// <inheritdoc />
     public Logic<
       TInput, TState, TOutput, THandler, TInputReturn, TUpdate
@@ -131,7 +131,7 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public Binding Watch<TInputType>(
+    public IBinding Watch<TInputType>(
       Action<TInputType> handler
     ) where TInputType : TInput {
       _inputCheckers.Add((input) => input is TInputType);
@@ -156,7 +156,7 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public Binding Handle<TOutputType>(
+    public IBinding Handle<TOutputType>(
       Action<TOutputType> handler
     ) where TOutputType : TOutput {
       _handledOutputCheckers.Add((output) => output is TOutputType);
@@ -166,7 +166,7 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public Binding Catch<TException>(
+    public IBinding Catch<TException>(
       Action<TException> handler
     ) where TException : Exception {
       _errorCheckers.Add((error) => error is TException);
