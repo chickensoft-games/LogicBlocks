@@ -130,17 +130,6 @@ public abstract partial class Logic<
       LogicBlock.OnError += OnError;
     }
 
-    internal Binding() {
-      LogicBlock = default!;
-      _previousState = default!;
-      _whenBindingRunners = default!;
-      _whenBindingCheckers = default!;
-      _handledOutputRunners = default!;
-      _handledOutputCheckers = default!;
-      _errorRunners = default!;
-      _errorCheckers = default!;
-    }
-
     /// <inheritdoc />
     public IBinding Watch<TInputType>(
       Action<TInputType> handler
