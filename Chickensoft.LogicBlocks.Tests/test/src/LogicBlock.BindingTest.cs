@@ -245,11 +245,7 @@ public class BlocGlueTests {
 
   [Fact]
   public void CanBeMocked() {
-    var logic = new Mock<
-      ILogicBlock<
-        FakeLogicBlock.Input, FakeLogicBlock.State, FakeLogicBlock.Output
-      >
-    >();
+    var logic = new Mock<FakeLogicBlock>((Exception e) => { });
 
     var binding = new Mock<FakeLogicBlock.IBinding>();
     var context = new Mock<FakeLogicBlock.IContext>();
