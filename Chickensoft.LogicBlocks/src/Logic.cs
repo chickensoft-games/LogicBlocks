@@ -69,7 +69,7 @@ public partial interface ILogic<
   /// <returns>Logic block binding.</returns>
   Logic<
     TInput, TState, TOutput, THandler, TInputReturn, TUpdate
-  >.IBinding Bind();
+  >.Binding Bind();
 }
 
 /// <summary>
@@ -182,7 +182,7 @@ public abstract partial class Logic<
   internal Logic() { }
 
   /// <inheritdoc />
-  public virtual IBinding Bind() => new Binding(this);
+  public virtual Binding Bind() => new InternalBinding(this);
 
   /// <inheritdoc />
   public abstract TState GetInitialState();

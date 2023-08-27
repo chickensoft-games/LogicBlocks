@@ -247,7 +247,7 @@ public class BlocGlueTests {
   public void CanBeMocked() {
     var logic = new Mock<FakeLogicBlock>((Exception e) => { });
 
-    var binding = new Mock<FakeLogicBlock.IBinding>();
+    var binding = new Mock<FakeLogicBlock.Binding>();
     var context = new Mock<FakeLogicBlock.IContext>();
 
     var input = new FakeLogicBlock.Input.InputOne(1, 2);

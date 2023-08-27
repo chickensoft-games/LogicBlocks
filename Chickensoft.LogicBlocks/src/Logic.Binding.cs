@@ -75,7 +75,7 @@ public abstract partial class Logic<
   /// updates when a state has changed but the relevant data within it has not.
   /// </para>
   /// </summary>
-  public sealed class Binding : IBinding {
+  public abstract class Binding : IBinding {
     /// <inheritdoc />
     public Logic<
       TInput, TState, TOutput, THandler, TInputReturn, TUpdate
@@ -130,8 +130,22 @@ public abstract partial class Logic<
       LogicBlock.OnError += OnError;
     }
 
+    /// <summary>
+    /// Constructor used for mocking a binding.
+    /// </summary>
+    protected internal Binding() {
+      LogicBlock = default!;
+      _previousState = default!;
+      _whenBindingRunners = default!;
+      _whenBindingCheckers = default!;
+      _handledOutputRunners = default!;
+      _handledOutputCheckers = default!;
+      _errorRunners = default!;
+      _errorCheckers = default!;
+    }
+
     /// <inheritdoc />
-    public Binding Watch<TInputType>(
+    public virtual Binding Watch<TInputType>(
       Action<TInputType> handler
     ) where TInputType : TInput {
       _inputCheckers.Add((input) => input is TInputType);
@@ -141,9 +155,9 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public IWhenBinding<TStateType> When<TStateType>()
+    public virtual IWhenBinding<TStateType> When<TStateType>()
       where TStateType : TState {
-      var whenBinding = new WhenBinding<TStateType>();
+      var whenBinding = new InternalWhenBinding<TStateType>();
       // Add a closure to the list of when binding runners that invokes
       // the captured generic binding with the captured generic type.
       _whenBindingRunners.Add(
@@ -156,7 +170,7 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public Binding Handle<TOutputType>(
+    public virtual Binding Handle<TOutputType>(
       Action<TOutputType> handler
     ) where TOutputType : TOutput {
       _handledOutputCheckers.Add((output) => output is TOutputType);
@@ -166,7 +180,7 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public Binding Catch<TException>(
+    public virtual Binding Catch<TException>(
       Action<TException> handler
     ) where TException : Exception {
       _errorCheckers.Add((error) => error is TException);
@@ -255,6 +269,13 @@ public abstract partial class Logic<
     }
   }
 
+  internal class InternalBinding : Binding {
+    internal InternalBinding(
+      Logic<TInput, TState, TOutput, THandler, TInputReturn, TUpdate>
+        logicBlock
+    ) : base(logicBlock) { }
+  }
+
   /// <summary>
   /// A bindings group that allows you to register bindings for a specific type
   /// of state. Bindings are callbacks that only run when the specific type of
@@ -297,7 +318,7 @@ public abstract partial class Logic<
   /// state you specify with <typeparamref name="TStateType" /> is encountered.
   /// </summary>
   /// <typeparam name="TStateType">Type of state to bind to.</typeparam>
-  internal sealed class WhenBinding<TStateType> : IWhenBinding<TStateType> {
+  public abstract class WhenBinding<TStateType> : IWhenBinding<TStateType> {
     // Selected data bindings checkers registered with .Use()
     // These callbacks receive the current state, the previous state, the
     // selected data from the current state and the
@@ -318,7 +339,10 @@ public abstract partial class Logic<
     // Callbacks for this state type registered with .Call()
     private readonly List<Action<dynamic, TState>> _callbacks = new();
 
-    internal WhenBinding() { }
+    /// <summary>
+    /// Constructor used to mock this class.
+    /// </summary>
+    protected internal WhenBinding() { }
 
     /// <summary>
     /// Determines if this binding should run for a given state.
@@ -356,7 +380,7 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public IWhenBinding<TStateType> Use<TSelectedData>(
+    public virtual IWhenBinding<TStateType> Use<TSelectedData>(
       Func<TStateType, TSelectedData> data, Action<TSelectedData> to
     ) where TSelectedData : notnull {
       var checker = (
@@ -396,7 +420,7 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public IWhenBinding<TStateType> Call(Action<TStateType> callback) {
+    public virtual IWhenBinding<TStateType> Call(Action<TStateType> callback) {
       var handler =
         (dynamic state, TState previous) => callback((TStateType)state);
 
@@ -405,4 +429,6 @@ public abstract partial class Logic<
       return this;
     }
   }
+
+  internal class InternalWhenBinding<TStateType> : WhenBinding<TStateType> { }
 }
