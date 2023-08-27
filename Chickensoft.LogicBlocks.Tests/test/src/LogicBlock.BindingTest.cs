@@ -2,6 +2,7 @@ namespace Chickensoft.LogicBlocks.Tests;
 
 using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Chickensoft.LogicBlocks.Tests.TestUtils;
+using Moq;
 using Shouldly;
 using Xunit;
 
@@ -240,6 +241,27 @@ public class BlocGlueTests {
     block.Input(new FakeLogicBlock.Input.InputError());
 
     called.ShouldBeTrue();
+  }
+
+  [Fact]
+  public void CanBeMocked() {
+    var logic = new Mock<
+      ILogicBlock<
+        FakeLogicBlock.Input, FakeLogicBlock.State, FakeLogicBlock.Output
+      >
+    >();
+
+    var binding = new Mock<FakeLogicBlock.IBinding>();
+    var context = new Mock<FakeLogicBlock.IContext>();
+
+    var input = new FakeLogicBlock.Input.InputOne(1, 2);
+    var state = new FakeLogicBlock.State.StateA(context.Object, 1, 2);
+
+    logic.Setup(logic => logic.Bind()).Returns(binding.Object);
+    logic.Setup(logic => logic.Input(input)).Returns(state);
+
+    logic.Object.Bind().ShouldBe(binding.Object);
+    logic.Object.Input(input).ShouldBe(state);
   }
 
   [Fact]

@@ -1,0 +1,3 @@
+@startuml MyLogicBlock
+state "MyLogicBlock State" as Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State
+@enduml

@@ -8,17 +8,17 @@ public class NonEquatable :
 
   public abstract class State : IStateLogic,
     IGet<Input.GoToA>, IGet<Input.GoToB> {
-    public Context Context { get; }
-    public State(Context context) {
+    public IContext Context { get; }
+    public State(IContext context) {
       Context = context;
     }
 
     public class A : State {
-      public A(Context context) : base(context) { }
+      public A(IContext context) : base(context) { }
     }
 
     public class B : State {
-      public B(Context context) : base(context) { }
+      public B(IContext context) : base(context) { }
     }
 
     public State On(Input.GoToA input) => new A(Context);
@@ -27,6 +27,6 @@ public class NonEquatable :
 
   public class Output { }
 
-  public override State GetInitialState(Context context) =>
+  public override State GetInitialState(IContext context) =>
     new State.A(context);
 }

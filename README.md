@@ -4,12 +4,6 @@
 
 Human-friendly state management for games and apps in C#.
 
-Logic blocks borrow from [statecharts], [state machines][state-machines], and [blocs][bloc-pattern] to provide a flexible and easy-to-use API.
-
-Logic blocks allow developers to define self-contained states that read like ordinary code using the [state pattern][state-pattern] instead of requiring developers to write elaborate transition tables. Logic blocks are intended to be refactor-friendly and grow with your project from simple state machines to nested, hierarchical statecharts.
-
-> 🖼 Ever wondered what your code looks like? LogicBlocks includes an experimental generator that allows you to visualize your logic blocks as a state diagram!
-
 ---
 
 <p align="center">
@@ -18,30 +12,33 @@ Logic blocks allow developers to define self-contained states that read like ord
 
 ---
 
+Logic blocks borrow from [statecharts], [state machines][state-machines], and [blocs][bloc-pattern] to provide a flexible and easy-to-use API.
+
+Logic blocks allow developers to define self-contained states that read like ordinary code using the [state pattern][state-pattern] instead of requiring developers to write elaborate transition tables. Logic blocks are intended to be refactor-friendly and grow with your project from simple state machines to nested, hierarchical statecharts.
+
+> 🖼 Ever wondered what your code looks like? LogicBlocks includes an experimental generator that allows you to visualize your logic blocks as a state diagram!
+
 **A logic block is a class that can receive inputs, maintain a state, and produce outputs.** How you design your states is up to you. Outputs allow logic block listeners to be informed about one-shot events that aren't persisted the way state is, allowing the logic block to influence the world around it without tight coupling. Additionally, logic block states can retrieve values shared across the entire logic block from the logic block's *blackboard*.
 
 Here is a minimal example. More ✨ advanced ✨ examples are linked below.
 
 ```csharp
-namespace Chickensoft.LogicBlocks.Generator.Tests;
-
 [StateMachine]
-public class LightSwitch :
-  LogicBlock<LightSwitch.Input, LightSwitch.State, LightSwitch.Output> {
-  public override State GetInitialState(Context context) =>
+public class LightSwitch : LogicBlock<LightSwitch.Input, LightSwitch.State, LightSwitch.Output> {
+  public override State GetInitialState(IContext context) =>
     new State.Off(context);
 
   public abstract record Input {
     public record Toggle : Input;
   }
 
-  public abstract record State(Context Context) : StateLogic(Context) {
-    public record On(Context Context) : State(Context), IGet<Input.Toggle> {
-      public State On(Input.Toggle input) => new Off(Context);
+  public abstract record State(IContext Context) : StateLogic(Context) {
+    public record On(IContext Context) : State(Context), IGet<Input.Toggle> {
+      State IGet<Input.Toggle>.On(Input.Toggle input) => new Off(Context);
     }
 
-    public record Off(Context Context) : State(Context), IGet<Input.Toggle> {
-      public State On(Input.Toggle input) => new On(Context);
+    public record Off(IContext Context) : State(Context), IGet<Input.Toggle> {
+      State IGet<Input.Toggle>.On(Input.Toggle input) => new On(Context);
     }
   }
 
@@ -135,6 +132,10 @@ Logic blocks attempt to achieve the following goals:
 
   Logic blocks come with `Binding`, a utility class that provides a fluent API for monitoring states and outputs. Binding to a logic block is as simple as calling `myLogicBlock.Bind()`.
 
+- 🧪 **Testable.**
+
+  Logic blocks are easily tested using traditional mocking tools. You can mock the logic block, its context, and its bindings to unit-test your logic block states and logic block consumers in isolation.
+
 ## 📦 Installation
 
 You can find the latest version of LogicBlocks on [nuget][logic-blocks-nuget].
@@ -178,7 +179,7 @@ Inside of the class, we need to define a base input type, state type, and output
 public class Heater :
   LogicBlock<Heater.Input, Heater.State, Heater.Output> {
     public abstract record Input { }
-    public abstract record State(Context Context) : StateLogic(Context) {
+    public abstract record State(IContext Context) : StateLogic(Context) {
       
     }
     public abstract record Output { }
@@ -225,16 +226,16 @@ We know our space heater will be in one of three states: `Off`, `Idle`, and `Hea
 We'll go ahead and write out the first two states, `Off` and `Idle`:
 
 ```csharp
-  public abstract record State(Context Context, double TargetTemp)
+  public abstract record State(IContext Context, double TargetTemp)
     : StateLogic(Context) {
     
     public record Off(
-      Context Context, double TargetTemp
+      IContext Context, double TargetTemp
     ) : State(Context, TargetTemp), IGet<Input.TurnOn> {
       public State On(Input.TurnOn input) => new Heating(Context, TargetTemp);
     }
 
-    public record Idle(Context Context, double TargetTemp) :
+    public record Idle(IContext Context, double TargetTemp) :
       State(Context, TargetTemp);
   }
 ```
@@ -251,7 +252,7 @@ In the case of `Off`, we only need to handle the `TurnOn` event. Input handlers 
       IGet<Input.AirTempSensorChanged>,
       IGet<Input.TargetTempChanged> {
         
-      public Heating(Context context, double targetTemp) : base(
+      public Heating(IContext context, double targetTemp) : base(
         context, targetTemp
       ) {
         var tempSensor = context.Get<ITemperatureSensor>();
@@ -300,7 +301,7 @@ public class Heater :
     Set<ITemperatureSensor>(tempSensor);
   }
 
-  public override State GetInitialState(Context context) =>
+  public override State GetInitialState(IContext context) =>
     new State.Off(context, 72.0);
 
 }
@@ -395,7 +396,7 @@ using Chickensoft.LogicBlocks.Generator;
 public partial class MyLogicBlock :
   LogicBlock<MyLogicBlock.Input, MyLogicBlock.State, MyLogicBlock.Output> {
   public abstract record Input { ... }
-  public abstract record State(Context Context) : StateLogic(Context) { ... }
+  public abstract record State(IContext Context) : StateLogic(Context) { ... }
   public abstract record Output { ... }
 
   public MyLogicBlock(IMyDependency dependency) {
@@ -413,7 +414,7 @@ public partial class MyLogicBlock :
   }
 
   // Return the initial state by looking it up in the blackboard.
-  public override State GetInitialState(Context context) =>
+  public override State GetInitialState(IContext context) =>
     Context.Get<MyFirstState>();
 }
 ```
@@ -476,7 +477,7 @@ using Chickensoft.LogicBlocks.Generator;
 public partial class MyLogicBlock :
   LogicBlock<MyLogicBlock.Input, MyLogicBlock.State, MyLogicBlock.Output> {
   public abstract record Input { ... }
-  public abstract record State(Context Context) : StateLogic(Context) { ... }
+  public abstract record State(IContext Context) : StateLogic(Context) { ... }
   public abstract record Output { ... }
 
   ...
@@ -486,6 +487,122 @@ public partial class MyLogicBlock :
 
     // Or you can stop execution on any exception that occurs inside a state.
     throw e; 
+  }
+}
+```
+
+### 🧪 Testing
+
+You can mock a logic block, its bindings, and its context.
+
+- Mocking the context allows states to be tested in isolation.
+- Mocking the logic block itself and its bindings allows you to simulate a logic block's behavior so that objects using a logic block can be tested in isolation (i.e., unit tests).
+
+#### Testing LogicBlock Consumers
+
+Imagine you have an object that uses a logic block called [`MyLogicBlock`](Chickensoft.LogicBlocks.Tests/test/fixtures/MyLogicBlock.cs). We'll keep the object simple for the sake of example.
+
+```csharp
+public class MyObject {
+  public MyLogicBlock Logic { get; }
+
+  public MyObject(MyLogicBlock logic) {
+    Logic = logic;
+  }
+
+  // Method we want to test
+  public MyLogicBlock.State DoSomething() =>
+    Logic.Input(new MyLogicBlock.Input.SomeInput());
+}
+```
+
+To write a unit test for `MyObject`, we need to mock its dependencies and then verify that it interacts with the dependencies in the way we expect. In this case, the only dependency is the logic block. We can mock it in the same way we mock other objects.
+
+```csharp
+using Moq;
+using Shouldly;
+using Xunit;
+
+public class MyObjectTest {
+  [Fact]
+  public void DoSomethingDoesSomething() {
+    // Our unit test follows the AAA pattern: Arrange, Act, Assert.
+    // Or Setup, Execute, and Verify, if you prefer. Etc.
+
+    // Setup
+    var logic = new Mock<MyLogicBlock>();
+    var context = new Mock<MyLogicBlock.IContext>();
+
+    var myObject = new MyObject(logic.Object);
+
+    // Create a state that we expect to be returned.
+    var expectedState = new MyLogicBlock.State.SomeState(context.Object);
+
+    // Setup the mock of the logic block to return our expected state whenever
+    // it receives the input SomeInput.
+    logic.Setup(logic => logic.Input(It.IsAny<MyLogicBlock.Input.SomeInput>()))
+      .Returns(expectedState);
+
+    // Execute the method we want to test.
+    var result = myObject.DoSomething();
+
+    // Verify that method returned the correct value.
+    result.ShouldBe(expectedState);
+
+    // Verify that the method invoked our logic block as expected.
+    logic.VerifyAll();
+  }
+}
+```
+
+#### Testing LogicBlock States
+
+We can also test that our logic block states work the way we intend them to work by mocking the context and expecting the state to call certain methods on it when certain inputs are received.
+
+Imagine we want to test the state `SomeState` on `MyLogicBlock`.
+
+For reference, here is the definition of `SomeState`. It receives `SomeInput`, outputs `SomeOutput`, and transitions to `SomeOtherState`.
+
+```csharp
+// ...
+public record SomeState(IContext Context) : State(Context),
+  IGet<Input.SomeInput> {
+
+  public State On(Input.SomeInput input) {
+    Context.Output(new Output.SomeOutput());
+    return new SomeOtherState(Context);
+  }
+
+}
+// ...
+```
+
+To test it, we simply need to mock the logic block context and verify that it is called the way we expect it to be called.
+
+```csharp
+using Moq;
+using Shouldly;
+using Xunit;
+
+public class SomeStateTest {
+  [Fact]
+  public void HandlesSomeInput() {
+    var context = new Mock<MyLogicBlock.IContext>();
+    var state = new MyLogicBlock.State.SomeState(context.Object);
+
+    // Expect our state to output SomeOutput when SomeInput is received.
+    context
+      .Setup(context => context.Output(new MyLogicBlock.Output.SomeOutput()));
+
+    // Perform the action we are testing on our state.
+    var result = state.On(new MyLogicBlock.Input.SomeInput());
+
+    // Make sure the output we expected was produced by ensuring our mock
+    // context was called the same way we set it up.
+    context.VerifyAll();
+
+    // Make sure we got the next state.
+    result.ShouldBeOfType<MyLogicBlock.State.SomeOtherState>();
   }
 }
 ```

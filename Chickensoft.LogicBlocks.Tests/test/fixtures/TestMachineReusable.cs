@@ -14,7 +14,7 @@ public partial class TestMachineReusable :
     public record Deactivate() : Input;
   }
 
-  public abstract record State(Context Context) : StateLogic(Context),
+  public abstract record State(IContext Context) : StateLogic(Context),
     IGet<Input.Activate> {
     public State On(Input.Activate input) =>
       input.Secondary switch {
@@ -24,7 +24,7 @@ public partial class TestMachineReusable :
       };
 
     public abstract record Activated : State, IGet<Input.Deactivate> {
-      public Activated(Context context) : base(context) {
+      public Activated(IContext context) : base(context) {
         OnEnter<Activated>(
           (previous) => context.Output(new Output.Activated())
         );
@@ -36,7 +36,7 @@ public partial class TestMachineReusable :
       public State On(Input.Deactivate input) => Context.Get<Deactivated>();
 
       public record Blooped : Activated {
-        public Blooped(Context context) : base(context) {
+        public Blooped(IContext context) : base(context) {
           OnEnter<Blooped>(
             (previous) => context.Output(new Output.Blooped())
           );
@@ -47,7 +47,7 @@ public partial class TestMachineReusable :
       }
 
       public record Bopped : Activated {
-        public Bopped(Context context) : base(context) {
+        public Bopped(IContext context) : base(context) {
           OnEnter<Bopped>(
             (previous) => context.Output(new Output.Bopped())
           );
@@ -59,7 +59,7 @@ public partial class TestMachineReusable :
     }
 
     public record Deactivated : State {
-      public Deactivated(Context context) : base(context) {
+      public Deactivated(IContext context) : base(context) {
         OnEnter<Deactivated>(
           (previous) => context.Output(new Output.Deactivated())
         );
@@ -87,6 +87,6 @@ public partial class TestMachineReusable :
     Set(new State.Deactivated(Context));
   }
 
-  public override State GetInitialState(Context context) =>
+  public override State GetInitialState(IContext context) =>
     context.Get<State.Deactivated>();
 }

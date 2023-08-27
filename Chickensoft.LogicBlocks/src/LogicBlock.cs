@@ -17,9 +17,46 @@ using System;
 /// <typeparam name="TInput">Input type.</typeparam>
 /// <typeparam name="TState">State type.</typeparam>
 /// <typeparam name="TOutput">Output type.</typeparam>
-public abstract partial class LogicBlock<TInput, TState, TOutput> :
-  Logic<TInput, TState, TOutput, Func<TInput, TState>, TState, Action<TState>>
+public interface ILogicBlock<TInput, TState, TOutput>
+  : ILogic<
+      TInput, TState, TOutput, Func<TInput, TState>, TState, Action<TState>
+    >
   where TInput : notnull
+  where TState : Logic<
+      TInput, TState, TOutput, Func<TInput, TState>, TState, Action<TState>
+    >.IStateLogic
+  where TOutput : notnull {
+  /// <summary>
+  /// Returns the initial state of the logic block. Implementations must
+  /// override this method to provide a valid initial state.
+  /// </summary>
+  /// <param name="context">Logic block context.</param>
+  /// <returns>Initial state of the logic block.</returns>
+  TState GetInitialState(Logic<
+    TInput, TState, TOutput, Func<TInput, TState>, TState, Action<TState>
+  >.IContext context);
+}
+
+/// <summary>
+/// <para>
+/// A synchronous logic block. Logic blocks are machines that process inputs
+/// one-at-a-time, maintain a current state graph, and produce outputs.
+/// </para>
+/// <para>
+/// Logic blocks are essentially statecharts that are created using the state
+/// pattern. Each state is a self-contained class, record, or struct that
+/// implements <see cref="Logic{TInput, TState, TOutput, THandler,
+/// TInputReturn, TUpdate}.IStateLogic"/>.
+/// </para>
+/// </summary>
+/// <typeparam name="TInput">Input type.</typeparam>
+/// <typeparam name="TState">State type.</typeparam>
+/// <typeparam name="TOutput">Output type.</typeparam>
+public abstract partial class LogicBlock<TInput, TState, TOutput> :
+  Logic<
+    TInput, TState, TOutput, Func<TInput, TState>, TState, Action<TState>
+  >,
+  ILogicBlock<TInput, TState, TOutput> where TInput : notnull
   where TState : Logic<
     TInput,
     TState,
@@ -32,7 +69,7 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
   /// <summary>
   /// The context provided to the states of the logic block.
   /// </summary>
-  public new Context Context { get; }
+  public new IContext Context { get; }
 
   /// <summary>
   /// Whether or not the logic block is processing inputs.
@@ -43,19 +80,14 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
 
   /// <summary>Creates a new logic block.</summary>
   protected LogicBlock() {
-    Context = new(this);
+    Context = new Context(this);
   }
 
   /// <inheritdoc />
   public sealed override TState GetInitialState() => GetInitialState(Context);
 
-  /// <summary>
-  /// Returns the initial state of the logic block. Implementations must
-  /// override this method to provide a valid initial state.
-  /// </summary>
-  /// <param name="context">Logic block context.</param>
-  /// <returns>Initial state of the logic block.</returns>
-  public abstract TState GetInitialState(Context context);
+  /// <inheritdoc />
+  public abstract TState GetInitialState(IContext context);
 
   internal override TState Process() {
     if (IsProcessing) {
