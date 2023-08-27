@@ -715,8 +715,7 @@ Conceptually, logic blocks draw from a number of inspirations:
 [discord-badge]: https://raw.githubusercontent.com/chickensoft-games/chickensoft_site/main/static/img/badges/discord_badge.svg
 [discord]: https://discord.gg/gSjaPgMmYW
 [read-the-docs-badge]: https://raw.githubusercontent.com/chickensoft-games/chickensoft_site/main/static/img/badges/read_the_docs_badge.svg
-[docs]: https://chickensoft.games/docsickensoft%20Discord-%237289DA.svg?style=flat&logo=discord&logoColor=white
-[line-coverage]: Chickensoft.LogicBlocks.Tests/badges/line_coverage.svg
+[docs]: https://chickensoft.games/docs
 [branch-coverage]: Chickensoft.LogicBlocks.Tests/badges/branch_coverage.svg
 
 [bloc]: https://bloclibrary.dev/#/
