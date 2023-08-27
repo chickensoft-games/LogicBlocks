@@ -28,7 +28,7 @@ public abstract partial class Logic<
     /// <typeparam name="TInputType">Type of input to register a handler
     /// for.</typeparam>
     /// <returns>The current binding.</returns>
-    Binding Watch<TInputType>(
+    IBinding Watch<TInputType>(
       Action<TInputType> handler
     ) where TInputType : TInput;
 
@@ -52,7 +52,7 @@ public abstract partial class Logic<
     /// <typeparam name="TOutputType">Type of output to register a handler
     /// for.</typeparam>
     /// <returns>The current binding.</returns>
-    Binding Handle<TOutputType>(Action<TOutputType> handler)
+    IBinding Handle<TOutputType>(Action<TOutputType> handler)
         where TOutputType : TOutput;
 
     /// <summary>
@@ -62,7 +62,7 @@ public abstract partial class Logic<
     /// <param name="handler">Error callback handler.</param>
     /// <typeparam name="TException">Type of exception to handle.</typeparam>
     /// <returns>The current binding.</returns>
-    Binding Catch<TException>(Action<TException> handler)
+    IBinding Catch<TException>(Action<TException> handler)
       where TException : Exception;
   }
 
@@ -145,7 +145,7 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public virtual Binding Watch<TInputType>(
+    public virtual IBinding Watch<TInputType>(
       Action<TInputType> handler
     ) where TInputType : TInput {
       _inputCheckers.Add((input) => input is TInputType);
@@ -170,7 +170,7 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public virtual Binding Handle<TOutputType>(
+    public virtual IBinding Handle<TOutputType>(
       Action<TOutputType> handler
     ) where TOutputType : TOutput {
       _handledOutputCheckers.Add((output) => output is TOutputType);
@@ -180,7 +180,7 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public virtual Binding Catch<TException>(
+    public virtual IBinding Catch<TException>(
       Action<TException> handler
     ) where TException : Exception {
       _errorCheckers.Add((error) => error is TException);
