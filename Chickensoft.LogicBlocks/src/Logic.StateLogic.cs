@@ -12,7 +12,7 @@ public abstract partial class Logic<
   /// </summary>
   public interface IStateLogic {
     /// <summary>Logic block context.</summary>
-    Context Context { get; }
+    IContext Context { get; }
   }
 
   internal class StateLogicState {
@@ -46,7 +46,7 @@ public abstract partial class Logic<
   /// </summary>
   public abstract record StateLogic : IStateLogic {
     /// <summary>Logic block context.</summary>
-    public Context Context { get; }
+    public IContext Context { get; }
 
     internal StateLogicState InternalState { get; }
 
@@ -54,7 +54,7 @@ public abstract partial class Logic<
     /// Creates a new instance of the logic block base state record.
     /// </summary>
     /// <param name="context">Logic block context.</param>
-    public StateLogic(Context context) {
+    public StateLogic(IContext context) {
       Context = context;
       InternalState = new();
     }

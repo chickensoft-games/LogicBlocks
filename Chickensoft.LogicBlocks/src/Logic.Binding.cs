@@ -7,10 +7,64 @@ public abstract partial class Logic<
   TInput, TState, TOutput, THandler, TInputReturn, TUpdate
 > {
   /// <summary>
-  /// Creates a binding to a logic block.
+  /// <para>State bindings for a logic block.</para>
+  /// <para>
+  /// A binding allows you to select data from a logic block's state, invoke
+  /// methods when certain states occur, and handle outputs. Using bindings
+  /// enable you to write more declarative code and prevent unnecessary
+  /// updates when a state has changed but the relevant data within it has not.
+  /// </para>
   /// </summary>
-  /// <returns>Logic block binding.</returns>
-  public Binding Bind() => new(this);
+  public interface IBinding : IDisposable {
+    /// <summary>Logic block that is being bound to.</summary>
+    Logic<TInput, TState, TOutput, THandler, TInputReturn, TUpdate>
+      LogicBlock { get; }
+
+    /// <summary>
+    /// Register a callback to be invoked whenever an input type of
+    /// <typeparamref name="TInputType" /> is encountered.
+    /// </summary>
+    /// <param name="handler">Input callback handler.</param>
+    /// <typeparam name="TInputType">Type of input to register a handler
+    /// for.</typeparam>
+    /// <returns>The current binding.</returns>
+    Binding Watch<TInputType>(
+      Action<TInputType> handler
+    ) where TInputType : TInput;
+
+    /// Registers a binding for a specific type of state.
+    /// <summary>
+    /// Create a bindings group that allows you to register bindings for a
+    /// specific type of state. Bindings are callbacks that only run when the
+    /// specific type of state you specify with
+    /// <typeparamref name="TStateType" /> is encountered.
+    /// </summary>
+    /// <typeparam name="TStateType">Type of state to bind to.</typeparam>
+    /// <returns>The new binding group.</returns>
+    IWhenBinding<TStateType>
+      When<TStateType>() where TStateType : TState;
+
+    /// <summary>
+    /// Register a callback to be invoked whenever an output type of
+    /// <typeparamref name="TOutputType" /> is encountered.
+    /// </summary>
+    /// <param name="handler">Output callback handler.</param>
+    /// <typeparam name="TOutputType">Type of output to register a handler
+    /// for.</typeparam>
+    /// <returns>The current binding.</returns>
+    Binding Handle<TOutputType>(Action<TOutputType> handler)
+        where TOutputType : TOutput;
+
+    /// <summary>
+    /// Register a callback to be invoked whenever an error type of
+    /// <typeparamref name="TException" /> is encountered.
+    /// </summary>
+    /// <param name="handler">Error callback handler.</param>
+    /// <typeparam name="TException">Type of exception to handle.</typeparam>
+    /// <returns>The current binding.</returns>
+    Binding Catch<TException>(Action<TException> handler)
+      where TException : Exception;
+  }
 
   /// <summary>
   /// <para>State bindings for a logic block.</para>
@@ -21,8 +75,8 @@ public abstract partial class Logic<
   /// updates when a state has changed but the relevant data within it has not.
   /// </para>
   /// </summary>
-  public sealed class Binding : IDisposable {
-    /// <summary>Logic block that is being bound to.</summary>
+  public sealed class Binding : IBinding {
+    /// <inheritdoc />
     public Logic<
       TInput, TState, TOutput, THandler, TInputReturn, TUpdate
     > LogicBlock { get; }
@@ -58,7 +112,8 @@ public abstract partial class Logic<
     private readonly List<Action<Exception>> _errorRunners;
 
     internal Binding(
-      Logic<TInput, TState, TOutput, THandler, TInputReturn, TUpdate> logicBlock
+      Logic<TInput, TState, TOutput, THandler, TInputReturn, TUpdate>
+        logicBlock
     ) {
       LogicBlock = logicBlock;
       _previousState = logicBlock.Value;
@@ -75,14 +130,7 @@ public abstract partial class Logic<
       LogicBlock.OnError += OnError;
     }
 
-    /// <summary>
-    /// Register a callback to be invoked whenever an input type of
-    /// <typeparamref name="TInputType" /> is encountered.
-    /// </summary>
-    /// <param name="handler">Input callback handler.</param>
-    /// <typeparam name="TInputType">Type of input to register a handler
-    /// for.</typeparam>
-    /// <returns>The current binding.</returns>
+    /// <inheritdoc />
     public Binding Watch<TInputType>(
       Action<TInputType> handler
     ) where TInputType : TInput {
@@ -92,16 +140,8 @@ public abstract partial class Logic<
       return this;
     }
 
-    // Registers a binding for a specific type of state.
-    /// <summary>
-    /// Create a bindings group that allows you to register bindings for a
-    /// specific type of state. Bindings are callbacks that only run when the
-    /// specific type of state you specify with
-    /// <typeparamref name="TStateType" /> is encountered.
-    /// </summary>
-    /// <typeparam name="TStateType">Type of state to bind to.</typeparam>
-    /// <returns>The new binding group.</returns>
-    public WhenBinding<TStateType> When<TStateType>()
+    /// <inheritdoc />
+    public IWhenBinding<TStateType> When<TStateType>()
       where TStateType : TState {
       var whenBinding = new WhenBinding<TStateType>();
       // Add a closure to the list of when binding runners that invokes
@@ -115,14 +155,7 @@ public abstract partial class Logic<
       return whenBinding;
     }
 
-    /// <summary>
-    /// Register a callback to be invoked whenever an output type of
-    /// <typeparamref name="TOutputType" /> is encountered.
-    /// </summary>
-    /// <param name="handler">Output callback handler.</param>
-    /// <typeparam name="TOutputType">Type of output to register a handler
-    /// for.</typeparam>
-    /// <returns>The current binding.</returns>
+    /// <inheritdoc />
     public Binding Handle<TOutputType>(
       Action<TOutputType> handler
     ) where TOutputType : TOutput {
@@ -132,13 +165,7 @@ public abstract partial class Logic<
       return this;
     }
 
-    /// <summary>
-    /// Register a callback to be invoked whenever an error type of
-    /// <typeparamref name="TException" /> is encountered.
-    /// </summary>
-    /// <param name="handler">Error callback handler.</param>
-    /// <typeparam name="TException">Type of exception to handle.</typeparam>
-    /// <returns>The current binding.</returns>
+    /// <inheritdoc />
     public Binding Catch<TException>(
       Action<TException> handler
     ) where TException : Exception {
@@ -234,7 +261,43 @@ public abstract partial class Logic<
   /// state you specify with <typeparamref name="TStateType" /> is encountered.
   /// </summary>
   /// <typeparam name="TStateType">Type of state to bind to.</typeparam>
-  public sealed class WhenBinding<TStateType> {
+  public interface IWhenBinding<TStateType> {
+    /// <summary>
+    /// Use data from the state to invoke a method that receives the data. This
+    /// allows you to "select" data from a given type of state and invoke a
+    /// callback only when the selected data actually changes (as determined by
+    /// reference equality and the default equality comparer).
+    /// </summary>
+    /// <param name="data">Data to select from the state type
+    /// <typeparamref name="TStateType" />.</param>
+    /// <param name="to">Callback that receives the selected data and runs
+    /// only when the selected data has changed after a state update.</param>
+    /// <typeparam name="TSelectedData">Type of data to select from the state.
+    /// </typeparam>
+    /// <returns>The current when-binding clause so that you can continue to use
+    /// data from the state or register callbacks.</returns>
+    IWhenBinding<TStateType> Use<TSelectedData>(
+      Func<TStateType, TSelectedData> data, Action<TSelectedData> to
+    ) where TSelectedData : notnull;
+
+    /// <summary>
+    /// Register a callback to be invoked whenever the state changes to the
+    /// state type <typeparamref name="TStateType" />.
+    /// </summary>
+    /// <param name="callback">Callback invoked whenever the state changes to
+    /// the state type <typeparamref name="TStateType" />.</param>
+    /// <returns>The current when-binding clause so that you can continue to use
+    /// data from the state or register callbacks.</returns>
+    IWhenBinding<TStateType> Call(Action<TStateType> callback);
+  }
+
+  /// <summary>
+  /// A bindings group that allows you to register bindings for a specific type
+  /// of state. Bindings are callbacks that only run when the specific type of
+  /// state you specify with <typeparamref name="TStateType" /> is encountered.
+  /// </summary>
+  /// <typeparam name="TStateType">Type of state to bind to.</typeparam>
+  internal sealed class WhenBinding<TStateType> : IWhenBinding<TStateType> {
     // Selected data bindings checkers registered with .Use()
     // These callbacks receive the current state, the previous state, the
     // selected data from the current state and the
@@ -292,21 +355,8 @@ public abstract partial class Logic<
       }
     }
 
-    /// <summary>
-    /// Use data from the state to invoke a method that receives the data. This
-    /// allows you to "select" data from a given type of state and invoke a
-    /// callback only when the selected data actually changes (as determined by
-    /// reference equality and the default equality comparer).
-    /// </summary>
-    /// <param name="data">Data to select from the state type
-    /// <typeparamref name="TStateType" />.</param>
-    /// <param name="to">Callback that receives the selected data and runs
-    /// only when the selected data has changed after a state update.</param>
-    /// <typeparam name="TSelectedData">Type of data to select from the state.
-    /// </typeparam>
-    /// <returns>The current when-binding clause so that you can continue to use
-    /// data from the state or register callbacks.</returns>
-    public WhenBinding<TStateType> Use<TSelectedData>(
+    /// <inheritdoc />
+    public IWhenBinding<TStateType> Use<TSelectedData>(
       Func<TStateType, TSelectedData> data, Action<TSelectedData> to
     ) where TSelectedData : notnull {
       var checker = (
@@ -345,15 +395,8 @@ public abstract partial class Logic<
       return this;
     }
 
-    /// <summary>
-    /// Register a callback to be invoked whenever the state changes to the
-    /// state type <typeparamref name="TStateType" />.
-    /// </summary>
-    /// <param name="callback">Callback invoked whenever the state changes to
-    /// the state type <typeparamref name="TStateType" />.</param>
-    /// <returns>The current when-binding clause so that you can continue to use
-    /// data from the state or register callbacks.</returns>
-    public WhenBinding<TStateType> Call(Action<TStateType> callback) {
+    /// <inheritdoc />
+    public IWhenBinding<TStateType> Call(Action<TStateType> callback) {
       var handler =
         (dynamic state, TState previous) => callback((TStateType)state);
 

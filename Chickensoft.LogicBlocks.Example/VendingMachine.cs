@@ -13,10 +13,10 @@ public partial class VendingMachine {
     public record VendingCompleted : Input;
   }
 
-  public abstract record State(Context Context) : StateLogic(Context) {
+  public abstract record State(IContext Context) : StateLogic(Context) {
     public record Idle : State,
       IGet<Input.SelectionEntered>, IGet<Input.PaymentReceived> {
-      public Idle(Context context) : base(context) {
+      public Idle(IContext context) : base(context) {
         OnEnter<Idle>((previous) => context.Output(
           new Output.ClearTransactionTimeOutTimer()
         ));
@@ -49,7 +49,7 @@ public partial class VendingMachine {
       public int AmountReceived { get; }
 
       public TransactionActive(
-        Context context, ItemType type, int price, int amountReceived
+        IContext context, ItemType type, int price, int amountReceived
       ) : base(context) {
         Type = type;
         Price = price;
@@ -95,7 +95,7 @@ public partial class VendingMachine {
       public record Started : TransactionActive,
         IGet<Input.SelectionEntered> {
         public Started(
-          Context context, ItemType type, int price, int amountReceived
+          IContext context, ItemType type, int price, int amountReceived
         ) : base(context, type, price, amountReceived) {
           OnEnter<Started>(
             (previous) => context.Output(new Output.TransactionStarted())
@@ -115,7 +115,7 @@ public partial class VendingMachine {
       }
 
       public record PaymentPending(
-        Context Context, ItemType Type, int Price, int AmountReceived
+        IContext Context, ItemType Type, int Price, int AmountReceived
       ) : TransactionActive(Context, Type, Price, AmountReceived);
     }
 
@@ -123,7 +123,7 @@ public partial class VendingMachine {
       public ItemType Type { get; }
       public int Price { get; }
 
-      public Vending(Context context, ItemType type, int price) :
+      public Vending(IContext context, ItemType type, int price) :
         base(context) {
         Type = type;
         Price = price;
@@ -171,7 +171,7 @@ public partial class VendingMachine :
     Set(stock);
   }
 
-  public override State GetInitialState(Context context)
+  public override State GetInitialState(IContext context)
     => new State.Idle(context);
 }
 

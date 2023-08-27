@@ -2,7 +2,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 [StateMachine]
 public class ToasterOven :
   LogicBlock<ToasterOven.Input, ToasterOven.State, ToasterOven.Output> {
-  public override State GetInitialState(Context context) =>
+  public override State GetInitialState(IContext context) =>
     new State.Toasting(context, 0);
 
   public record Input {
@@ -12,9 +12,9 @@ public class ToasterOven :
     public record StartToasting(int ToastColor) : Input;
   }
 
-  public abstract record State(Context Context) : StateLogic(Context) {
+  public abstract record State(IContext Context) : StateLogic(Context) {
     public record Heating : State, IGet<Input.OpenDoor> {
-      public Heating(Context context) : base(context) {
+      public Heating(IContext context) : base(context) {
         OnEnter<Heating>(
           (previous) => Context.Output(new Output.TurnHeaterOn())
         );
@@ -29,7 +29,7 @@ public class ToasterOven :
     public record Toasting : Heating, IGet<Input.StartBaking> {
       public int ToastColor { get; }
 
-      public Toasting(Context context, int toastColor) : base(context) {
+      public Toasting(IContext context, int toastColor) : base(context) {
         ToastColor = toastColor;
 
         OnEnter<Toasting>(
@@ -48,7 +48,7 @@ public class ToasterOven :
     public record Baking : Heating, IGet<Input.StartToasting> {
       public int Temperature { get; }
 
-      public Baking(Context context, int temperature) : base(context) {
+      public Baking(IContext context, int temperature) : base(context) {
         Temperature = temperature;
 
         OnEnter<Baking>(
@@ -65,7 +65,7 @@ public class ToasterOven :
     }
 
     public record DoorOpen : State, IGet<Input.CloseDoor> {
-      public DoorOpen(Context context) : base(context) {
+      public DoorOpen(IContext context) : base(context) {
         OnEnter<DoorOpen>(
           (previous) => Context.Output(new Output.TurnLampOn())
         );

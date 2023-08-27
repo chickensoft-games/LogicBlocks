@@ -15,12 +15,12 @@ public partial class FakeLogicBlockAsync {
     public record SelfInput(Input Input) : Input;
     public record InputCallback(
       Action Callback,
-      Func<Context, State> Next
+      Func<IContext, State> Next
     ) : Input;
-    public record Custom(Func<Context, State> Next) : Input;
+    public record Custom(Func<IContext, State> Next) : Input;
   }
 
-  public abstract record State(Context Context) : StateLogic(Context),
+  public abstract record State(IContext Context) : StateLogic(Context),
     IGet<Input.InputOne>,
     IGet<Input.InputTwo>,
     IGet<Input.InputThree>,
@@ -70,23 +70,23 @@ public partial class FakeLogicBlockAsync {
       return this;
     }
 
-    public record StateA(Context Context, int Value1, int Value2) :
+    public record StateA(IContext Context, int Value1, int Value2) :
       State(Context);
-    public record StateB(Context Context, string Value1, string Value2) :
+    public record StateB(IContext Context, string Value1, string Value2) :
       State(Context);
-    public record StateC(Context Context, string Value) :
+    public record StateC(IContext Context, string Value) :
       State(Context);
-    public record StateD(Context Context, string Value1, string Value2) :
+    public record StateD(IContext Context, string Value1, string Value2) :
       State(Context);
     public record Custom : State {
-      public Custom(Context context, Action<Context> setupCallback) :
+      public Custom(IContext context, Action<IContext> setupCallback) :
         base(context) {
         setupCallback(context);
       }
     }
 
     public record OnEnterState : State {
-      public OnEnterState(Context context, Func<State, Task> onEnter) :
+      public OnEnterState(IContext context, Func<State, Task> onEnter) :
         base(context) {
         OnEnter<OnEnterState>(onEnter);
       }
@@ -103,11 +103,11 @@ public partial class FakeLogicBlockAsync
   : LogicBlockAsync<
     FakeLogicBlockAsync.Input, FakeLogicBlockAsync.State, FakeLogicBlockAsync.Output
   > {
-  public Func<Context, State>? InitialState { get; init; }
+  public Func<IContext, State>? InitialState { get; init; }
 
   public List<Exception> Exceptions { get; } = new();
 
-  public override State GetInitialState(Context context) =>
+  public override State GetInitialState(IContext context) =>
     InitialState?.Invoke(context) ?? new State.StateA(context, 1, 2);
 
   private readonly Action<Exception>? _onError;

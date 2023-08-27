@@ -15,7 +15,7 @@ public partial class TestMachineReusableAsync :
     public record Deactivate() : Input;
   }
 
-  public abstract record State(Context Context) : StateLogic(Context),
+  public abstract record State(IContext Context) : StateLogic(Context),
     IGet<Input.Activate> {
     public async Task<State> On(Input.Activate input) {
       await Task.Delay(5);
@@ -28,7 +28,7 @@ public partial class TestMachineReusableAsync :
     }
 
     public abstract record Activated : State, IGet<Input.Deactivate> {
-      public Activated(Context context) : base(context) {
+      public Activated(IContext context) : base(context) {
         OnEnter<Activated>(
           async (previous) => {
             await Task.Delay(10);
@@ -47,7 +47,7 @@ public partial class TestMachineReusableAsync :
         Context.Get<Deactivated>();
 
       public record Blooped : Activated {
-        public Blooped(Context context) : base(context) {
+        public Blooped(IContext context) : base(context) {
           OnEnter<Blooped>(
             async (previous) => {
               await Task.Delay(10);
@@ -64,7 +64,7 @@ public partial class TestMachineReusableAsync :
       }
 
       public record Bopped : Activated {
-        public Bopped(Context context) : base(context) {
+        public Bopped(IContext context) : base(context) {
           OnEnter<Bopped>(
             async (previous) => {
               await Task.Delay(10);
@@ -82,7 +82,7 @@ public partial class TestMachineReusableAsync :
     }
 
     public record Deactivated : State {
-      public Deactivated(Context context) : base(context) {
+      public Deactivated(IContext context) : base(context) {
         OnEnter<Deactivated>(
           async (previous) => {
             await Task.Delay(20);
@@ -116,7 +116,7 @@ public partial class TestMachineReusableAsync :
     Set(new State.Deactivated(Context));
   }
 
-  public override State GetInitialState(Context context) =>
+  public override State GetInitialState(IContext context) =>
     context.Get<State.Deactivated>();
 }
 

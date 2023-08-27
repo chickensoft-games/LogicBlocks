@@ -16,10 +16,80 @@ using WeakEvent;
 /// <typeparam name="THandler">Input handler type.</typeparam>
 /// <typeparam name="TInputReturn">Input method return type.</typeparam>
 /// <typeparam name="TUpdate">Update callback type.</typeparam>
-public abstract partial class Logic<
+public partial interface ILogic<
   TInput, TState, TOutput, THandler, TInputReturn, TUpdate
 >
   where TInput : notnull
+  where TState : Logic<
+    TInput, TState, TOutput, THandler, TInputReturn, TUpdate
+  >.IStateLogic
+  where TOutput : notnull {
+  /// <summary>Current state of the logic block.</summary>
+  TState Value { get; }
+  /// <summary>
+  /// Whether or not the logic block is currently processing inputs.
+  /// </summary>
+  bool IsProcessing { get; }
+  /// <summary>Event invoked whenever an input is processed.</summary>
+  event EventHandler<TInput> OnInput;
+  /// <summary>Event invoked whenever the state is updated.</summary>
+  event EventHandler<TState> OnState;
+  /// <summary>
+  /// Event invoked whenever an output is produced by an input handler.
+  /// </summary>
+  event EventHandler<TOutput> OnOutput;
+  /// <summary>
+  /// Event invoked whenever an error occurs in a state's input handler.
+  /// </summary>
+  event EventHandler<Exception> OnError;
+  /// <summary>
+  /// Gets data from the blackboard.
+  /// </summary>
+  /// <typeparam name="TData">The type of data to retrieve.</typeparam>
+  /// <exception cref="KeyNotFoundException" />
+  TData Get<TData>() where TData : notnull;
+  /// <summary>
+  /// Returns the initial state of the logic block. Implementations must
+  /// override this to provide a valid initial state.
+  /// </summary>
+  /// <returns>Initial logic block state.</returns>
+  TState GetInitialState();
+
+  /// <summary>
+  /// Adds an input value to the logic block's internal input queue.
+  /// </summary>
+  /// <param name="input">Input to process.</param>
+  /// <typeparam name="TInputType">Type of the input.</typeparam>
+  /// <returns>Logic block input return value.</returns>
+  TInputReturn Input<TInputType>(TInputType input) where TInputType : TInput;
+
+  /// <summary>
+  /// Creates a binding to a logic block.
+  /// </summary>
+  /// <returns>Logic block binding.</returns>
+  Logic<
+    TInput, TState, TOutput, THandler, TInputReturn, TUpdate
+  >.IBinding Bind();
+}
+
+/// <summary>
+/// A logic block. Logic blocks are machines that receive input, maintain a
+/// single state, and produce outputs. They can be used as simple
+/// input-to-state reducers, or built upon to create hierarchical state
+/// machines.
+/// </summary>
+/// <typeparam name="TInput">Base input type.</typeparam>
+/// <typeparam name="TState">Base state type.</typeparam>
+/// <typeparam name="TOutput">Base output type.</typeparam>
+/// <typeparam name="THandler">Input handler type.</typeparam>
+/// <typeparam name="TInputReturn">Input method return type.</typeparam>
+/// <typeparam name="TUpdate">Update callback type.</typeparam>
+public abstract partial class Logic<
+  TInput, TState, TOutput, THandler, TInputReturn, TUpdate
+> :
+  ILogic<
+    TInput, TState, TOutput, THandler, TInputReturn, TUpdate
+  > where TInput : notnull
   where TState : Logic<
     TInput, TState, TOutput, THandler, TInputReturn, TUpdate
   >.IStateLogic
@@ -61,43 +131,36 @@ public abstract partial class Logic<
     TStateTypeA stateA, TStateTypeB stateB
   ) where TStateTypeA : TState where TStateTypeB : TState;
 
-  /// <summary>Event invoked whenever an input is processed.</summary>
+  /// <inheritdoc />
   public event EventHandler<TInput> OnInput {
     add => _inputEventSource.Subscribe(value);
     remove => _inputEventSource.Unsubscribe(value);
   }
 
-  /// <summary>Event invoked whenever the state is updated.</summary>
+  /// <inheritdoc />
   public event EventHandler<TState> OnState {
     add => _stateEventSource.Subscribe(value);
     remove => _stateEventSource.Unsubscribe(value);
   }
-
-  /// <summary>
-  /// Event invoked whenever an error occurs in an input handler.
-  /// </summary>
-  public event EventHandler<Exception> OnError {
-    add => _errorEventSource.Subscribe(value);
-    remove => _errorEventSource.Unsubscribe(value);
-  }
-
-  /// <summary>
-  /// Event invoked whenever an output is produced by an input handler.
-  /// </summary>
+  /// <inheritdoc />
   public event EventHandler<TOutput> OnOutput {
     add => _outputEventSource.Subscribe(value);
     remove => _outputEventSource.Unsubscribe(value);
   }
 
-  /// <summary>Current state of the logic block.</summary>
+  /// <inheritdoc />
+  public event EventHandler<Exception> OnError {
+    add => _errorEventSource.Subscribe(value);
+    remove => _errorEventSource.Unsubscribe(value);
+  }
+
+  /// <inheritdoc />
   public TState Value => _value ??= GetInitialState();
 
-  private TState? _value;
-
-  /// <summary>
-  /// Whether or not the logic block is currently processing inputs.
-  /// </summary>
+  /// <inheritdoc />
   public abstract bool IsProcessing { get; }
+
+  private TState? _value;
 
   private readonly Queue<PendingInput> _inputs = new();
   private readonly Dictionary<Type, dynamic> _blackboard = new();
@@ -118,19 +181,13 @@ public abstract partial class Logic<
   /// </summary>
   internal Logic() { }
 
-  /// <summary>
-  /// Returns the initial state of the logic block. Implementations must
-  /// override this to provide a valid initial state.
-  /// </summary>
-  /// <returns>Initial logic block state.</returns>
+  /// <inheritdoc />
+  public IBinding Bind() => new Binding(this);
+
+  /// <inheritdoc />
   public abstract TState GetInitialState();
 
-  /// <summary>
-  /// Adds an input value to the logic block's internal input queue.
-  /// </summary>
-  /// <param name="input">Input to process.</param>
-  /// <typeparam name="TInputType">Type of the input.</typeparam>
-  /// <returns>Logic block input return value.</returns>
+  /// <inheritdoc />
   public virtual TInputReturn Input<TInputType>(TInputType input)
     where TInputType : TInput {
     _inputs.Enqueue(
@@ -245,11 +302,7 @@ public abstract partial class Logic<
   internal void AnnounceInput(TInput input) =>
     _inputEventSource.Raise(this, input);
 
-  /// <summary>
-  /// Gets data from the blackboard.
-  /// </summary>
-  /// <typeparam name="TData">The type of data to retrieve.</typeparam>
-  /// <exception cref="KeyNotFoundException" />
+  /// <inheritdoc />
   public TData Get<TData>() where TData : notnull {
     var type = typeof(TData);
     return !_blackboard.TryGetValue(type, out var data)

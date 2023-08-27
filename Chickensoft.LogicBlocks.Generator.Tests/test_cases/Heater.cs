@@ -21,7 +21,7 @@ public class Heater :
     Set(tempSensor);
   }
 
-  public override State GetInitialState(Context context) =>
+  public override State GetInitialState(IContext context) =>
     new State.Off(context, 72.0);
 
   public abstract record Input {
@@ -31,23 +31,23 @@ public class Heater :
     public record AirTempSensorChanged(double AirTemp) : Input;
   }
 
-  public abstract record State(Context Context, double TargetTemp)
+  public abstract record State(IContext Context, double TargetTemp)
     : StateLogic(Context) {
     public record Off(
-      Context Context, double TargetTemp
+      IContext Context, double TargetTemp
     ) : State(Context, TargetTemp), IGet<Input.TurnOn> {
       State IGet<Input.TurnOn>.On(Input.TurnOn input) =>
         new Heating(Context, TargetTemp);
     }
 
-    public record Idle(Context Context, double TargetTemp) :
+    public record Idle(IContext Context, double TargetTemp) :
       State(Context, TargetTemp);
 
     public record Heating : State,
       IGet<Input.TurnOff>,
       IGet<Input.AirTempSensorChanged>,
       IGet<Input.TargetTempChanged> {
-      public Heating(Context context, double targetTemp) : base(
+      public Heating(IContext context, double targetTemp) : base(
         context, targetTemp
       ) {
         var tempSensor = context.Get<ITemperatureSensor>();

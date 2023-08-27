@@ -4,7 +4,7 @@ public partial class PartialLogic :
   LogicBlock<PartialLogic.Input, PartialLogic.State, PartialLogic.Output> {
   public abstract partial record State : StateLogic {
     public partial record A : State, IGet<Input.One> {
-      public A(Context context) : base(context) {
+      public A(IContext context) : base(context) {
         OnEnter<A>(
           (previous) => Context.Output(new Output.OutputEnterA())
         );
@@ -14,6 +14,6 @@ public partial class PartialLogic :
       }
     }
 
-    public record B(Context Context) : State(Context);
+    public record B(IContext Context) : State(Context);
   }
 }
