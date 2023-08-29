@@ -116,7 +116,9 @@ public partial class FakeLogicBlockAsync
     _onError = onError;
   }
 
+#pragma warning disable RCS1259
   ~FakeLogicBlockAsync() { }
+#pragma warning restore RCS1259
 
   protected override void HandleError(Exception e) {
     Exceptions.Add(e);

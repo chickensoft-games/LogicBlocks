@@ -5,30 +5,32 @@ using Moq;
 using Shouldly;
 using Xunit;
 
-public class SomeStateTest {
+public class SomeStateAsyncTest {
   [Fact]
-  public void HandlesSomeInput() {
-    var context = new Mock<MyLogicBlock.IContext>(MockBehavior.Strict);
-    var state = new MyLogicBlock.State.SomeState(context.Object);
+  public async Task HandlesSomeInput() {
+    var context = new Mock<MyLogicBlockAsync.IContext>(MockBehavior.Strict);
+    var state = new MyLogicBlockAsync.State.SomeState(context.Object);
 
     var someOutputs = 0;
     // Expect our state to output SomeOutput when SomeInput is received.
     context
-      .Setup(context => context.Output(new MyLogicBlock.Output.SomeOutput()))
+      .Setup(context => context.Output(
+        new MyLogicBlockAsync.Output.SomeOutput())
+      )
       .Callback(() => someOutputs++);
 
     // Perform the action we are testing on our state.
-    var result = state.On(new MyLogicBlock.Input.SomeInput());
+    var result = await state.On(new MyLogicBlockAsync.Input.SomeInput());
 
     // Make sure we got the next state.
-    result.ShouldBeOfType<MyLogicBlock.State.SomeOtherState>();
+    result.ShouldBeOfType<MyLogicBlockAsync.State.SomeOtherState>();
 
     // Create a special StateTester so we can run enter/exit callbacks.
-    var stateTester = MyLogicBlock.Test(state);
+    var stateTester = MyLogicBlockAsync.Test(state);
 
     // Simulate enter/exit callbacks
-    stateTester.Enter();
-    stateTester.Exit();
+    await stateTester.Enter();
+    await stateTester.Exit();
 
     // Make sure we got 3 outputs:
     // 1 from enter, 1 from input handler, and 1 from exit.

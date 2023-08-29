@@ -67,6 +67,14 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
   >.IStateLogic
   where TOutput : notnull {
   /// <summary>
+  /// Creates a new utility for testing the enter and exit callbacks on a state.
+  /// </summary>
+  /// <param name="state">State to be tested.</param>
+  /// <returns>A new state tester.</returns>
+  public static IStateTester Test(TState state) =>
+    new StateTester<TInput, TState, TOutput>(state);
+
+  /// <summary>
   /// The context provided to the states of the logic block.
   /// </summary>
   public new IContext Context { get; }

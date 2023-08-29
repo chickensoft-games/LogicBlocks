@@ -90,6 +90,15 @@ public abstract partial class LogicBlockAsync<TInput, TState, TOutput> :
   >.IStateLogic
   where TOutput : notnull {
   /// <summary>
+  /// Creates a new utility for testing the enter and exit callbacks
+  /// asynchronously on a state.
+  /// </summary>
+  /// <param name="state">State to be tested.</param>
+  /// <returns>A new state tester.</returns>
+  public static IStateTesterAsync Test(TState state) =>
+    new StateTesterAsync<TInput, TState, TOutput>(state);
+
+  /// <summary>
   /// The context provided to the states of the logic block.
   /// </summary>
   public new IContext Context { get; }
