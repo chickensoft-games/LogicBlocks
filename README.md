@@ -493,30 +493,47 @@ public partial class MyLogicBlock :
 
 ### 🧪 Testing
 
-You can mock a logic block, its bindings, and its context.
+You can mock a logic block, its bindings, and its context. Additionally, a `StateTester` and `StateTesterAsync` class is provided to allow you to manually trigger state enter and exit callbacks.
 
 - Mocking the context allows states to be tested in isolation.
 - Mocking the logic block itself and its bindings allows you to simulate a logic block's behavior so that objects using a logic block can be tested in isolation (i.e., unit tests).
 
 #### Testing LogicBlock Consumers
 
-Imagine you have an object that uses a logic block called [`MyLogicBlock`](Chickensoft.LogicBlocks.Tests/test/fixtures/MyLogicBlock.cs). We'll keep the object simple for the sake of example.
+Imagine you have an object named `MyObject` that uses a logic block called [`MyLogicBlock`](Chickensoft.LogicBlocks.Tests/test/fixtures/MyLogicBlock.cs).
+
+The object does two things: it registers a single binding to observe `SomeOutput` and has a method `DoSomething` that adds the `SomeInput` input to the logic block it uses.
 
 ```csharp
-public class MyObject {
+public class MyObject : IDisposable {
   public MyLogicBlock Logic { get; }
+  public MyLogicBlock.IBinding Binding { get; }
+
+  public bool SawSomeOutput { get; private set; }
 
   public MyObject(MyLogicBlock logic) {
     Logic = logic;
+    Binding = logic.Bind();
+
+    Binding.Handle<MyLogicBlock.Output.SomeOutput>(
+      (output) => SawSomeOutput = true
+    );
   }
 
   // Method we want to test
   public MyLogicBlock.State DoSomething() =>
     Logic.Input(new MyLogicBlock.Input.SomeInput());
+
+  public void Dispose() {
+    Binding.Dispose();
+    GC.SuppressFinalize(this);
+  }
 }
 ```
 
 To write a unit test for `MyObject`, we need to mock its dependencies and then verify that it interacts with the dependencies in the way we expect. In this case, the only dependency is the logic block. We can mock it in the same way we mock other objects.
+
+Finally, we can use Moq's `Callback` method to capture the binding functions and invoke them from a test to ensure that every part of `MyObject` is tested thoroughly.
 
 ```csharp
 using Moq;
@@ -533,7 +550,10 @@ public class MyObjectTest {
     var logic = new Mock<MyLogicBlock>();
     var context = new Mock<MyLogicBlock.IContext>();
 
-    var myObject = new MyObject(logic.Object);
+    var binding = new Mock<MyLogicBlock.IBinding>();
+    logic.Setup(logic => logic.Bind()).Returns(binding.Object);
+
+    using var myObject = new MyObject(logic.Object);
 
     // Create a state that we expect to be returned.
     var expectedState = new MyLogicBlock.State.SomeState(context.Object);
@@ -552,6 +572,37 @@ public class MyObjectTest {
     // Verify that the method invoked our logic block as expected.
     logic.VerifyAll();
   }
+
+  [Fact]
+  public void ListensForSomeOutput() {
+    var logic = new Mock<MyLogicBlock>();
+    var context = new Mock<MyLogicBlock.IContext>();
+    var binding = new Mock<MyLogicBlock.IBinding>();
+
+    // Return mocked binding so we can test binding handlers manually.
+    logic.Setup(logic => logic.Bind()).Returns(binding.Object);
+
+    var output = new MyLogicBlock.Output.SomeOutput();
+    Action<MyLogicBlock.Output.SomeOutput> handler = (output) => { };
+
+    // Capture the binding handler so we can test it.
+    binding
+      .Setup(binding => binding.Handle(
+        It.IsAny<Action<MyLogicBlock.Output.SomeOutput>>()
+      ))
+      .Returns(binding.Object)
+      .Callback<Action<MyLogicBlock.Output.SomeOutput>>(
+        action => handler = action
+      );
+
+    using var myObject = new MyObject(logic.Object);
+
+    // Test the binding handler.
+    handler(output);
+
+    binding.VerifyAll();
+    myObject.SawSomeOutput.ShouldBeTrue();
+  }
 }
 ```
 
@@ -561,23 +612,31 @@ We can also test that our logic block states work the way we intend them to work
 
 Imagine we want to test the state `SomeState` on `MyLogicBlock`.
 
-For reference, here is the definition of `SomeState`. It receives `SomeInput`, outputs `SomeOutput`, and transitions to `SomeOtherState`.
+For reference, here is the definition of `SomeState`. When it's entered and exited, it outputs the output `SomeOutput`. In addition, when it receives the `SomeInput` input it also outputs `SomeOutput` again and transitions to `SomeOtherState`.
 
 ```csharp
 // ...
-public record SomeState(IContext Context) : State(Context),
-  IGet<Input.SomeInput> {
+public record SomeState : State, IGet<Input.SomeInput> {
+  public SomeState(IContext context) : base(context) {
+    OnEnter<SomeState>(
+      (previous) => context.Output(new Output.SomeOutput())
+    );
+    OnExit<SomeState>(
+      (previous) => context.Output(new Output.SomeOutput())
+    );
+  }
 
   public State On(Input.SomeInput input) {
     Context.Output(new Output.SomeOutput());
     return new SomeOtherState(Context);
   }
-
 }
 // ...
 ```
 
-To test it, we simply need to mock the logic block context and verify that it is called the way we expect it to be called.
+To test it, we need to mock the logic block context and verify that it is called the way we expect it to be called.
+
+To test the enter and exit callbacks, we need to use the included `StateTester` class that allows us to trigger the state's enter and exit callbacks manually with a mock context.
 
 ```csharp
 using Moq;
@@ -587,22 +646,37 @@ using Xunit;
 public class SomeStateTest {
   [Fact]
   public void HandlesSomeInput() {
-    var context = new Mock<MyLogicBlock.IContext>();
+    var context = new Mock<MyLogicBlock.IContext>(MockBehavior.Strict);
     var state = new MyLogicBlock.State.SomeState(context.Object);
 
+    var someOutputs = 0;
     // Expect our state to output SomeOutput when SomeInput is received.
     context
-      .Setup(context => context.Output(new MyLogicBlock.Output.SomeOutput()));
+      .Setup(context => context.Output(new MyLogicBlock.Output.SomeOutput()))
+      .Callback(() =>
+      someOutputs++
+    );
 
     // Perform the action we are testing on our state.
     var result = state.On(new MyLogicBlock.Input.SomeInput());
 
+    // Make sure we got the next state.
+    result.ShouldBeOfType<MyLogicBlock.State.SomeOtherState>();
+
+    // Create a special StateTester so we can run enter/exit callbacks.
+    var stateTester = MyLogicBlock.Test(state);
+
+    // Simulate enter/exit callbacks
+    stateTester.Enter();
+    stateTester.Exit();
+
+    // Make sure we got 3 outputs:
+    // 1 from enter, 1 from input handler, and 1 from exit.
+    someOutputs.ShouldBe(3);
+
     // Make sure the output we expected was produced by ensuring our mock
     // context was called the same way we set it up.
     context.VerifyAll();
-
-    // Make sure we got the next state.
-    result.ShouldBeOfType<MyLogicBlock.State.SomeOtherState>();
   }
 }
 ```

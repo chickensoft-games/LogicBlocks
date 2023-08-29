@@ -41,6 +41,7 @@
     "Linq",
     "methodcoverage",
     "missingall",
+    "Moq's",
     "msbuild",
     "MSYS",
     "nameof",

@@ -15,7 +15,10 @@ public class MyObjectTest {
     var logic = new Mock<MyLogicBlock>();
     var context = new Mock<MyLogicBlock.IContext>();
 
-    var myObject = new MyObject(logic.Object);
+    var binding = new Mock<MyLogicBlock.IBinding>();
+    logic.Setup(logic => logic.Bind()).Returns(binding.Object);
+
+    using var myObject = new MyObject(logic.Object);
 
     // Create a state that we expect to be returned.
     var expectedState = new MyLogicBlock.State.SomeState(context.Object);
@@ -33,5 +36,36 @@ public class MyObjectTest {
 
     // Verify that the method invoked our logic block as expected.
     logic.VerifyAll();
+  }
+
+  [Fact]
+  public void ListensForSomeOutput() {
+    var logic = new Mock<MyLogicBlock>();
+    var context = new Mock<MyLogicBlock.IContext>();
+    var binding = new Mock<MyLogicBlock.IBinding>();
+
+    // Return mocked binding so we can test binding handlers manually.
+    logic.Setup(logic => logic.Bind()).Returns(binding.Object);
+
+    var output = new MyLogicBlock.Output.SomeOutput();
+    Action<MyLogicBlock.Output.SomeOutput> handler = (output) => { };
+
+    // Capture the binding handler so we can test it.
+    binding
+      .Setup(binding => binding.Handle(
+        It.IsAny<Action<MyLogicBlock.Output.SomeOutput>>()
+      ))
+      .Returns(binding.Object)
+      .Callback<Action<MyLogicBlock.Output.SomeOutput>>(
+        action => handler = action
+      );
+
+    using var myObject = new MyObject(logic.Object);
+
+    // Test the binding handler.
+    handler(output);
+
+    binding.VerifyAll();
+    myObject.SawSomeOutput.ShouldBeTrue();
   }
 }
