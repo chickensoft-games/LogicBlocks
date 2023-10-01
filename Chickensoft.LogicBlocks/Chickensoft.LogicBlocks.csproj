@@ -13,8 +13,8 @@
     <DebugType>portable</DebugType>
 
     <Title>LogicBlocks</Title>
-    <Version>2.4.0</Version>
-    <Description>State management in a box.</Description>
+    <Version>2.4.1</Version>
+    <Description>Human-friendly, hierarchical state machines for games and apps in C#.</Description>
     <Copyright>© 2023 Chickensoft</Copyright>
     <Authors>Chickensoft</Authors>
     <Company>Chickensoft</Company>

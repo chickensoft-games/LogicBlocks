@@ -11,8 +11,8 @@
     <NoWarn>NU5128</NoWarn>
 
     <Title>LogicBlocks Generator</Title>
-    <Version>2.4.0</Version>
-    <Description></Description>
+    <Version>2.4.1</Version>
+    <Description>See what your hierarchical state machine code looks like as a diagram!</Description>
     <Copyright>© 2023 Chickensoft Games</Copyright>
     <Authors>Chickensoft</Authors>
     <Company>Chickensoft</Company>
@@ -26,7 +26,7 @@
     <PackageProjectUrl>https://github.com/chickensoft-games/LogicBlocks</PackageProjectUrl>
 
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/chickensoft-games/LogicBlocks</RepositoryUrl>
+    <RepositoryUrl>git@github.com:chickensoft-games/LogicBlocks.git</RepositoryUrl>
 
   </PropertyGroup>
 

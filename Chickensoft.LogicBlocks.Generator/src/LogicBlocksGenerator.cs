@@ -31,7 +31,7 @@ public class LogicBlocksGenerator :
     // the source generator process is started by running `dotnet build` in
     // the project consuming the source generator
     //
-    Debugger.Launch();
+    // Debugger.Launch();
 
     // Add post initialization sources
     // (source code that is always generated regardless)
