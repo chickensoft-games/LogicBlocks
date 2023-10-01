@@ -2,7 +2,7 @@
 
 [![Chickensoft Badge][chickensoft-badge]][chickensoft-website] [![Discord][discord-badge]][discord] [![Read the docs][read-the-docs-badge]][docs] ![line coverage][line-coverage] ![branch coverage][branch-coverage]
 
-Human-friendly state management for games and apps in C#.
+Human-friendly, hierarchical state machines for games and apps in C#.
 
 ---
 
@@ -772,7 +772,7 @@ Conceptually, logic blocks draw from a number of inspirations:
 
   Outputs provide a way of communicating with the world outside the logic block without introducing strong coupling between the logic block and whatever is listening to it (like a game engine component or a view).
 
-  Logic block states can also use normal object-oriented programming patterns like inheritance and composition to recreate the nested or hierarchical nature of state charts.
+  Logic block states can also use normal object-oriented programming patterns like inheritance and composition to recreate the nested or hierarchical nature of statecharts.
 
 - 🧊 [Bloc][bloc]
 
