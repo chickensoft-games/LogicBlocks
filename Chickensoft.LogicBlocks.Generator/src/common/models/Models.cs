@@ -12,24 +12,23 @@ using Chickensoft.SourceGeneratorUtils;
 /// <param name="Id">Fully qualified name of the type.</param>
 /// <param name="Name">Declared name of the type.</param>
 /// <param name="BaseId">Fully qualified name of the base type.</param>
-/// <param name="InputToStates">Map of input id's to the states transitioned
-/// to by that input's handler.</param>
-/// <param name="Outputs">Output id's keyed by where the output can be produced.
-/// </param>
 /// <param name="Children">State graph child nodes.</param>
 public sealed record LogicBlockGraph(
   string Id,
   string Name,
   string BaseId,
-  Dictionary<string, ImmutableHashSet<string>> InputToStates,
-  Dictionary<IOutputContext, ImmutableHashSet<LogicBlockOutput>> Outputs,
   List<LogicBlockGraph> Children
 ) {
+  /// <summary>
+  /// Logic block graph data (inputs, input to state mappings, and outputs).
+  /// </summary>
+  public LogicBlockGraphData Data { get; set; } = default!;
+
   public LogicBlockGraph(
     string id,
     string name,
     string baseId
-  ) : this(id, name, baseId, new(), new(), new()) { }
+  ) : this(id, name, baseId, new()) { }
 
   public string UmlId => Id
     .Replace("global::", "")
@@ -73,7 +72,6 @@ public sealed record LogicBlockImplementation(
   string Name,
   ImmutableHashSet<string> InitialStateIds,
   LogicBlockGraph Graph,
-  ImmutableDictionary<string, LogicBlockSubclass> Inputs,
   ImmutableDictionary<string, LogicBlockGraph> StatesById
 ) {
   public bool Equals(LogicBlockImplementation? other) {
@@ -81,8 +79,7 @@ public sealed record LogicBlockImplementation(
       return false;
     }
 
-    return Id == other.Id && Name == other.Name && Graph.Equals(other.Graph) &&
-      Inputs.SequenceEqual(other.Inputs);
+    return Id == other.Id && Name == other.Name && Graph.Equals(other.Graph);
   }
 
   public override int GetHashCode() => Id.GetHashCode();
@@ -94,6 +91,7 @@ public record LogicBlockSubclass(
   string BaseId
 );
 
+public record LogicBlockInput(string Id, string Name);
 public record LogicBlockOutput(string Id, string Name);
 
 public interface ILogicBlockResult { }
@@ -102,9 +100,11 @@ public record LogicBlockOutputResult(
   string FilePath, string Name, string Content
 ) : ILogicBlockResult;
 
-public record StatesAndOutputs(
+public record LogicBlockGraphData(
+  ImmutableDictionary<string, LogicBlockInput> Inputs,
   ImmutableDictionary<string, ImmutableHashSet<string>> InputToStates,
-  ImmutableDictionary<IOutputContext, ImmutableHashSet<LogicBlockOutput>> Outputs
+  ImmutableDictionary<IOutputContext, ImmutableHashSet<LogicBlockOutput>>
+    Outputs
 );
 
 public interface IOutputContext {

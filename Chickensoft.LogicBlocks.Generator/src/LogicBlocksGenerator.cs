@@ -189,8 +189,6 @@ public class LogicBlocksGenerator :
       return null;
     }
 
-    var inputs = GetSubclassesById(symbol, inputBaseType);
-
     var stateSubtypes = CodeService.GetAllTypes(
       stateBaseType,
       (type) => CodeService.GetAllBaseTypes(type).Any(
@@ -305,15 +303,9 @@ public class LogicBlocksGenerator :
     }
 
     foreach (var state in stateGraphsById.Values) {
-      var statesAndOutputs = GetStatesAndOutputs(
+      state.Data = GetStateGraphData(
         stateTypesById[state.Id], model, token, stateBaseType
       );
-      foreach (var pair in statesAndOutputs.InputToStates) {
-        state.InputToStates[pair.Key] = pair.Value;
-      }
-      foreach (var outputSet in statesAndOutputs.Outputs) {
-        state.Outputs.Add(outputSet.Key, outputSet.Value);
-      }
     }
 
     var implementation = new LogicBlockImplementation(
@@ -322,12 +314,10 @@ public class LogicBlocksGenerator :
       Name: symbol.Name,
       InitialStateIds: initialStateIds.ToImmutableHashSet(),
       Graph: root,
-      Inputs: inputs.ToImmutableDictionary(),
       StatesById: stateGraphsById.ToImmutableDictionary()
     );
 
     Log.Print("Graph: " + implementation.Graph);
-    Log.Print("Inputs: " + string.Join(",", implementation.Inputs));
 
     return implementation;
   }
@@ -342,15 +332,19 @@ public class LogicBlocksGenerator :
     var graph = implementation.Graph;
 
     var transitions = new List<string>();
-    foreach (var stateId in implementation.StatesById.OrderBy(id => id.Key)) {
+    foreach (
+      var stateId in implementation.StatesById.OrderBy(id => id.Key)
+    ) {
       var state = stateId.Value;
-      foreach (var inputToStates in state.InputToStates.OrderBy(id => id.Key)) {
+      foreach (
+        var inputToStates in state.Data.InputToStates.OrderBy(id => id.Key)
+      ) {
         var inputId = inputToStates.Key;
         foreach (var destStateId in inputToStates.Value.OrderBy(id => id)) {
           var dest = implementation.StatesById[destStateId];
           transitions.Add(
             $"{state.UmlId} --> " +
-            $"{dest.UmlId} : {implementation.Inputs[inputId].Name}"
+            $"{dest.UmlId} : {state.Data.Inputs[inputId].Name}"
           );
         }
       }
@@ -393,7 +387,7 @@ public class LogicBlocksGenerator :
     var lines = new List<string>();
 
     var isMultilineState = graph.Children.Count > 0 ||
-      graph.Outputs.Count > 0;
+      graph.Data.Outputs.Count > 0;
 
     var isRoot = graph == impl.Graph;
 
@@ -421,9 +415,10 @@ public class LogicBlocksGenerator :
     }
 
     foreach (
-      var outputContext in graph.Outputs.Keys.OrderBy(key => key.DisplayName)
+      var outputContext in
+        graph.Data.Outputs.Keys.OrderBy(key => key.DisplayName)
     ) {
-      var outputs = graph.Outputs[outputContext]
+      var outputs = graph.Data.Outputs[outputContext]
         .Select(output => output.Name)
         .OrderBy(output => output);
       var line = string.Join(", ", outputs);
@@ -463,7 +458,7 @@ public class LogicBlocksGenerator :
     return subclasses;
   }
 
-  public StatesAndOutputs GetStatesAndOutputs(
+  public LogicBlockGraphData GetStateGraphData(
       INamedTypeSymbol type,
       SemanticModel model,
       CancellationToken token,
@@ -471,6 +466,8 @@ public class LogicBlocksGenerator :
     ) {
     // type is the state type
 
+    var inputsBuilder = ImmutableDictionary
+      .CreateBuilder<string, LogicBlockInput>();
     var inputToStatesBuilder = ImmutableDictionary
       .CreateBuilder<string, ImmutableHashSet<string>>();
     var outputsBuilder = ImmutableDictionary
@@ -557,6 +554,11 @@ public class LogicBlocksGenerator :
           );
         }
 
+        inputsBuilder.Add(
+          inputId,
+          new LogicBlockInput(Id: inputId, Name: inputType.Name)
+        );
+
         inputToStatesBuilder.Add(
           inputId,
           returnTypeVisitor.ReturnTypes
@@ -592,6 +594,8 @@ public class LogicBlocksGenerator :
       }
     }
 
+    var inputs = inputsBuilder.ToImmutable();
+
     var inputToStates = inputToStatesBuilder.ToImmutable();
 
     foreach (var input in inputToStates.Keys) {
@@ -605,7 +609,8 @@ public class LogicBlocksGenerator :
 
     var outputs = outputsBuilder.ToImmutable();
 
-    return new StatesAndOutputs(
+    return new LogicBlockGraphData(
+      Inputs: inputs,
       InputToStates: inputToStates,
       Outputs: outputs
     );
