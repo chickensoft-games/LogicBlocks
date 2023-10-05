@@ -3,7 +3,6 @@ namespace Chickensoft.LogicBlocks.Generator;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -191,7 +190,6 @@ public class LogicBlocksGenerator :
     }
 
     var inputs = GetSubclassesById(symbol, inputBaseType);
-    var outputs = GetSubclassesById(symbol, outputBaseType);
 
     var stateSubtypes = CodeService.GetAllTypes(
       stateBaseType,
@@ -325,13 +323,11 @@ public class LogicBlocksGenerator :
       InitialStateIds: initialStateIds.ToImmutableHashSet(),
       Graph: root,
       Inputs: inputs.ToImmutableDictionary(),
-      Outputs: outputs.ToImmutableDictionary(),
       StatesById: stateGraphsById.ToImmutableDictionary()
     );
 
-    Log.Print("Graph: " + implementation.Graph.ToString());
+    Log.Print("Graph: " + implementation.Graph);
     Log.Print("Inputs: " + string.Join(",", implementation.Inputs));
-    Log.Print("Outputs: " + string.Join(",", implementation.Outputs));
 
     return implementation;
   }
@@ -428,7 +424,7 @@ public class LogicBlocksGenerator :
       var outputContext in graph.Outputs.Keys.OrderBy(key => key.DisplayName)
     ) {
       var outputs = graph.Outputs[outputContext]
-        .Select(outputId => impl.Outputs[outputId].Name)
+        .Select(output => output.Name)
         .OrderBy(output => output);
       var line = string.Join(", ", outputs);
       lines.Add(
@@ -440,10 +436,10 @@ public class LogicBlocksGenerator :
     return lines;
   }
 
-  private Dictionary<string, ILogicBlockSubclass> GetSubclassesById(
+  private Dictionary<string, LogicBlockSubclass> GetSubclassesById(
     INamedTypeSymbol containerType, INamedTypeSymbol ancestorType
   ) {
-    var subclasses = new Dictionary<string, ILogicBlockSubclass>();
+    var subclasses = new Dictionary<string, LogicBlockSubclass>();
     var typesToSearch = CodeService.GetSubtypesExtending(
         containerType, ancestorType
       ).ToImmutableArray();
@@ -478,7 +474,7 @@ public class LogicBlocksGenerator :
     var inputToStatesBuilder = ImmutableDictionary
       .CreateBuilder<string, ImmutableHashSet<string>>();
     var outputsBuilder = ImmutableDictionary
-      .CreateBuilder<IOutputContext, ImmutableHashSet<string>>();
+      .CreateBuilder<IOutputContext, ImmutableHashSet<LogicBlockOutput>>();
 
     // Get all of the handled inputs by looking at the implemented input
     // handler interfaces.

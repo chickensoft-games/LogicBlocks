@@ -26,7 +26,7 @@ public abstract partial class Logic<
     /// Produces a logic block output value.
     /// </summary>
     /// <param name="output">Output value.</param>
-    void Output(TOutput output);
+    void Output(in TOutput output);
     /// <summary>
     /// Gets a value from the logic block's blackboard.
     /// </summary>
@@ -65,7 +65,7 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public void Output(TOutput output) => Logic.OutputValue(output);
+    public void Output(in TOutput output) => Logic.OutputValue(in output);
 
     /// <inheritdoc />
     public TDataType Get<TDataType>() where TDataType : notnull =>

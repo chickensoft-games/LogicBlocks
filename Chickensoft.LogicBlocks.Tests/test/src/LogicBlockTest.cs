@@ -33,7 +33,7 @@ public class LogicBlockTest {
     var called = 0;
     var input = new FakeLogicBlock.Input.InputOne(2, 3);
 
-    void handler(object? block, FakeLogicBlock.Input input) {
+    void handler(FakeLogicBlock.Input input) {
       input.ShouldBe(input);
       called++;
     }
@@ -56,7 +56,7 @@ public class LogicBlockTest {
     var called = 0;
     var output = new FakeLogicBlock.Output.OutputOne(2);
 
-    void handler(object? block, FakeLogicBlock.Output output) {
+    void handler(object output) {
       output.ShouldBe(output);
       called++;
     }
@@ -80,7 +80,7 @@ public class LogicBlockTest {
     var called = 0;
     var state = new FakeLogicBlock.State.StateA(context, 2, 3);
 
-    void handler(object? block, FakeLogicBlock.State state) {
+    void handler(FakeLogicBlock.State state) {
       state.ShouldBe(state);
       called++;
     }
@@ -101,7 +101,7 @@ public class LogicBlockTest {
 
     var called = 0;
 
-    void handler(object? _, Exception e) => called++;
+    void handler(Exception e) => called++;
 
     block.OnError += handler;
 
@@ -150,9 +150,9 @@ public class LogicBlockTest {
     var logic = new TestMachine();
     var context = new TestMachine.Context(logic);
 
-    var outputs = new List<TestMachine.Output>();
+    var outputs = new List<object>();
 
-    void onOutput(object? block, TestMachine.Output output) =>
+    void onOutput(object output) =>
       outputs.Add(output);
 
     logic.OnOutput += onOutput;
@@ -201,10 +201,9 @@ public class LogicBlockTest {
     var logic = new TestMachineReusable();
     var context = logic.Context;
 
-    var outputs = new List<TestMachineReusable.Output>();
+    var outputs = new List<object>();
 
-    void onOutput(object? block, TestMachineReusable.Output output) =>
-      outputs.Add(output);
+    void onOutput(object output) => outputs.Add(output);
 
     logic.OnOutput += onOutput;
 
@@ -270,7 +269,7 @@ public class LogicBlockTest {
 
     var called = 0;
 
-    void handler(object? _, Exception e) => called++;
+    void handler(Exception e) => called++;
 
     block.OnError += handler;
 
@@ -306,5 +305,31 @@ public class LogicBlockTest {
     logic.Input(new FakeLogicBlock.Input.SelfInput(input));
 
     logic.Value.ShouldBeOfType<FakeLogicBlock.State.StateA>();
+  }
+
+  [Fact]
+  public void StartsManuallyAndIgnoresStartWhenProcessing() {
+    var enterCalled = 0;
+    var block = new FakeLogicBlock() {
+      InitialState = (context) =>
+        new FakeLogicBlock.State.OnEnterState(
+          context, (previous) => enterCalled++
+        )
+    };
+
+    // LogicBlocks shouldn't call entrance handlers for the initial state.
+    enterCalled.ShouldBe(0);
+
+    block.Start();
+    enterCalled.ShouldBe(1);
+
+    var context = new FakeLogicBlock.Context(block);
+    var value = block.Input(new FakeLogicBlock.Input.InputCallback(
+      () =>         // This gets run from the input handler of InputCallback.
+        block.Start(),
+      (context) => new FakeLogicBlock.State.StateA(context, 2, 3)
+    ));
+
+    enterCalled.ShouldBe(1);
   }
 }

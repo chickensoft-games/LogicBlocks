@@ -23,8 +23,11 @@ Logic blocks allow developers to define self-contained states that read like ord
 Here is a minimal example. More ✨ advanced ✨ examples are linked below.
 
 ```csharp
+using Chickensoft.LogicBlocks;
+using Chickensoft.LogicBlocks.Generator;
+
 [StateMachine]
-public class LightSwitch : LogicBlock<LightSwitch.Input, LightSwitch.State, LightSwitch.Output> {
+public class LightSwitch : LogicBlock<LightSwitch.Input, LightSwitch.State> {
   public override State GetInitialState(IContext context) =>
     new State.Off(context);
 
@@ -41,8 +44,6 @@ public class LightSwitch : LogicBlock<LightSwitch.Input, LightSwitch.State, Ligh
       State IGet<Input.Toggle>.On(Input.Toggle input) => new On(Context);
     }
   }
-
-  public abstract record Output { }
 }
 ```
 
@@ -176,8 +177,7 @@ Inside of the class, we need to define a base input type, state type, and output
 
 ```csharp
 [StateMachine]
-public class Heater :
-  LogicBlock<Heater.Input, Heater.State, Heater.Output> {
+public class Heater : LogicBlock<Heater.Input, Heater.State> {
     public abstract record Input { }
     public abstract record State(IContext Context) : StateLogic(Context) {
       
@@ -294,7 +294,7 @@ We're just about done with our LogicBlock — all we need to do is define the in
 ```csharp
 [StateMachine]
 public class Heater :
-  LogicBlock<Heater.Input, Heater.State, Heater.Output> {
+  LogicBlock<Heater.Input, Heater.State> {
 
   public Heater(ITemperatureSensor tempSensor) {
     // Make sure states can access the temperature sensor.
@@ -393,8 +393,8 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 using Chickensoft.LogicBlocks.Generator;
 
 [StateMachine]
-public partial class MyLogicBlock :
-  LogicBlock<MyLogicBlock.Input, MyLogicBlock.State, MyLogicBlock.Output> {
+public partial class MyLogicBlock : 
+LogicBlock<MyLogicBlock.Input, MyLogicBlock.State> {
   public abstract record Input { ... }
   public abstract record State(IContext Context) : StateLogic(Context) { ... }
   public abstract record Output { ... }
@@ -421,26 +421,36 @@ public partial class MyLogicBlock :
 
 ### 🎤 Events
 
-You can manually subscribe to a logic block's events if you need total control of a logic block. Manually subscribing to events can allow you to create a custom binding system or monitor inputs, outputs, and errors.
-
-LogicBlocks uses the [`WeakEvent`][weak-event] library to avoid memory leaks when subscribing to events. As a best practice, you should still unsubscribe to events when you're done, but if you miss one accidentally it shouldn't cause a memory leak.
-
-The first event parameter is always an `object?` that is actually a reference to the logic block firing the event, so casting it to the type of your logic block is perfectly safe. Meanwhile, the second parameter is the data from the event.
+You can manually subscribe to a logic block's events if you need total control of a logic block. Manually subscribing to events can allow you to create a custom binding system or other such system which can watch inputs, handle outputs, and catch errors.
 
 ```csharp
 var logic = new MyLogicBlock();
 
-logic.OnInput += (object? logicBlock, MyLogicBlock.Input input) =>
+logic.OnInput += OnInput;
+logic.OnState += OnState;
+logic.OnOutput += OnOutput;
+logic.OnError += OnError;
+
+public void OnInput(MyLogicBlock.Input input) =>
   Console.WriteLine($"Input being processed: {input}");
 
-logic.OnState += (object? logicBlock, MyLogicBlock.State state) =>
+public void OnState(MyLogicBlock.State state) =>
   Console.WriteLine($"State changed: {state}");
 
-logic.OnOutput += (object? logicBlock, MyLogicBlock.Output output) =>
+public void OnOutput(object output) =>
   Console.WriteLine($"Output: {output}");
 
-logic.OnError += (object? logicBlock, Exception error) =>
+public void OnError(Exception error) =>
   Console.WriteLine($"Error occurred: {error}");
+```
+
+As with any C# events, be sure to unsubscribe when you're done listening to the logic block to avoid creating a memory leak.
+
+```csharp
+logic.OnInput -= OnInput;
+logic.OnState -= OnState;
+logic.OnOutput -= OnOutput;
+logic.OnError -= OnError;
 ```
 
 ### 📛 Error Handling
@@ -475,10 +485,7 @@ using Chickensoft.LogicBlocks.Generator;
 
 [StateMachine]
 public partial class MyLogicBlock :
-  LogicBlock<MyLogicBlock.Input, MyLogicBlock.State, MyLogicBlock.Output> {
-  public abstract record Input { ... }
-  public abstract record State(IContext Context) : StateLogic(Context) { ... }
-  public abstract record Output { ... }
+LogicBlock<MyLogicBlock.Input, MyLogicBlock.State> {
 
   ...
 
@@ -488,7 +495,40 @@ public partial class MyLogicBlock :
     // Or you can stop execution on any exception that occurs inside a state.
     throw e; 
   }
+
+  ...
 }
+```
+
+### 💥 Initial State Side Effects
+
+By default, LogicBlocks doesn't invoke any `OnEnter` callbacks registered by the initial state, for a couple of reasons:
+
+- The state property lazily creates the initial state the first time it is accessed. This allows the LogicBlocks API to be more ergonomic. If the state wasn't initialized lazily, the base LogicBlock constructor would have to set the first state before you have a chance to add anything to the logic block's blackboard, which make it hard to create states that have blackboard dependencies.
+- The `Value` property of logic blocks is synchronous, and async logic blocks need to await the invocation of each registered enter callback. Otherwise, you'd end up with tasks out in the ether that no one is watching over.
+- In many scenarios, you don't actually want to trigger the side effects of the initial state since it represents the default start state, and any bindings that get invoked as a result would just be updating redundant values.
+
+That being said, **there are plenty of times when you *do* want to run the entrance callbacks for the initial state because you *do* want the bindings to trigger**.
+
+To that end, LogicBlocks provides a simple `Start` method that will trigger the initial state's entrance callbacks (or, technically speaking, the entrance callbacks of the current state).
+
+```csharp
+var logic = new MyLogicBlock();
+var binding = logic.Bind();
+binding.Handle<MyLogicBlock.Output.SomeOutput>(
+  (output) => { ... }
+);
+
+// Run initial state's entrance callbacks. Essentially, this forces any 
+// relevant bindings to run in response to the first state, ensuring that 
+// whatever is consuming the logic block is in-sync with the initial state.
+logic.Start();
+```
+
+Or, in the case of an async logic block:
+
+```csharp
+await logic.Start();
 ```
 
 ### 🧪 Testing
@@ -496,7 +536,7 @@ public partial class MyLogicBlock :
 You can mock a logic block, its bindings, and its context. Additionally, a `StateTester` and `StateTesterAsync` class is provided to allow you to manually trigger state enter and exit callbacks.
 
 - Mocking the context allows states to be tested in isolation.
-- Mocking the logic block itself and its bindings allows you to simulate a logic block's behavior so that objects using a logic block can be tested in isolation (i.e., unit tests).
+- Mocking the logic block itself and its bindings allows you to simulate a logic block's behavior so that objects using a logic block can be tested in isolation.
 
 #### Testing LogicBlock Consumers
 
@@ -652,10 +692,9 @@ public class SomeStateTest {
     var someOutputs = 0;
     // Expect our state to output SomeOutput when SomeInput is received.
     context
-      .Setup(context => context.Output(new MyLogicBlock.Output.SomeOutput()))
-      .Callback(() =>
-      someOutputs++
-    );
+      .Setup(context => context.Output(
+        It.Ref<MyLogicBlock.Output.SomeOutput>.IsAny
+      )).Callback(() => someOutputs++);
 
     // Perform the action we are testing on our state.
     var result = state.On(new MyLogicBlock.Input.SomeInput());
@@ -693,8 +732,7 @@ To instruct the LogicBlocks generator to create a UML state diagram for your cod
 
 ```csharp
 [StateMachine]
-public class LightSwitch :
-  LogicBlock<LightSwitch.Input, LightSwitch.State, LightSwitch.Output> {
+public class LightSwitch : LogicBlock<LightSwitch.Input, LightSwitch.State> {
 ```
 
 > The `[StateMachine]` attribute code is automatically injected by the source generator.
@@ -808,4 +846,3 @@ Conceptually, logic blocks draw from a number of inspirations:
 [primary constructor]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/record
 [nested types]: https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/nested-types
 [PlantText]: https://www.planttext.com/
-[weak-event]: https://github.com/thomaslevesque/WeakEvent

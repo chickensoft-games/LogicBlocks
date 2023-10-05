@@ -52,6 +52,25 @@ public interface ILogicBlockAsync<TInput, TState, TOutput>
       Func<TState, Task>
     >.IContext context
   );
+
+  /// <summary>
+  /// Calls the entrance callbacks for the initial state. Technically, you can
+  /// call this whenever you'd like to re-trigger entrance callbacks for the
+  /// current state, but it's not recommended.
+  /// <br />
+  /// Calling this is optional. LogicBlocks doesn't invoke the initial state's
+  /// entrance callbacks by default since the <see cref="Logic{
+  ///   TInput, TState, TOutput, THandler, TInputReturn, TUpdate
+  /// }.Value"/> property  must be synchronous and the side effects of the
+  /// initial state are often redundant in typical use cases representing the
+  /// default starting state.
+  /// <br />
+  /// This is provided for those times when you actually do need the side
+  /// effects from the initial state's entrance callbacks.
+  /// </summary>
+  /// <returns>Asynchronous task that finishes when the OnEntrance callbacks
+  /// for the current state complete.</returns>
+  Task Start();
 }
 
 /// <summary>
@@ -62,8 +81,9 @@ public interface ILogicBlockAsync<TInput, TState, TOutput>
 /// <para>
 /// Logic blocks are essentially statecharts that are created using the state
 /// pattern. Each state is a self-contained class, record, or struct that
-/// implements <see cref="Logic{TInput, TState, TOutput, THandler,
-/// TInputReturn, TUpdate}.IStateLogic"/>.
+/// implements <see cref="Logic{
+///   TInput, TState, TOutput, THandler, TInputReturn, TUpdate
+/// }.IStateLogic"/>.
 /// </para>
 /// </summary>
 /// <typeparam name="TInput">Input type.</typeparam>
@@ -124,6 +144,15 @@ public abstract partial class LogicBlockAsync<TInput, TState, TOutput> :
   /// <inheritdoc />
   public abstract TState GetInitialState(IContext context);
 
+  /// <inheritdoc />
+  public async Task Start() {
+    if (IsProcessing) {
+      return;
+    }
+
+    await CallOnEnterCallbacks(default!, Value);
+  }
+
   internal override Task<TState> Process() {
     if (IsProcessing) {
       return _processTask.Task;
@@ -168,33 +197,41 @@ public abstract partial class LogicBlockAsync<TInput, TState, TOutput> :
       var previous = Value;
 
       // Call OnExit callbacks for StateLogic states.
-      if (previous is StateLogic previousLogic) {
-        foreach (var onExit in previousLogic.InternalState.ExitCallbacks) {
-          if (onExit.IsType(state)) {
-            // Not actually leaving this state type.
-            continue;
-          }
-          await RunSafe(() => onExit.Callback(state));
-        }
-      }
+      await CallOnExitCallbacks(previous, state);
 
       SetState(state);
 
       // Call OnEnter callbacks for StateLogic states.
-      if (state is StateLogic stateLogic) {
-        foreach (var onEnter in stateLogic.InternalState.EnterCallbacks) {
-          if (onEnter.IsType(previous)) {
-            // Already entered this state type.
-            continue;
-          }
-          await RunSafe(() => onEnter.Callback(previous));
-        }
-      }
+      await CallOnEnterCallbacks(previous, state);
 
       FinalizeStateChange(state);
     }
 
     return Value;
+  }
+
+  internal async Task CallOnEnterCallbacks(TState previous, TState next) {
+    if (next is StateLogic nextStateLogic) {
+      foreach (var onEnter in nextStateLogic.InternalState.EnterCallbacks) {
+        if (onEnter.IsType(previous)) {
+          // Already entered this state type.
+          continue;
+        }
+        await RunSafe(() => onEnter.Callback(previous));
+      }
+    }
+  }
+
+  internal async Task CallOnExitCallbacks(TState previous, TState next) {
+    if (previous is StateLogic previousLogic) {
+      foreach (var onExit in previousLogic.InternalState.ExitCallbacks) {
+        if (onExit.IsType(next)) {
+          // Not actually leaving this state type.
+          continue;
+        }
+        await RunSafe(() => onExit.Callback(next));
+      }
+    }
   }
 
   internal override Func<TInput, Task<TState>> GetInputHandler<TInputType>()

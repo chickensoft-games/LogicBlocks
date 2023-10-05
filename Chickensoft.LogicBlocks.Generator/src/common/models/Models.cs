@@ -22,7 +22,7 @@ public sealed record LogicBlockGraph(
   string Name,
   string BaseId,
   Dictionary<string, ImmutableHashSet<string>> InputToStates,
-  Dictionary<IOutputContext, ImmutableHashSet<string>> Outputs,
+  Dictionary<IOutputContext, ImmutableHashSet<LogicBlockOutput>> Outputs,
   List<LogicBlockGraph> Children
 ) {
   public LogicBlockGraph(
@@ -73,8 +73,7 @@ public sealed record LogicBlockImplementation(
   string Name,
   ImmutableHashSet<string> InitialStateIds,
   LogicBlockGraph Graph,
-  ImmutableDictionary<string, ILogicBlockSubclass> Inputs,
-  ImmutableDictionary<string, ILogicBlockSubclass> Outputs,
+  ImmutableDictionary<string, LogicBlockSubclass> Inputs,
   ImmutableDictionary<string, LogicBlockGraph> StatesById
 ) {
   public bool Equals(LogicBlockImplementation? other) {
@@ -83,24 +82,19 @@ public sealed record LogicBlockImplementation(
     }
 
     return Id == other.Id && Name == other.Name && Graph.Equals(other.Graph) &&
-      Inputs.SequenceEqual(other.Inputs) &&
-      Outputs.SequenceEqual(other.Outputs);
+      Inputs.SequenceEqual(other.Inputs);
   }
 
   public override int GetHashCode() => Id.GetHashCode();
-}
-
-public interface ILogicBlockSubclass {
-  string Id { get; }
-  string Name { get; }
-  string BaseId { get; }
 }
 
 public record LogicBlockSubclass(
   string Id,
   string Name,
   string BaseId
-) : ILogicBlockSubclass;
+);
+
+public record LogicBlockOutput(string Id, string Name);
 
 public interface ILogicBlockResult { }
 public record InvalidLogicBlockResult : ILogicBlockResult;
@@ -110,7 +104,7 @@ public record LogicBlockOutputResult(
 
 public record StatesAndOutputs(
   ImmutableDictionary<string, ImmutableHashSet<string>> InputToStates,
-  ImmutableDictionary<IOutputContext, ImmutableHashSet<string>> Outputs
+  ImmutableDictionary<IOutputContext, ImmutableHashSet<LogicBlockOutput>> Outputs
 );
 
 public interface IOutputContext {

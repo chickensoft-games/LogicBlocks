@@ -85,10 +85,10 @@ public abstract partial class Logic<
 
     // List of functions that receive a TInput and return whether the binding
     // with the same index in the _inputRunners should be run.
-    private readonly List<Func<TInput, bool>> _inputCheckers = new();
+    private readonly List<Func<TInput, bool>> _inputCheckers;
     // List of functions that receive a TInput and invoke the relevant binding
     // when a particular type of input is encountered.
-    private readonly List<Action<TInput>> _inputRunners = new();
+    private readonly List<Action<TInput>> _inputRunners;
 
     // List of functions that receive a TState and return whether the binding
     // with the same index in the _whenBindingRunners should be run.
@@ -117,12 +117,14 @@ public abstract partial class Logic<
     ) {
       LogicBlock = logicBlock;
       _previousState = logicBlock.Value;
-      _whenBindingRunners = new();
+      _inputCheckers = new();
+      _inputRunners = new();
       _whenBindingCheckers = new();
-      _handledOutputRunners = new();
+      _whenBindingRunners = new();
       _handledOutputCheckers = new();
-      _errorRunners = new();
+      _handledOutputRunners = new();
       _errorCheckers = new();
+      _errorRunners = new();
 
       LogicBlock.OnInput += OnInput;
       LogicBlock.OnState += OnState;
@@ -181,7 +183,7 @@ public abstract partial class Logic<
     /// </summary>
     public void Dispose() => Dispose(true);
 
-    private void OnInput(object? _, TInput input) {
+    private void OnInput(TInput input) {
       // Run each input binding that should be run.
       for (var i = 0; i < _inputCheckers.Count; i++) {
         var checker = _inputCheckers[i];
@@ -193,7 +195,7 @@ public abstract partial class Logic<
       }
     }
 
-    private void OnState(object? _, TState state) {
+    private void OnState(TState state) {
       // Run each when binding that should be run.
       for (var i = 0; i < _whenBindingCheckers.Count; i++) {
         var checker = _whenBindingCheckers[i];
@@ -206,7 +208,7 @@ public abstract partial class Logic<
 
       _previousState = state;
     }
-    private void OnOutput(object? _, TOutput output) {
+    private void OnOutput(TOutput output) {
       // Run each handled output binding that should be run.
       for (var i = 0; i < _handledOutputCheckers.Count; i++) {
         var checker = _handledOutputCheckers[i];
@@ -218,7 +220,7 @@ public abstract partial class Logic<
       }
     }
 
-    private void OnError(object? _, Exception error) {
+    private void OnError(Exception error) {
       // Run each error binding that should be run.
       for (var i = 0; i < _errorCheckers.Count; i++) {
         var checker = _errorCheckers[i];
@@ -232,8 +234,10 @@ public abstract partial class Logic<
 
     private void Dispose(bool disposing) {
       if (disposing) {
-        LogicBlock.OnOutput -= OnOutput;
+        LogicBlock.OnInput -= OnInput;
         LogicBlock.OnState -= OnState;
+        LogicBlock.OnOutput -= OnOutput;
+        LogicBlock.OnError -= OnError;
         Cleanup();
       }
     }

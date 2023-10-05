@@ -2,7 +2,6 @@ namespace Chickensoft.LogicBlocks;
 
 using System;
 using System.Collections.Generic;
-using WeakEvent;
 
 /// <summary>
 /// A logic block. Logic blocks are machines that receive input, maintain a
@@ -31,17 +30,17 @@ public partial interface ILogic<
   /// </summary>
   bool IsProcessing { get; }
   /// <summary>Event invoked whenever an input is processed.</summary>
-  event EventHandler<TInput> OnInput;
+  event Action<TInput>? OnInput;
   /// <summary>Event invoked whenever the state is updated.</summary>
-  event EventHandler<TState> OnState;
+  event Action<TState>? OnState;
   /// <summary>
   /// Event invoked whenever an output is produced by an input handler.
   /// </summary>
-  event EventHandler<TOutput> OnOutput;
+  event Action<TOutput>? OnOutput;
   /// <summary>
   /// Event invoked whenever an error occurs in a state's input handler.
   /// </summary>
-  event EventHandler<Exception> OnError;
+  event Action<Exception>? OnError;
   /// <summary>
   /// Gets data from the blackboard.
   /// </summary>
@@ -132,27 +131,13 @@ public abstract partial class Logic<
   ) where TStateTypeA : TState where TStateTypeB : TState;
 
   /// <inheritdoc />
-  public event EventHandler<TInput> OnInput {
-    add => _inputEventSource.Subscribe(value);
-    remove => _inputEventSource.Unsubscribe(value);
-  }
-
+  public event Action<TInput>? OnInput;
   /// <inheritdoc />
-  public event EventHandler<TState> OnState {
-    add => _stateEventSource.Subscribe(value);
-    remove => _stateEventSource.Unsubscribe(value);
-  }
+  public event Action<TState>? OnState;
   /// <inheritdoc />
-  public event EventHandler<TOutput> OnOutput {
-    add => _outputEventSource.Subscribe(value);
-    remove => _outputEventSource.Unsubscribe(value);
-  }
-
+  public event Action<TOutput>? OnOutput;
   /// <inheritdoc />
-  public event EventHandler<Exception> OnError {
-    add => _errorEventSource.Subscribe(value);
-    remove => _errorEventSource.Unsubscribe(value);
-  }
+  public event Action<Exception>? OnError;
 
   /// <inheritdoc />
   public TState Value => _value ??= GetInitialState();
@@ -164,11 +149,6 @@ public abstract partial class Logic<
 
   private readonly Queue<PendingInput> _inputs = new();
   private readonly Dictionary<Type, dynamic> _blackboard = new();
-
-  private readonly WeakEventSource<TInput> _inputEventSource = new();
-  private readonly WeakEventSource<TState> _stateEventSource = new();
-  private readonly WeakEventSource<Exception> _errorEventSource = new();
-  private readonly WeakEventSource<TOutput> _outputEventSource = new();
 
   /// <summary>
   /// <para>Creates a new LogicBlock.</para>
@@ -234,7 +214,7 @@ public abstract partial class Logic<
   /// </summary>
   /// <param name="e">Exception to add.</param>
   internal virtual void AddError(Exception e) {
-    _errorEventSource.Raise(this, e);
+    OnError?.Invoke(e);
     HandleError(e);
   }
 
@@ -252,8 +232,8 @@ public abstract partial class Logic<
   /// equivalent to the idea of actions in statecharts.
   /// </summary>
   /// <param name="output">Output value.</param>
-  internal virtual void OutputValue(TOutput output) =>
-    _outputEventSource.Raise(this, output);
+  internal virtual void OutputValue(in TOutput output) =>
+    OnOutput?.Invoke(output);
 
   /// <summary>
   /// <para>
@@ -297,10 +277,10 @@ public abstract partial class Logic<
 
   // Announce state change.
   internal void FinalizeStateChange(TState state) =>
-    _stateEventSource.Raise(this, state);
+    OnState?.Invoke(state);
 
   internal void AnnounceInput(TInput input) =>
-    _inputEventSource.Raise(this, input);
+    OnInput?.Invoke(input);
 
   /// <inheritdoc />
   public TData Get<TData>() where TData : notnull {

@@ -61,7 +61,7 @@ public static class Program {
     var outputs = new Queue<VendingMachine.Output>();
 
     Console.CancelKeyPress += (_, _) => shouldContinue = false;
-    machine.OnOutput += (_, output) => {
+    machine.OnOutput += (output) => {
       AddOutputToBuffer(output);
       outputs.Enqueue(output);
     };

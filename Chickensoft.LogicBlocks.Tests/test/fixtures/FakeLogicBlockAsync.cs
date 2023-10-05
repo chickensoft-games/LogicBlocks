@@ -14,8 +14,8 @@ public partial class FakeLogicBlockAsync {
     public record NoNewState() : Input;
     public record SelfInput(Input Input) : Input;
     public record InputCallback(
-      Action Callback,
-      Func<IContext, State> Next
+      Func<Task> Callback,
+      Func<IContext, Task<State>> Next
     ) : Input;
     public record Custom(Func<IContext, State> Next) : Input;
   }
@@ -53,8 +53,8 @@ public partial class FakeLogicBlockAsync {
     }
 
     public async Task<State> On(Input.InputCallback input) {
-      input.Callback();
-      return input.Next(Context);
+      await input.Callback();
+      return await input.Next(Context);
     }
 
     public async Task<State> On(Input.Custom input) => input.Next(Context);

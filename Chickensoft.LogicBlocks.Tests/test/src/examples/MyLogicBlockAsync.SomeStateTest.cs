@@ -15,9 +15,8 @@ public class SomeStateAsyncTest {
     // Expect our state to output SomeOutput when SomeInput is received.
     context
       .Setup(context => context.Output(
-        new MyLogicBlockAsync.Output.SomeOutput())
-      )
-      .Callback(() => someOutputs++);
+        It.Ref<MyLogicBlockAsync.Output.SomeOutput>.IsAny
+      )).Callback(() => someOutputs++);
 
     // Perform the action we are testing on our state.
     var result = await state.On(new MyLogicBlockAsync.Input.SomeInput());
