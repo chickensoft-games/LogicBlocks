@@ -6,11 +6,11 @@ using Chickensoft.LogicBlocks.Generator;
 public partial class VendingMachine {
   // Inputs
 
-  public abstract record Input {
-    public record SelectionEntered(ItemType Type) : Input;
-    public record PaymentReceived(int Amount) : Input;
-    public record TransactionTimedOut : Input;
-    public record VendingCompleted : Input;
+  public static class Input {
+    public readonly record struct SelectionEntered(ItemType Type);
+    public readonly record struct PaymentReceived(int Amount);
+    public readonly record struct TransactionTimedOut;
+    public readonly record struct VendingCompleted;
   }
 
   public abstract record State(IContext Context) : StateLogic(Context) {
@@ -140,16 +140,16 @@ public partial class VendingMachine {
 
   // Side effects
 
-  public abstract record Output {
-    public record Dispensed(ItemType Type) : Output;
-    public record TransactionStarted : Output;
-    public record TransactionCompleted(
+  public static class Output {
+    public readonly record struct Dispensed(ItemType Type);
+    public readonly record struct TransactionStarted;
+    public readonly record struct TransactionCompleted(
       ItemType Type, int Price, TransactionStatus Status, int AmountPaid
-    ) : Output;
-    public record RestartTransactionTimeOutTimer : Output;
-    public record ClearTransactionTimeOutTimer : Output;
-    public record MakeChange(int Amount) : Output;
-    public record BeginVending : Output { }
+    );
+    public readonly record struct RestartTransactionTimeOutTimer;
+    public readonly record struct ClearTransactionTimeOutTimer;
+    public readonly record struct MakeChange(int Amount);
+    public readonly record struct BeginVending { }
   }
 
   // Feature-specific stuff
@@ -163,10 +163,7 @@ public partial class VendingMachine {
 
 // Logic Block / Hierarchical State Machine
 
-public partial class VendingMachine :
-  LogicBlock<
-    VendingMachine.Input, VendingMachine.State, VendingMachine.Output
-  > {
+public partial class VendingMachine : LogicBlock<VendingMachine.State> {
   public VendingMachine(VendingMachineStock stock) {
     Set(stock);
   }

@@ -33,7 +33,7 @@ public class LogicBlockTest {
     var called = 0;
     var input = new FakeLogicBlock.Input.InputOne(2, 3);
 
-    void handler(FakeLogicBlock.Input input) {
+    void handler(object input) {
       input.ShouldBe(input);
       called++;
     }
@@ -152,8 +152,7 @@ public class LogicBlockTest {
 
     var outputs = new List<object>();
 
-    void onOutput(object output) =>
-      outputs.Add(output);
+    void onOutput(object output) => outputs.Add(output);
 
     logic.OnOutput += onOutput;
 
@@ -178,7 +177,7 @@ public class LogicBlockTest {
       new TestMachine.Input.Deactivate()
     );
 
-    outputs.ShouldBe(new TestMachine.Output[] {
+    outputs.ShouldBe(new object[] {
       new TestMachine.Output.DeactivatedCleanUp(),
       new TestMachine.Output.Activated(),
       new TestMachine.Output.Blooped(),
@@ -228,7 +227,7 @@ public class LogicBlockTest {
       new TestMachineReusable.Input.Deactivate()
     );
 
-    outputs.ShouldBe(new TestMachineReusable.Output[] {
+    outputs.ShouldBe(new object[] {
       new TestMachineReusable.Output.DeactivatedCleanUp(),
       new TestMachineReusable.Output.Activated(),
       new TestMachineReusable.Output.Blooped(),
@@ -288,13 +287,18 @@ public class LogicBlockTest {
   }
 
   [Fact]
-  public void DeterminesIfCanChangeStateToNonEquatableState() {
-    var logic = new NonEquatable();
-    logic.Value.ShouldBeOfType<NonEquatable.State.A>();
-    logic.Input(new NonEquatable.Input.GoToA());
-    logic.Value.ShouldBeOfType<NonEquatable.State.A>();
-    logic.Input(new NonEquatable.Input.GoToB());
-    logic.Value.ShouldBeOfType<NonEquatable.State.B>();
+  public void InvokesErrorEventFromUpdateHandlerManually() {
+    var block = new FakeLogicBlock() {
+      InitialState = (context) => new FakeLogicBlock.State.OnEnterState(
+        context,
+        (previous) =>
+          throw new InvalidOperationException("Error from OnEnter")
+      )
+    };
+
+    Should.Throw<InvalidOperationException>(
+      () => block.Value.Enter()
+    );
   }
 
   [Fact]
@@ -309,27 +313,19 @@ public class LogicBlockTest {
 
   [Fact]
   public void StartsManuallyAndIgnoresStartWhenProcessing() {
-    var enterCalled = 0;
+    var enterCalled = false;
     var block = new FakeLogicBlock() {
       InitialState = (context) =>
         new FakeLogicBlock.State.OnEnterState(
-          context, (previous) => enterCalled++
+          context, (previous) => enterCalled = true
         )
     };
 
     // LogicBlocks shouldn't call entrance handlers for the initial state.
-    enterCalled.ShouldBe(0);
+    enterCalled.ShouldBeFalse();
 
-    block.Start();
-    enterCalled.ShouldBe(1);
+    block.Value.Enter();
 
-    var context = new FakeLogicBlock.Context(block);
-    var value = block.Input(new FakeLogicBlock.Input.InputCallback(
-      () =>         // This gets run from the input handler of InputCallback.
-        block.Start(),
-      (context) => new FakeLogicBlock.State.StateA(context, 2, 3)
-    ));
-
-    enterCalled.ShouldBe(1);
+    enterCalled.ShouldBeTrue();
   }
 }

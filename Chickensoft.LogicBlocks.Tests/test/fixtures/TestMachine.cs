@@ -8,11 +8,10 @@ public enum SecondaryState {
 }
 
 [StateMachine]
-public partial class TestMachine :
-  LogicBlock<TestMachine.Input, TestMachine.State, TestMachine.Output> {
-  public abstract record Input {
-    public record Activate(SecondaryState Secondary) : Input;
-    public record Deactivate() : Input;
+public partial class TestMachine : LogicBlock<TestMachine.State> {
+  public static class Input {
+    public readonly record struct Activate(SecondaryState Secondary);
+    public readonly record struct Deactivate();
   }
 
   public abstract record State(IContext Context) : StateLogic(Context),
@@ -71,15 +70,15 @@ public partial class TestMachine :
     }
   }
 
-  public abstract record Output {
-    public record Activated() : Output;
-    public record ActivatedCleanUp() : Output;
-    public record Deactivated() : Output;
-    public record DeactivatedCleanUp() : Output;
-    public record Blooped() : Output;
-    public record BloopedCleanUp() : Output;
-    public record Bopped() : Output;
-    public record BoppedCleanUp() : Output;
+  public static class Output {
+    public readonly record struct Activated;
+    public readonly record struct ActivatedCleanUp;
+    public readonly record struct Deactivated;
+    public readonly record struct DeactivatedCleanUp;
+    public readonly record struct Blooped;
+    public readonly record struct BloopedCleanUp;
+    public readonly record struct Bopped;
+    public readonly record struct BoppedCleanUp;
   }
 
   public override State GetInitialState(IContext context) =>

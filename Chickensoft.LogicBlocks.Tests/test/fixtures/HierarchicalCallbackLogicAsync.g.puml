@@ -1,0 +1,6 @@
+@startuml HierarchicalCallbackLogicAsync
+state "HierarchicalCallbackLogicAsync State" as Chickensoft_LogicBlocks_Tests_Fixtures_HierarchicalCallbackLogicAsync_State {
+  state "Substate" as Chickensoft_LogicBlocks_Tests_Fixtures_HierarchicalCallbackLogicAsync_State_Substate
+}
+[*] --> Chickensoft_LogicBlocks_Tests_Fixtures_HierarchicalCallbackLogicAsync_State
+@enduml

@@ -1,118 +1,122 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
-
-using Shouldly;
-
+/// <summary>
+/// Temperature sensor that presumably communicates with actual hardware
+/// (not shown here).
+/// </summary>
 public interface ITemperatureSensor {
+  /// <summary>Last recorded air temperature.</summary>
+  double AirTemp { get; }
+  /// <summary>Invoked whenever a change in temperature is noticed.</summary>
   event Action<double>? OnTemperatureChanged;
 }
 
 public record TemperatureSensor : ITemperatureSensor {
+  public double AirTemp { get; set; } = 72.0d;
   public event Action<double>? OnTemperatureChanged;
 
-  public void UpdateReading(double airTemp) =>
+  public void UpdateReading(double airTemp) {
+    AirTemp = airTemp;
     OnTemperatureChanged?.Invoke(airTemp);
+  }
 }
 
 [StateMachine]
-public class Heater :
-  LogicBlock<Heater.Input, Heater.State, Heater.Output> {
+public class Heater : LogicBlock<Heater.State> {
   public Heater(ITemperatureSensor tempSensor) {
     // Make sure states can access the temperature sensor.
     Set(tempSensor);
   }
 
   public override State GetInitialState(IContext context) =>
-    new State.Off(context, 72.0);
+    new State.Off(context) { TargetTemp = 72.0 };
 
-  public abstract record Input {
-    public record TurnOn : Input;
-    public record TurnOff : Input;
-    public record TargetTempChanged(double Temp) : Input;
-    public record AirTempSensorChanged(double AirTemp) : Input;
+  public static class Input {
+    public readonly record struct TurnOn;
+    public readonly record struct TurnOff;
+    public readonly record struct TargetTempChanged(double Temp);
+    public readonly record struct AirTempSensorChanged(double AirTemp);
   }
 
-  public abstract record State(IContext Context, double TargetTemp)
-    : StateLogic(Context) {
-    public record Off(
-      IContext Context, double TargetTemp
-    ) : State(Context, TargetTemp), IGet<Input.TurnOn> {
-      State IGet<Input.TurnOn>.On(Input.TurnOn input) =>
-        new Heating(Context, TargetTemp);
-    }
+  public abstract record State : StateLogic, IGet<Input.TargetTempChanged> {
+    public double TargetTemp { get; init; }
 
-    public record Idle(IContext Context, double TargetTemp) :
-      State(Context, TargetTemp);
+    public State(IContext context) : base(context) { }
 
-    public record Heating : State,
-      IGet<Input.TurnOff>,
-      IGet<Input.AirTempSensorChanged>,
-      IGet<Input.TargetTempChanged> {
-      public Heating(IContext context, double targetTemp) : base(
-        context, targetTemp
-      ) {
+    public State On(Input.TargetTempChanged input) => this with {
+      TargetTemp = input.Temp
+    };
+
+    public abstract record Powered : State, IGet<Input.TurnOff> {
+      public Powered(IContext context) : base(context) {
         var tempSensor = context.Get<ITemperatureSensor>();
 
-        OnEnter<Heating>(
+        // When we enter the state, subscribe to changes in temperature.
+        OnEnter<Powered>(
           (previous) => tempSensor.OnTemperatureChanged += OnTemperatureChanged
         );
 
-        OnExit<Heating>(
+        // When we exit this state, unsubscribe from changes in temperature.
+        OnExit<Powered>(
           (next) => tempSensor.OnTemperatureChanged -= OnTemperatureChanged
         );
       }
 
-      public State On(Input.TurnOff input) => new Off(Context, TargetTemp);
+      public State On(Input.TurnOff input) =>
+        new Off(Context) { TargetTemp = TargetTemp };
 
-      public State On(Input.AirTempSensorChanged input) =>
-        input.AirTemp >= TargetTemp
-          ? new Idle(Context, TargetTemp)
-          : this;
-
-      public State On(Input.TargetTempChanged input) => this with {
-        TargetTemp = input.Temp
-      };
-
-      private void OnTemperatureChanged(double airTemp) {
+      // Whenever our temperature sensor gives us a reading, we will just
+      // provide an input to ourselves. This lets us have a chance to change
+      // the logic block's state.
+      private void OnTemperatureChanged(double airTemp) =>
         Context.Input(new Input.AirTempSensorChanged(airTemp));
-        Context.Output(new Output.AirTempChanged(airTemp));
+    }
+
+    public record Off : State, IGet<Input.TurnOn> {
+      public Off(IContext context) : base(context) { }
+
+      public State On(Input.TurnOn input) {
+        // Get the temperature sensor from the blackboard.
+        var tempSensor = Context.Get<ITemperatureSensor>();
+
+        if (tempSensor.AirTemp >= TargetTemp) {
+          // Room is already hot enough.
+          return new Idle(Context) { TargetTemp = TargetTemp };
+        }
+
+        // Room is too cold — start heating.
+        return new Heating(Context) { TargetTemp = TargetTemp };
+      }
+    }
+
+    public record Idle : Powered, IGet<Input.AirTempSensorChanged> {
+      public Idle(IContext context) : base(context) { }
+
+      public State On(Input.AirTempSensorChanged input) {
+        if (input.AirTemp < TargetTemp - 3.0d) {
+          // Temperature has fallen too far below target temp — start heating.
+          return new Heating(Context) { TargetTemp = TargetTemp };
+        }
+        // Room is still hot enough — keep waiting.
+        return this;
+      }
+    }
+
+    public record Heating : Powered, IGet<Input.AirTempSensorChanged> {
+      public Heating(IContext context) : base(context) { }
+
+      public State On(Input.AirTempSensorChanged input) {
+        if (input.AirTemp >= TargetTemp) {
+          // We're done heating!
+          Context.Output(new Output.FinishedHeating());
+          return new Idle(Context) { TargetTemp = TargetTemp };
+        }
+        // Room isn't hot enough — keep heating.
+        return this;
       }
     }
   }
 
-  public abstract record Output {
-    public record AirTempChanged(double AirTemp) : Output;
-  }
-}
-
-public static class Program2 {
-  public static void Main2(string[] args) {
-    var tempSensor = new TemperatureSensor();
-    var heater = new Heater(tempSensor);
-
-    var binding = heater.Bind();
-
-    binding.Handle<Heater.Output.AirTempChanged>(
-      (output) => Console.WriteLine($"Air temp changed to {output.AirTemp}")
-    );
-
-    binding.When<Heater.State.Off>().Call(
-      (state) => Console.WriteLine("Heater is off")
-    );
-
-    binding.When<Heater.State.Idle>().Call(
-      (state) => Console.WriteLine("Heater is idle")
-    );
-
-    binding.When<Heater.State>()
-      .Use(
-        data: (state) => state.TargetTemp,
-        to: (temp) => Console.WriteLine($"Heater target temp is {temp}")
-      );
-
-    heater.Input(new Heater.Input.TurnOn());
-
-    tempSensor.UpdateReading(58.0);
-
-    heater.Value.TargetTemp.ShouldBe(72);
+  public static class Output {
+    public readonly record struct FinishedHeating;
   }
 }

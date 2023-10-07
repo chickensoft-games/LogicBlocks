@@ -1,12 +1,11 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 
 [StateMachine]
-public class SingleState :
-  LogicBlock<SingleState.Input, SingleState.State, SingleState.Output> {
+public class SingleState : LogicBlock<SingleState.State> {
   public override State GetInitialState(IContext context) => new(Context);
 
-  public abstract record Input {
-    public record MyInput : Input { }
+  public static class Input {
+    public readonly record struct MyInput;
   }
   public record State : StateLogic, IGet<Input.MyInput> {
     public State(IContext context) : base(context) {
@@ -19,7 +18,7 @@ public class SingleState :
       return this;
     }
   }
-  public abstract record Output {
-    public record MyOutput : Output { }
+  public static class Output {
+    public readonly record struct MyOutput;
   }
 }

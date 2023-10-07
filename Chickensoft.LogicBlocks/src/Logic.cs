@@ -9,20 +9,12 @@ using System.Collections.Generic;
 /// input-to-state reducers, or built upon to create hierarchical state
 /// machines.
 /// </summary>
-/// <typeparam name="TInput">Base input type.</typeparam>
 /// <typeparam name="TState">Base state type.</typeparam>
-/// <typeparam name="TOutput">Base output type.</typeparam>
 /// <typeparam name="THandler">Input handler type.</typeparam>
 /// <typeparam name="TInputReturn">Input method return type.</typeparam>
 /// <typeparam name="TUpdate">Update callback type.</typeparam>
-public partial interface ILogic<
-  TInput, TState, TOutput, THandler, TInputReturn, TUpdate
->
-  where TInput : notnull
-  where TState : Logic<
-    TInput, TState, TOutput, THandler, TInputReturn, TUpdate
-  >.IStateLogic
-  where TOutput : notnull {
+public partial interface ILogic<TState, THandler, TInputReturn, TUpdate>
+where TState : Logic<TState, THandler, TInputReturn, TUpdate>.IStateLogic {
   /// <summary>Current state of the logic block.</summary>
   TState Value { get; }
   /// <summary>
@@ -30,13 +22,13 @@ public partial interface ILogic<
   /// </summary>
   bool IsProcessing { get; }
   /// <summary>Event invoked whenever an input is processed.</summary>
-  event Action<TInput>? OnInput;
+  event Action<object>? OnInput;
   /// <summary>Event invoked whenever the state is updated.</summary>
   event Action<TState>? OnState;
   /// <summary>
   /// Event invoked whenever an output is produced by an input handler.
   /// </summary>
-  event Action<TOutput>? OnOutput;
+  event Action<object>? OnOutput;
   /// <summary>
   /// Event invoked whenever an error occurs in a state's input handler.
   /// </summary>
@@ -60,15 +52,13 @@ public partial interface ILogic<
   /// <param name="input">Input to process.</param>
   /// <typeparam name="TInputType">Type of the input.</typeparam>
   /// <returns>Logic block input return value.</returns>
-  TInputReturn Input<TInputType>(TInputType input) where TInputType : TInput;
+  TInputReturn Input<TInputType>(TInputType input) where TInputType : notnull;
 
   /// <summary>
   /// Creates a binding to a logic block.
   /// </summary>
   /// <returns>Logic block binding.</returns>
-  Logic<
-    TInput, TState, TOutput, THandler, TInputReturn, TUpdate
-  >.IBinding Bind();
+  Logic<TState, THandler, TInputReturn, TUpdate>.IBinding Bind();
 }
 
 /// <summary>
@@ -77,30 +67,22 @@ public partial interface ILogic<
 /// input-to-state reducers, or built upon to create hierarchical state
 /// machines.
 /// </summary>
-/// <typeparam name="TInput">Base input type.</typeparam>
 /// <typeparam name="TState">Base state type.</typeparam>
-/// <typeparam name="TOutput">Base output type.</typeparam>
 /// <typeparam name="THandler">Input handler type.</typeparam>
 /// <typeparam name="TInputReturn">Input method return type.</typeparam>
 /// <typeparam name="TUpdate">Update callback type.</typeparam>
-public abstract partial class Logic<
-  TInput, TState, TOutput, THandler, TInputReturn, TUpdate
-> :
-  ILogic<
-    TInput, TState, TOutput, THandler, TInputReturn, TUpdate
-  > where TInput : notnull
-  where TState : Logic<
-    TInput, TState, TOutput, THandler, TInputReturn, TUpdate
-  >.IStateLogic
-  where TOutput : notnull {
+public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> :
+  ILogic<TState, THandler, TInputReturn, TUpdate> where TState : Logic<
+    TState, THandler, TInputReturn, TUpdate
+  >.IStateLogic {
   internal readonly struct PendingInput {
-    public TInput Input { get; }
+    public object Input { get; }
     /// <summary>
     /// A function which returns a function that processes the input.
     /// </summary>
     public Func<THandler> GetHandler { get; }
 
-    public PendingInput(TInput input, Func<THandler> getHandler) {
+    public PendingInput(object input, Func<THandler> getHandler) {
       Input = input;
       GetHandler = getHandler;
     }
@@ -108,9 +90,9 @@ public abstract partial class Logic<
 
   internal readonly struct UpdateCallback {
     public TUpdate Callback { get; }
-    public Func<dynamic, bool> IsType { get; }
+    public Func<dynamic?, bool> IsType { get; }
 
-    public UpdateCallback(TUpdate callback, Func<dynamic, bool> isType) {
+    public UpdateCallback(TUpdate callback, Func<dynamic?, bool> isType) {
       Callback = callback;
       IsType = isType;
     }
@@ -131,11 +113,11 @@ public abstract partial class Logic<
   ) where TStateTypeA : TState where TStateTypeB : TState;
 
   /// <inheritdoc />
-  public event Action<TInput>? OnInput;
+  public event Action<object>? OnInput;
   /// <inheritdoc />
   public event Action<TState>? OnState;
   /// <inheritdoc />
-  public event Action<TOutput>? OnOutput;
+  public event Action<object>? OnOutput;
   /// <inheritdoc />
   public event Action<Exception>? OnError;
 
@@ -145,7 +127,7 @@ public abstract partial class Logic<
   /// <inheritdoc />
   public abstract bool IsProcessing { get; }
 
-  private TState? _value;
+  internal TState? _value;
 
   private readonly Queue<PendingInput> _inputs = new();
   private readonly Dictionary<Type, dynamic> _blackboard = new();
@@ -169,7 +151,7 @@ public abstract partial class Logic<
 
   /// <inheritdoc />
   public virtual TInputReturn Input<TInputType>(TInputType input)
-    where TInputType : TInput {
+  where TInputType : notnull {
     _inputs.Enqueue(
       new PendingInput(input, GetInputHandler<TInputType>)
     );
@@ -194,10 +176,7 @@ public abstract partial class Logic<
   protected virtual bool CanChangeState(TState state) {
     if (
       ReferenceEquals(Value, state) ||
-      (
-        state is IEquatable<TState> &&
-        EqualityComparer<TState>.Default.Equals(state, Value)
-      )
+      EqualityComparer<TState>.Default.Equals(state, Value)
     ) {
       // A state may always transition to itself or an equivalent state.
       return false;
@@ -232,7 +211,7 @@ public abstract partial class Logic<
   /// equivalent to the idea of actions in statecharts.
   /// </summary>
   /// <param name="output">Output value.</param>
-  internal virtual void OutputValue(in TOutput output) =>
+  internal virtual void OutputValue(in object output) =>
     OnOutput?.Invoke(output);
 
   /// <summary>
@@ -248,13 +227,12 @@ public abstract partial class Logic<
   /// </summary>
   /// <typeparam name="TInputType">Input type.</typeparam>
   /// <exception cref="InvalidOperationException" />
-  internal abstract THandler GetInputHandler<TInputType>()
-    where TInputType : TInput;
+  internal abstract THandler GetInputHandler<TInputType>();
 
   /// <summary>
   /// Called whenever an input needs to be processed. This method should remove
   /// the input from the input queue and invoke the appropriate input handler.
-  /// It may use <see cref="AnnounceInput(TInput)" /> to announce when it
+  /// It may use <see cref="AnnounceInput(object)" /> to announce when it
   /// processes an individual input. This method should call
   /// <see cref="SetState(TState)" /> whenever the state should be changed, and
   /// <see cref="FinalizeStateChange(TState)" /> after all state changes have
@@ -279,7 +257,7 @@ public abstract partial class Logic<
   internal void FinalizeStateChange(TState state) =>
     OnState?.Invoke(state);
 
-  internal void AnnounceInput(TInput input) =>
+  internal void AnnounceInput(object input) =>
     OnInput?.Invoke(input);
 
   /// <inheritdoc />

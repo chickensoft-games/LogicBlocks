@@ -3,9 +3,7 @@ namespace Chickensoft.LogicBlocks;
 using System;
 using System.Collections.Generic;
 
-public abstract partial class Logic<
-  TInput, TState, TOutput, THandler, TInputReturn, TUpdate
-> {
+public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
   /// <summary>
   /// <para>State bindings for a logic block.</para>
   /// <para>
@@ -17,8 +15,7 @@ public abstract partial class Logic<
   /// </summary>
   public interface IBinding : IDisposable {
     /// <summary>Logic block that is being bound to.</summary>
-    Logic<TInput, TState, TOutput, THandler, TInputReturn, TUpdate>
-      LogicBlock { get; }
+    Logic<TState, THandler, TInputReturn, TUpdate> LogicBlock { get; }
 
     /// <summary>
     /// Register a callback to be invoked whenever an input type of
@@ -28,9 +25,7 @@ public abstract partial class Logic<
     /// <typeparam name="TInputType">Type of input to register a handler
     /// for.</typeparam>
     /// <returns>The current binding.</returns>
-    IBinding Watch<TInputType>(
-      Action<TInputType> handler
-    ) where TInputType : TInput;
+    IBinding Watch<TInputType>(Action<TInputType> handler);
 
     /// Registers a binding for a specific type of state.
     /// <summary>
@@ -41,8 +36,7 @@ public abstract partial class Logic<
     /// </summary>
     /// <typeparam name="TStateType">Type of state to bind to.</typeparam>
     /// <returns>The new binding group.</returns>
-    IWhenBinding<TStateType>
-      When<TStateType>() where TStateType : TState;
+    IWhenBinding<TStateType> When<TStateType>() where TStateType : TState;
 
     /// <summary>
     /// Register a callback to be invoked whenever an output type of
@@ -52,8 +46,7 @@ public abstract partial class Logic<
     /// <typeparam name="TOutputType">Type of output to register a handler
     /// for.</typeparam>
     /// <returns>The current binding.</returns>
-    IBinding Handle<TOutputType>(Action<TOutputType> handler)
-        where TOutputType : TOutput;
+    IBinding Handle<TOutputType>(Action<TOutputType> handler);
 
     /// <summary>
     /// Register a callback to be invoked whenever an error type of
@@ -77,18 +70,16 @@ public abstract partial class Logic<
   /// </summary>
   internal sealed class Binding : IBinding {
     /// <inheritdoc />
-    public Logic<
-      TInput, TState, TOutput, THandler, TInputReturn, TUpdate
-    > LogicBlock { get; }
+    public Logic<TState, THandler, TInputReturn, TUpdate> LogicBlock { get; }
 
     private TState _previousState;
 
     // List of functions that receive a TInput and return whether the binding
     // with the same index in the _inputRunners should be run.
-    private readonly List<Func<TInput, bool>> _inputCheckers;
-    // List of functions that receive a TInput and invoke the relevant binding
+    private readonly List<Func<object, bool>> _inputCheckers;
+    // List of functions that receive an input and invoke the relevant binding
     // when a particular type of input is encountered.
-    private readonly List<Action<TInput>> _inputRunners;
+    private readonly List<Action<object>> _inputRunners;
 
     // List of functions that receive a TState and return whether the binding
     // with the same index in the _whenBindingRunners should be run.
@@ -99,10 +90,10 @@ public abstract partial class Logic<
 
     // List of functions that receive a TState and return whether the binding
     // with the same index in the _handledOutputRunners should be run.
-    private readonly List<Func<TOutput, bool>> _handledOutputCheckers;
-    // List of functions that receive a TOutput and invoke the relevant binding
+    private readonly List<Func<object, bool>> _handledOutputCheckers;
+    // List of functions that receive an output and invoke the relevant binding
     // when a particular type of output is encountered.
-    private readonly List<Action<TOutput>> _handledOutputRunners;
+    private readonly List<Action<object>> _handledOutputRunners;
 
     // List of functions that receive an Exception and return whether the
     // binding with the same index in the _errorRunners should be run.
@@ -112,8 +103,7 @@ public abstract partial class Logic<
     private readonly List<Action<Exception>> _errorRunners;
 
     internal Binding(
-      Logic<TInput, TState, TOutput, THandler, TInputReturn, TUpdate>
-        logicBlock
+      Logic<TState, THandler, TInputReturn, TUpdate> logicBlock
     ) {
       LogicBlock = logicBlock;
       _previousState = logicBlock.Value;
@@ -133,9 +123,7 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public IBinding Watch<TInputType>(
-      Action<TInputType> handler
-    ) where TInputType : TInput {
+    public IBinding Watch<TInputType>(Action<TInputType> handler) {
       _inputCheckers.Add((input) => input is TInputType);
       _inputRunners.Add((input) => handler((TInputType)input));
 
@@ -158,9 +146,7 @@ public abstract partial class Logic<
     }
 
     /// <inheritdoc />
-    public IBinding Handle<TOutputType>(
-      Action<TOutputType> handler
-    ) where TOutputType : TOutput {
+    public IBinding Handle<TOutputType>(Action<TOutputType> handler) {
       _handledOutputCheckers.Add((output) => output is TOutputType);
       _handledOutputRunners.Add((output) => handler((TOutputType)output));
 
@@ -183,7 +169,7 @@ public abstract partial class Logic<
     /// </summary>
     public void Dispose() => Dispose(true);
 
-    private void OnInput(TInput input) {
+    private void OnInput(object input) {
       // Run each input binding that should be run.
       for (var i = 0; i < _inputCheckers.Count; i++) {
         var checker = _inputCheckers[i];
@@ -208,7 +194,7 @@ public abstract partial class Logic<
 
       _previousState = state;
     }
-    private void OnOutput(TOutput output) {
+    private void OnOutput(object output) {
       // Run each handled output binding that should be run.
       for (var i = 0; i < _handledOutputCheckers.Count; i++) {
         var checker = _handledOutputCheckers[i];

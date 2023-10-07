@@ -258,13 +258,6 @@ public class BlocGlueTests {
 
     logic.Object.Bind().ShouldBe(binding.Object);
     logic.Object.Input(input).ShouldBe(state);
-
-    var tester = FakeLogicBlock.Test(state);
-    tester.ShouldBeOfType<
-      StateTester<
-        FakeLogicBlock.Input, FakeLogicBlock.State, FakeLogicBlock.Output
-      >
-    >();
   }
 
   [Fact]

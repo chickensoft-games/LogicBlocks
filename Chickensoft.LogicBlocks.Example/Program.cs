@@ -30,7 +30,7 @@ public static class Program {
     [ItemType.Candy] = 6
   };
 
-  public const char EMPTY = '*';
+  public const char EMPTY = '_';
 
   public static readonly Dictionary<ItemType, char> Chars = new() {
     [ItemType.Juice] = 'J',
@@ -50,7 +50,7 @@ public static class Program {
 
   // Keep a buffer of the last 3 outputs to show them on the screen.
   private const int MAX_OUTPUTS = 3;
-  private static readonly Queue<VendingMachine.Output> _lastFewOutputs =
+  private static readonly Queue<object> _lastFewOutputs =
     new(MAX_OUTPUTS);
 
   public static int Main(string[] args) {
@@ -58,7 +58,7 @@ public static class Program {
     var shouldContinue = true;
     var lastState = machine.Value;
     // Outputs that need to be processed.
-    var outputs = new Queue<VendingMachine.Output>();
+    var outputs = new Queue<object>();
 
     Console.CancelKeyPress += (_, _) => shouldContinue = false;
     machine.OnOutput += (output) => {
@@ -241,7 +241,7 @@ public static class Program {
     Console.WriteLine("Press `q` or `escape` to quit.");
   }
 
-  private static void ShowOutputs(Queue<VendingMachine.Output> outputs) {
+  private static void ShowOutputs(Queue<object> outputs) {
     if (outputs.Count == 0) { return; }
     Console.WriteLine(" -- Last 3 Outputs (Most Recent -> Oldest) --");
     var i = 1;
@@ -250,7 +250,7 @@ public static class Program {
     }
   }
 
-  private static void ProcessOutput(VendingMachine.Output output) {
+  private static void ProcessOutput(object output) {
     if (output is VendingMachine.Output.BeginVending) {
       _vendingStartedTime = GetMs();
       _isTransactionUnderway = false;
@@ -332,7 +332,7 @@ public static class Program {
     return result;
   }
 
-  private static void AddOutputToBuffer(VendingMachine.Output output) {
+  private static void AddOutputToBuffer(object output) {
     _lastFewOutputs.Enqueue(output);
     if (_lastFewOutputs.Count > MAX_OUTPUTS) {
       _lastFewOutputs.Dequeue();
