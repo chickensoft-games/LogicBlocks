@@ -475,4 +475,5 @@ dotnet_diagnostic.IDE0200.severity = none
 dotnet_diagnostic.IDE0290.severity = none
 # Leave me alone about string builder optimizations
 dotnet_diagnostic.RCS1197.severity = none
-
+# Let me have empty destructors
+dotnet_diagnostic.RCS1259.severity = none

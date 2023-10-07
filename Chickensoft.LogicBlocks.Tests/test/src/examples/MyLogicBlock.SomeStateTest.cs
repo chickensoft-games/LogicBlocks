@@ -14,8 +14,9 @@ public class SomeStateTest {
     var someOutputs = 0;
     // Expect our state to output SomeOutput when SomeInput is received.
     context
-      .Setup(context => context.Output(new MyLogicBlock.Output.SomeOutput()))
-      .Callback(() => someOutputs++);
+      .Setup(context => context.Output(
+        It.Ref<MyLogicBlock.Output.SomeOutput>.IsAny
+      )).Callback(() => someOutputs++);
 
     // Perform the action we are testing on our state.
     var result = state.On(new MyLogicBlock.Input.SomeInput());

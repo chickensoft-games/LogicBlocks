@@ -15,13 +15,13 @@ public class OutputVisitor : CSharpSyntaxWalker {
   public CancellationToken Token { get; }
   public ICodeService CodeService { get; }
   private readonly
-    ImmutableDictionary<IOutputContext, HashSet<string>>.Builder
+    ImmutableDictionary<IOutputContext, HashSet<LogicBlockOutput>>.Builder
       _outputTypes = ImmutableDictionary
-        .CreateBuilder<IOutputContext, HashSet<string>>();
+        .CreateBuilder<IOutputContext, HashSet<LogicBlockOutput>>();
   private readonly Stack<IOutputContext> _outputContexts = new();
   private IOutputContext OutputContext => _outputContexts.Peek();
 
-  public ImmutableDictionary<IOutputContext, ImmutableHashSet<string>>
+  public ImmutableDictionary<IOutputContext, ImmutableHashSet<LogicBlockOutput>>
     OutputTypes => _outputTypes.ToImmutableDictionary(
       pair => pair.Key, pair => pair.Value.ToImmutableHashSet()
     );
@@ -88,7 +88,7 @@ public class OutputVisitor : CSharpSyntaxWalker {
         rhsType, rhsType.Name
       );
 
-      AddOutput(rhsTypeId);
+      AddOutput(rhsTypeId, rhsType.Name);
 
       return;
     }
@@ -119,15 +119,17 @@ public class OutputVisitor : CSharpSyntaxWalker {
     }
   }
 
+  // Don't visit nested types.
   public override void VisitClassDeclaration(ClassDeclarationSyntax node) { }
+  public override void VisitStructDeclaration(StructDeclarationSyntax node) { }
 
-  private void AddOutput(string outputId) {
+  private void AddOutput(string id, string name) {
     if (!_outputTypes.TryGetValue(OutputContext, out var outputs)) {
-      outputs = new HashSet<string>();
+      outputs = new HashSet<LogicBlockOutput>();
       _outputTypes.Add(OutputContext, outputs);
     }
 
-    outputs.Add(outputId);
+    outputs.Add(new LogicBlockOutput(id, name));
   }
 
   private SemanticModel GetModel(SyntaxNode node) =>

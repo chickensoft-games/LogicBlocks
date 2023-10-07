@@ -19,8 +19,7 @@ public class LogicBlockAsyncTest {
 
     var outputs = new List<TestMachineAsync.Output>();
 
-    void onOutput(object? block, TestMachineAsync.Output output) =>
-      outputs.Add(output);
+    void onOutput(TestMachineAsync.Output output) => outputs.Add(output);
 
     logic.OnOutput += onOutput;
 
@@ -69,7 +68,7 @@ public class LogicBlockAsyncTest {
     var logic = new TestMachineReusableAsync();
     var outputs = new List<TestMachineReusableAsync.Output>();
 
-    void onOutput(object? block, TestMachineReusableAsync.Output output) =>
+    void onOutput(TestMachineReusableAsync.Output output) =>
       outputs.Add(output);
 
     logic.OnOutput += onOutput;
@@ -120,7 +119,7 @@ public class LogicBlockAsyncTest {
 
     var called = 0;
 
-    void handler(object? _, Exception e) => called++;
+    void handler(Exception e) => called++;
 
     block.OnError += handler;
 
@@ -152,7 +151,7 @@ public class LogicBlockAsyncTest {
 
     var called = 0;
 
-    void handler(object? _, Exception e) => called++;
+    void handler(Exception e) => called++;
 
     block.OnError += handler;
 
@@ -182,5 +181,36 @@ public class LogicBlockAsyncTest {
     await logic.Input(new FakeLogicBlockAsync.Input.SelfInput(input));
 
     logic.Value.ShouldBeOfType<FakeLogicBlockAsync.State.StateA>();
+  }
+
+  [Fact]
+  public async Task StartsManuallyAndIgnoresStartWhenProcessing() {
+    var enterCalled = 0;
+    var block = new FakeLogicBlockAsync() {
+      InitialState = (context) =>
+        new FakeLogicBlockAsync.State.OnEnterState(
+          context, (previous) => {
+            enterCalled++;
+            return Task.CompletedTask;
+          }
+        )
+    };
+
+    // LogicBlocks shouldn't call entrance handlers for the initial state.
+    enterCalled.ShouldBe(0);
+
+    await block.Start();
+    enterCalled.ShouldBe(1);
+
+    var context = new FakeLogicBlockAsync.Context(block);
+    var value = block.Input(new FakeLogicBlockAsync.Input.InputCallback(
+      // This gets run from the input handler of InputCallback.
+      async () => await block.Start(),
+      (context) => Task.FromResult<FakeLogicBlockAsync.State>(
+        new FakeLogicBlockAsync.State.StateA(context, 2, 3)
+      )
+    ));
+
+    enterCalled.ShouldBe(1);
   }
 }

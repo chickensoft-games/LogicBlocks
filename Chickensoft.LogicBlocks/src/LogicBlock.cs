@@ -35,6 +35,23 @@ public interface ILogicBlock<TInput, TState, TOutput>
   TState GetInitialState(Logic<
     TInput, TState, TOutput, Func<TInput, TState>, TState, Action<TState>
   >.IContext context);
+
+  /// <summary>
+  /// Calls the entrance callbacks for the initial state. Technically, you can
+  /// call this whenever you'd like to re-trigger entrance callbacks for the
+  /// current state, but it's not recommended.
+  /// <br />
+  /// Calling this is optional. LogicBlocks doesn't invoke the initial state's
+  /// entrance callbacks by default since the <see cref="Logic{
+  /// TInput, TState, TOutput, THandler, TInputReturn, TUpdate
+  /// }.Value"/> property  must be synchronous and the side effects of the
+  /// initial state are often redundant in typical use cases representing the
+  /// default starting state.
+  /// <br />
+  /// This is provided for those times when you actually do need the side
+  /// effects from the initial state's entrance callbacks.
+  /// </summary>
+  void Start();
 }
 
 /// <summary>
@@ -97,6 +114,15 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
   /// <inheritdoc />
   public abstract TState GetInitialState(IContext context);
 
+  /// <inheritdoc />
+  public void Start() {
+    if (IsProcessing) {
+      return;
+    }
+
+    CallOnEnterCallbacks(default!, Value);
+  }
+
   internal override TState Process() {
     if (IsProcessing) {
       return Value;
@@ -123,28 +149,12 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
       var previous = Value;
 
       // Call OnExit callbacks for StateLogic states.
-      if (previous is StateLogic previousLogic) {
-        foreach (var onExit in previousLogic.InternalState.ExitCallbacks) {
-          if (onExit.IsType(state)) {
-            // Not actually leaving this state type.
-            continue;
-          }
-          RunSafe(() => onExit.Callback(state));
-        }
-      }
+      CallOnExitCallbacks(previous, state);
 
       SetState(state);
 
       // Call OnEnter callbacks for StateLogic states.
-      if (state is StateLogic stateLogic) {
-        foreach (var onEnter in stateLogic.InternalState.EnterCallbacks) {
-          if (onEnter.IsType(previous)) {
-            // Already entered this state type.
-            continue;
-          }
-          RunSafe(() => onEnter.Callback(previous));
-        }
-      }
+      CallOnEnterCallbacks(previous, state);
 
       FinalizeStateChange(state);
     }
@@ -152,6 +162,30 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
     _isProcessing = false;
 
     return Value;
+  }
+
+  internal void CallOnExitCallbacks(TState previous, TState next) {
+    if (previous is StateLogic previousLogic) {
+      foreach (var onExit in previousLogic.InternalState.ExitCallbacks) {
+        if (onExit.IsType(next)) {
+          // Not actually leaving this state type.
+          continue;
+        }
+        RunSafe(() => onExit.Callback(next));
+      }
+    }
+  }
+
+  internal void CallOnEnterCallbacks(TState previous, TState next) {
+    if (next is StateLogic nextStateLogic) {
+      foreach (var onEnter in nextStateLogic.InternalState.EnterCallbacks) {
+        if (onEnter.IsType(previous)) {
+          // Already entered this state type.
+          continue;
+        }
+        RunSafe(() => onEnter.Callback(previous));
+      }
+    }
   }
 
   internal override Func<TInput, TState> GetInputHandler<TInputType>()
