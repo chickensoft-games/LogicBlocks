@@ -1,17 +1,22 @@
 @startuml Heater
 state "Heater State" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State {
-  state "Off" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Off
-  state "Idle" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Idle
-  state "Heating" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating {
-    Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating : OnTemperatureChanged() → AirTempChanged
+  state "Powered" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Powered {
+    state "Idle" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Idle
+    state "Heating" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating {
+      Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating : OnAirTempSensorChanged → FinishedHeating
+    }
   }
+  state "Off" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Off
 }
 
+Chickensoft_LogicBlocks_Generator_Tests_Heater_State --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State : TargetTempChanged
 Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating : AirTempSensorChanged
-Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating : TargetTempChanged
 Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Idle : AirTempSensorChanged
-Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Off : TurnOff
+Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Idle --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating : AirTempSensorChanged
+Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Idle --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Idle : AirTempSensorChanged
 Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Off --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating : TurnOn
+Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Off --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Idle : TurnOn
+Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Powered --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Off : TurnOff
 
 [*] --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Off
 @enduml

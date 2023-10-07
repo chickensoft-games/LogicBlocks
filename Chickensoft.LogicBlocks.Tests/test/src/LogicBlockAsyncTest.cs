@@ -17,9 +17,9 @@ public class LogicBlockAsyncTest {
     var logic = new TestMachineAsync();
     var context = new TestMachineAsync.Context(logic);
 
-    var outputs = new List<TestMachineAsync.Output>();
+    var outputs = new List<object>();
 
-    void onOutput(TestMachineAsync.Output output) => outputs.Add(output);
+    void onOutput(object output) => outputs.Add(output);
 
     logic.OnOutput += onOutput;
 
@@ -45,7 +45,7 @@ public class LogicBlockAsyncTest {
       new TestMachineAsync.Input.Deactivate()
     );
 
-    outputs.ShouldBe(new TestMachineAsync.Output[] {
+    outputs.ShouldBe(new object[] {
       new TestMachineAsync.Output.DeactivatedCleanUp(),
       new TestMachineAsync.Output.Activated(),
       new TestMachineAsync.Output.Blooped(),
@@ -66,10 +66,9 @@ public class LogicBlockAsyncTest {
   [Fact]
   public async Task CallsEnterAndExitOnStatesInProperOrderForReusedStates() {
     var logic = new TestMachineReusableAsync();
-    var outputs = new List<TestMachineReusableAsync.Output>();
+    var outputs = new List<object>();
 
-    void onOutput(TestMachineReusableAsync.Output output) =>
-      outputs.Add(output);
+    void onOutput(object output) => outputs.Add(output);
 
     logic.OnOutput += onOutput;
 
@@ -95,7 +94,7 @@ public class LogicBlockAsyncTest {
       new TestMachineReusableAsync.Input.Deactivate()
     );
 
-    outputs.ShouldBe(new TestMachineReusableAsync.Output[] {
+    outputs.ShouldBe(new object[] {
       new TestMachineReusableAsync.Output.DeactivatedCleanUp(),
       new TestMachineReusableAsync.Output.Activated(),
       new TestMachineReusableAsync.Output.Blooped(),
@@ -135,6 +134,21 @@ public class LogicBlockAsyncTest {
     called.ShouldBe(1);
 
     block.OnError -= handler;
+  }
+
+  [Fact]
+  public async Task InvokesErrorEventFromUpdateHandlerManually() {
+    var block = new FakeLogicBlockAsync() {
+      InitialState = (context) => new FakeLogicBlockAsync.State.OnEnterState(
+        context,
+        (previous) =>
+          throw new InvalidOperationException("Error from OnEnter")
+      )
+    };
+
+    await Should.ThrowAsync<InvalidOperationException>(
+      async () => await block.Value.Enter()
+    );
   }
 
   [Fact]
@@ -185,32 +199,22 @@ public class LogicBlockAsyncTest {
 
   [Fact]
   public async Task StartsManuallyAndIgnoresStartWhenProcessing() {
-    var enterCalled = 0;
+    var enterCalled = false;
     var block = new FakeLogicBlockAsync() {
       InitialState = (context) =>
         new FakeLogicBlockAsync.State.OnEnterState(
           context, (previous) => {
-            enterCalled++;
+            enterCalled = true;
             return Task.CompletedTask;
           }
         )
     };
 
     // LogicBlocks shouldn't call entrance handlers for the initial state.
-    enterCalled.ShouldBe(0);
+    enterCalled.ShouldBeFalse();
 
-    await block.Start();
-    enterCalled.ShouldBe(1);
+    await block.Value.Enter();
 
-    var context = new FakeLogicBlockAsync.Context(block);
-    var value = block.Input(new FakeLogicBlockAsync.Input.InputCallback(
-      // This gets run from the input handler of InputCallback.
-      async () => await block.Start(),
-      (context) => Task.FromResult<FakeLogicBlockAsync.State>(
-        new FakeLogicBlockAsync.State.StateA(context, 2, 3)
-      )
-    ));
-
-    enterCalled.ShouldBe(1);
+    enterCalled.ShouldBeTrue();
   }
 }

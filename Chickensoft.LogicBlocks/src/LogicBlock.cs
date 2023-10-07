@@ -10,22 +10,16 @@ using System;
 /// <para>
 /// Logic blocks are essentially statecharts that are created using the state
 /// pattern. Each state is a self-contained class, record, or struct that
-/// implements <see cref="Logic{TInput, TState, TOutput, THandler,
-/// TInputReturn, TUpdate}.IStateLogic"/>.
+/// implements <see cref="Logic{
+///   TState, THandler, TInputReturn, TUpdate
+/// }.IStateLogic"/>.
 /// </para>
 /// </summary>
-/// <typeparam name="TInput">Input type.</typeparam>
 /// <typeparam name="TState">State type.</typeparam>
-/// <typeparam name="TOutput">Output type.</typeparam>
-public interface ILogicBlock<TInput, TState, TOutput>
-  : ILogic<
-      TInput, TState, TOutput, Func<TInput, TState>, TState, Action<TState>
-    >
-  where TInput : notnull
-  where TState : Logic<
-      TInput, TState, TOutput, Func<TInput, TState>, TState, Action<TState>
-    >.IStateLogic
-  where TOutput : notnull {
+public interface ILogicBlock<TState> :
+ILogic<
+  TState, Func<object, TState>, TState, Action<TState?>
+> where TState : LogicBlock<TState>.StateLogic {
   /// <summary>
   /// Returns the initial state of the logic block. Implementations must
   /// override this method to provide a valid initial state.
@@ -33,25 +27,8 @@ public interface ILogicBlock<TInput, TState, TOutput>
   /// <param name="context">Logic block context.</param>
   /// <returns>Initial state of the logic block.</returns>
   TState GetInitialState(Logic<
-    TInput, TState, TOutput, Func<TInput, TState>, TState, Action<TState>
+    TState, Func<object, TState>, TState, Action<TState?>
   >.IContext context);
-
-  /// <summary>
-  /// Calls the entrance callbacks for the initial state. Technically, you can
-  /// call this whenever you'd like to re-trigger entrance callbacks for the
-  /// current state, but it's not recommended.
-  /// <br />
-  /// Calling this is optional. LogicBlocks doesn't invoke the initial state's
-  /// entrance callbacks by default since the <see cref="Logic{
-  /// TInput, TState, TOutput, THandler, TInputReturn, TUpdate
-  /// }.Value"/> property  must be synchronous and the side effects of the
-  /// initial state are often redundant in typical use cases representing the
-  /// default starting state.
-  /// <br />
-  /// This is provided for those times when you actually do need the side
-  /// effects from the initial state's entrance callbacks.
-  /// </summary>
-  void Start();
 }
 
 /// <summary>
@@ -62,35 +39,16 @@ public interface ILogicBlock<TInput, TState, TOutput>
 /// <para>
 /// Logic blocks are essentially statecharts that are created using the state
 /// pattern. Each state is a self-contained class, record, or struct that
-/// implements <see cref="Logic{TInput, TState, TOutput, THandler,
-/// TInputReturn, TUpdate}.IStateLogic"/>.
+/// implements <see cref="Logic{
+///   TState, THandler, TInputReturn, TUpdate
+/// }.IStateLogic"/>.
 /// </para>
 /// </summary>
-/// <typeparam name="TInput">Input type.</typeparam>
 /// <typeparam name="TState">State type.</typeparam>
-/// <typeparam name="TOutput">Output type.</typeparam>
-public abstract partial class LogicBlock<TInput, TState, TOutput> :
-  Logic<
-    TInput, TState, TOutput, Func<TInput, TState>, TState, Action<TState>
-  >,
-  ILogicBlock<TInput, TState, TOutput> where TInput : notnull
-  where TState : Logic<
-    TInput,
-    TState,
-    TOutput,
-    Func<TInput, TState>,
-    TState,
-    Action<TState>
-  >.IStateLogic
-  where TOutput : notnull {
-  /// <summary>
-  /// Creates a new utility for testing the enter and exit callbacks on a state.
-  /// </summary>
-  /// <param name="state">State to be tested.</param>
-  /// <returns>A new state tester.</returns>
-  public static IStateTester Test(TState state) =>
-    new StateTester<TInput, TState, TOutput>(state);
-
+public abstract partial class LogicBlock<TState> :
+Logic<TState, Func<object, TState>, TState, Action<TState?>>,
+ILogicBlock<TState>
+where TState : LogicBlock<TState>.StateLogic {
   /// <summary>
   /// The context provided to the states of the logic block.
   /// </summary>
@@ -113,15 +71,6 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
 
   /// <inheritdoc />
   public abstract TState GetInitialState(IContext context);
-
-  /// <inheritdoc />
-  public void Start() {
-    if (IsProcessing) {
-      return;
-    }
-
-    CallOnEnterCallbacks(default!, Value);
-  }
 
   internal override TState Process() {
     if (IsProcessing) {
@@ -148,13 +97,13 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
 
       var previous = Value;
 
-      // Call OnExit callbacks for StateLogic states.
-      CallOnExitCallbacks(previous, state);
+      // Exit the previous state.
+      previous.Exit(state, (e) => AddError(e));
 
       SetState(state);
 
-      // Call OnEnter callbacks for StateLogic states.
-      CallOnEnterCallbacks(previous, state);
+      // Enter the next state.
+      state.Enter(previous, (e) => AddError(e));
 
       FinalizeStateChange(state);
     }
@@ -164,31 +113,7 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
     return Value;
   }
 
-  internal void CallOnExitCallbacks(TState previous, TState next) {
-    if (previous is StateLogic previousLogic) {
-      foreach (var onExit in previousLogic.InternalState.ExitCallbacks) {
-        if (onExit.IsType(next)) {
-          // Not actually leaving this state type.
-          continue;
-        }
-        RunSafe(() => onExit.Callback(next));
-      }
-    }
-  }
-
-  internal void CallOnEnterCallbacks(TState previous, TState next) {
-    if (next is StateLogic nextStateLogic) {
-      foreach (var onEnter in nextStateLogic.InternalState.EnterCallbacks) {
-        if (onEnter.IsType(previous)) {
-          // Already entered this state type.
-          continue;
-        }
-        RunSafe(() => onEnter.Callback(previous));
-      }
-    }
-  }
-
-  internal override Func<TInput, TState> GetInputHandler<TInputType>()
+  internal override Func<object, TState> GetInputHandler<TInputType>()
     => (input) => {
       if (Value is IGet<TInputType> stateWithHandler) {
         return RunSafe(() => stateWithHandler.On((TInputType)input), Value);
@@ -201,10 +126,5 @@ public abstract partial class LogicBlock<TInput, TState, TOutput> :
     try { return handler(); }
     catch (Exception e) { AddError(e); }
     return fallback;
-  }
-
-  private void RunSafe(Action callback) {
-    try { callback(); }
-    catch (Exception e) { AddError(e); }
   }
 }

@@ -4,22 +4,20 @@ using Chickensoft.LogicBlocks.Generator;
 
 [StateMachine]
 public partial class FakeLogicBlock {
-  public abstract record Input {
-    public record InputOne(int Value1, int Value2) : Input;
-    public record InputTwo(string Value1, string Value2)
-      : Input;
-    public record InputThree(string Value1, string Value2)
-      : Input;
-    public record InputError() : Input;
-    public record InputUnknown() : Input;
-    public record GetString() : Input;
-    public record NoNewState() : Input;
-    public record SelfInput(Input Input) : Input;
-    public record InputCallback(
+  public static class Input {
+    public readonly record struct InputOne(int Value1, int Value2);
+    public readonly record struct InputTwo(string Value1, string Value2);
+    public readonly record struct InputThree(string Value1, string Value2);
+    public readonly record struct InputError;
+    public readonly record struct InputUnknown;
+    public readonly record struct GetString;
+    public readonly record struct NoNewState;
+    public readonly record struct SelfInput(object Input);
+    public readonly record struct InputCallback(
       Action Callback,
       Func<IContext, State> Next
-    ) : Input;
-    public record Custom(Func<IContext, State> Next) : Input;
+    );
+    public readonly record struct Custom(Func<IContext, State> Next);
   }
 
   public abstract record State(IContext Context) : StateLogic(Context),
@@ -86,23 +84,20 @@ public partial class FakeLogicBlock {
     }
 
     public record OnEnterState : State {
-      public OnEnterState(IContext context, Action<State> onEnter) :
+      public OnEnterState(IContext context, Action<State?> onEnter) :
         base(context) {
         OnEnter<OnEnterState>(onEnter);
       }
     }
   }
 
-  public abstract record Output {
-    public record OutputOne(int Value) : Output;
-    public record OutputTwo(string Value) : Output;
+  public static class Output {
+    public readonly record struct OutputOne(int Value);
+    public readonly record struct OutputTwo(string Value);
   }
 }
 
-public partial class FakeLogicBlock
-  : LogicBlock<
-    FakeLogicBlock.Input, FakeLogicBlock.State, FakeLogicBlock.Output
-  > {
+public partial class FakeLogicBlock : LogicBlock<FakeLogicBlock.State> {
   public Func<IContext, State>? InitialState { get; init; }
 
   public List<Exception> Exceptions { get; } = new();

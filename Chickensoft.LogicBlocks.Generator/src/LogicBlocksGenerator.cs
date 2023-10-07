@@ -173,19 +173,13 @@ public class LogicBlocksGenerator :
     var logicBlockBase = matchingBases.First();
     var logicBlockGenericArgs = logicBlockBase.TypeArguments;
 
-    if (logicBlockGenericArgs.Length < 3) {
+    if (logicBlockGenericArgs.Length < 1) {
       return null;
     }
 
-    var inputType = logicBlockGenericArgs[0];
-    var stateType = logicBlockGenericArgs[1];
-    var outputType = logicBlockGenericArgs[2];
+    var stateType = logicBlockGenericArgs[0];
 
-    if (
-      stateType is not INamedTypeSymbol stateBaseType ||
-      inputType is not INamedTypeSymbol inputBaseType ||
-      outputType is not INamedTypeSymbol outputBaseType
-    ) {
+    if (stateType is not INamedTypeSymbol stateBaseType) {
       return null;
     }
 

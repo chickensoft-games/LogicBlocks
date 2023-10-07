@@ -3,14 +3,13 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 using Chickensoft.LogicBlocks.Generator;
 
 [StateMachine]
-public partial class MyLogicBlock :
-  LogicBlock<MyLogicBlock.Input, MyLogicBlock.State, MyLogicBlock.Output> {
+public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State> {
   public override State GetInitialState(IContext context) =>
     new State.SomeState(context);
 
-  public abstract record Input {
-    public record SomeInput : Input;
-    public record SomeOtherInput : Input;
+  public static class Input {
+    public readonly record struct SomeInput;
+    public readonly record struct SomeOtherInput;
   }
 
   public abstract record State(IContext Context) : StateLogic(Context) {
@@ -39,8 +38,8 @@ public partial class MyLogicBlock :
     }
   }
 
-  public abstract record Output {
-    public record SomeOutput : Output;
-    public record SomeOtherOutput : Output;
+  public static class Output {
+    public readonly record struct SomeOutput;
+    public readonly record struct SomeOtherOutput;
   }
 }

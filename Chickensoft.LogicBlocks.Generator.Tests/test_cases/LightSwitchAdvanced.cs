@@ -1,44 +1,41 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 
 [StateMachine]
-public class LightSwitchAdvanced :
-LogicBlock<
-  LightSwitchAdvanced.IInput, LightSwitchAdvanced.State, LightSwitchAdvanced.IOutput
-> {
+public class LightSwitchAdvanced : LogicBlock<LightSwitchAdvanced.State> {
   public override State GetInitialState(IContext context) =>
     new State.Off(context);
 
-  public interface IInput {
-    public readonly record struct Toggle : IInput;
+  public static class Input {
+    public readonly record struct Toggle;
   }
 
   public abstract record State(IContext Context) : StateLogic(Context) {
-    public record On : State, IGet<IInput.Toggle> {
+    public record On : State, IGet<Input.Toggle> {
       public On(IContext context) : base(context) {
         // Announce that we are now on.
         OnEnter<On>(
-          (context) => Context.Output(new IOutput.StatusChanged(IsOn: true))
+          (context) => Context.Output(new Output.StatusChanged(IsOn: true))
         );
       }
 
       // If we're toggled while we're on, we turn off.
-      State IGet<IInput.Toggle>.On(IInput.Toggle input) => new Off(Context);
+      State IGet<Input.Toggle>.On(Input.Toggle input) => new Off(Context);
     }
 
-    public record Off : State, IGet<IInput.Toggle> {
+    public record Off : State, IGet<Input.Toggle> {
       public Off(IContext context) : base(context) {
         // Announce that we are now off.
         OnEnter<On>(
-          (context) => Context.Output(new IOutput.StatusChanged(IsOn: false))
+          (context) => Context.Output(new Output.StatusChanged(IsOn: false))
         );
       }
 
       // If we're toggled while we're off, we turn on.
-      State IGet<IInput.Toggle>.On(IInput.Toggle input) => new On(Context);
+      State IGet<Input.Toggle>.On(Input.Toggle input) => new On(Context);
     }
   }
 
-  public interface IOutput {
-    public readonly record struct StatusChanged(bool IsOn) : IOutput;
+  public static class Output {
+    public readonly record struct StatusChanged(bool IsOn);
   }
 }

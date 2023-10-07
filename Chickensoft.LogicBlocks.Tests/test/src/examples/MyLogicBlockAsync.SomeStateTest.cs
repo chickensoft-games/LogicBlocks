@@ -24,12 +24,9 @@ public class SomeStateAsyncTest {
     // Make sure we got the next state.
     result.ShouldBeOfType<MyLogicBlockAsync.State.SomeOtherState>();
 
-    // Create a special StateTester so we can run enter/exit callbacks.
-    var stateTester = MyLogicBlockAsync.Test(state);
-
     // Simulate enter/exit callbacks
-    await stateTester.Enter();
-    await stateTester.Exit();
+    await state.Enter();
+    await state.Exit();
 
     // Make sure we got 3 outputs:
     // 1 from enter, 1 from input handler, and 1 from exit.

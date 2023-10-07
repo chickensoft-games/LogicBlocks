@@ -1,15 +1,14 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 [StateMachine]
-public class ToasterOven :
-  LogicBlock<ToasterOven.Input, ToasterOven.State, ToasterOven.Output> {
+public class ToasterOven : LogicBlock<ToasterOven.State> {
   public override State GetInitialState(IContext context) =>
     new State.Toasting(context, 0);
 
-  public record Input {
-    public record OpenDoor : Input;
-    public record CloseDoor(int ToastColor) : Input;
-    public record StartBaking(int Temperature) : Input;
-    public record StartToasting(int ToastColor) : Input;
+  public static class Input {
+    public readonly record struct OpenDoor;
+    public readonly record struct CloseDoor(int ToastColor);
+    public readonly record struct StartBaking(int Temperature);
+    public readonly record struct StartToasting(int ToastColor);
   }
 
   public abstract record State(IContext Context) : StateLogic(Context) {
@@ -80,13 +79,13 @@ public class ToasterOven :
     }
   }
 
-  public abstract record Output {
-    public record TurnHeaterOn() : Output;
-    public record TurnHeaterOff() : Output;
-    public record SetTemperature(int Temp) : Output;
-    public record TurnLampOn() : Output;
-    public record TurnLampOff() : Output;
-    public record SetTimer(int ToastColor) : Output;
-    public record ResetTimer() : Output;
+  public static class Output {
+    public readonly record struct TurnHeaterOn;
+    public readonly record struct TurnHeaterOff;
+    public readonly record struct SetTemperature(int Temp);
+    public readonly record struct TurnLampOn;
+    public readonly record struct TurnLampOff;
+    public readonly record struct SetTimer(int ToastColor);
+    public readonly record struct ResetTimer;
   }
 }
