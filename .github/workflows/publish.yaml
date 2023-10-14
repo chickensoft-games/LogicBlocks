@@ -60,10 +60,16 @@ jobs:
         run: |
           echo "Next Version: ${{ steps.next-version.outputs.version }}"
 
-      - name: 📝 Change Version
+      - name: 📝 Change Version in Main Project
         uses: vers-one/dotnet-project-version-updater@v1.3
         with:
           file: "Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj"
+          version:  ${{ steps.next-version.outputs.version }}
+
+      - name: 📝 Change Version in Generator Project
+        uses: vers-one/dotnet-project-version-updater@v1.3
+        with:
+          file: "Chickensoft.LogicBlocks.Generator/Chickensoft.LogicBlocks.Generator.csproj"
           version:  ${{ steps.next-version.outputs.version }}
 
       - name: ✍️ Commit Changes

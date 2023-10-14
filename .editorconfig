@@ -477,3 +477,5 @@ dotnet_diagnostic.IDE0290.severity = none
 dotnet_diagnostic.RCS1197.severity = none
 # Let me have empty destructors
 dotnet_diagnostic.RCS1259.severity = none
+# Leave me alone about static members in generic types.
+dotnet_diagnostic.RCS1158.severity = none

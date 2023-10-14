@@ -88,6 +88,13 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> :
     }
   }
 
+  /// <summary>
+  /// Creates a fake logic binding that can be used to more easily test objects
+  /// that bind to logic blocks.
+  /// </summary>
+  /// <returns>Fake binding.</returns>
+  public static IFakeBinding CreateFakeBinding() => new FakeBinding();
+
   internal readonly struct UpdateCallback {
     public TUpdate Callback { get; }
     public Func<dynamic?, bool> IsType { get; }

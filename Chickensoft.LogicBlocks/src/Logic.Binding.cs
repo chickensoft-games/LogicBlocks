@@ -14,9 +14,6 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
   /// </para>
   /// </summary>
   public interface IBinding : IDisposable {
-    /// <summary>Logic block that is being bound to.</summary>
-    Logic<TState, THandler, TInputReturn, TUpdate> LogicBlock { get; }
-
     /// <summary>
     /// Register a callback to be invoked whenever an input type of
     /// <typeparamref name="TInputType" /> is encountered.
@@ -59,54 +56,39 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
       where TException : Exception;
   }
 
-  /// <summary>
-  /// <para>State bindings for a logic block.</para>
-  /// <para>
-  /// A binding allows you to select data from a logic block's state, invoke
-  /// methods when certain states occur, and handle outputs. Using bindings
-  /// enable you to write more declarative code and prevent unnecessary
-  /// updates when a state has changed but the relevant data within it has not.
-  /// </para>
-  /// </summary>
-  internal sealed class Binding : IBinding {
-    /// <inheritdoc />
-    public Logic<TState, THandler, TInputReturn, TUpdate> LogicBlock { get; }
-
-    private TState _previousState;
-
+  internal abstract class BindingBase : IBinding {
     // List of functions that receive a TInput and return whether the binding
     // with the same index in the _inputRunners should be run.
-    private readonly List<Func<object, bool>> _inputCheckers;
+    internal readonly List<Func<object, bool>> _inputCheckers;
     // List of functions that receive an input and invoke the relevant binding
     // when a particular type of input is encountered.
-    private readonly List<Action<object>> _inputRunners;
+    internal readonly List<Action<object>> _inputRunners;
 
     // List of functions that receive a TState and return whether the binding
     // with the same index in the _whenBindingRunners should be run.
-    private readonly List<Func<TState, bool>> _whenBindingCheckers;
+    internal readonly List<Func<TState, bool>> _whenBindingCheckers;
     // List of functions that receive a TState and invoke the relevant binding
     // when a particular type of state is encountered.
-    private readonly List<Action<TState, TState>> _whenBindingRunners;
+    internal readonly List<Action<TState, TState?>> _whenBindingRunners;
 
     // List of functions that receive a TState and return whether the binding
     // with the same index in the _handledOutputRunners should be run.
-    private readonly List<Func<object, bool>> _handledOutputCheckers;
+    internal readonly List<Func<object, bool>> _handledOutputCheckers;
     // List of functions that receive an output and invoke the relevant binding
     // when a particular type of output is encountered.
-    private readonly List<Action<object>> _handledOutputRunners;
+    internal readonly List<Action<object>> _handledOutputRunners;
 
     // List of functions that receive an Exception and return whether the
     // binding with the same index in the _errorRunners should be run.
-    private readonly List<Func<Exception, bool>> _errorCheckers;
+    internal readonly List<Func<Exception, bool>> _errorCheckers;
     // List of functions that receive an Exception and invoke the relevant
     // binding when a particular type of error is encountered.
-    private readonly List<Action<Exception>> _errorRunners;
+    internal readonly List<Action<Exception>> _errorRunners;
 
-    internal Binding(
-      Logic<TState, THandler, TInputReturn, TUpdate> logicBlock
-    ) {
-      LogicBlock = logicBlock;
-      _previousState = logicBlock.Value;
+    private TState? _previousState;
+
+    internal BindingBase() {
+      _previousState = default;
       _inputCheckers = new();
       _inputRunners = new();
       _whenBindingCheckers = new();
@@ -115,11 +97,6 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
       _handledOutputRunners = new();
       _errorCheckers = new();
       _errorRunners = new();
-
-      LogicBlock.OnInput += OnInput;
-      LogicBlock.OnState += OnState;
-      LogicBlock.OnOutput += OnOutput;
-      LogicBlock.OnError += OnError;
     }
 
     /// <inheritdoc />
@@ -163,13 +140,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
       return this;
     }
 
-    /// <summary>
-    /// Clean up registered bindings for all states and stop listening
-    /// for state changes.
-    /// </summary>
-    public void Dispose() => Dispose(true);
-
-    private void OnInput(object input) {
+    internal void OnInput(object input) {
       // Run each input binding that should be run.
       for (var i = 0; i < _inputCheckers.Count; i++) {
         var checker = _inputCheckers[i];
@@ -181,7 +152,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
       }
     }
 
-    private void OnState(TState state) {
+    internal void OnState(TState state) {
       // Run each when binding that should be run.
       for (var i = 0; i < _whenBindingCheckers.Count; i++) {
         var checker = _whenBindingCheckers[i];
@@ -194,7 +165,8 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
 
       _previousState = state;
     }
-    private void OnOutput(object output) {
+
+    internal void OnOutput(object output) {
       // Run each handled output binding that should be run.
       for (var i = 0; i < _handledOutputCheckers.Count; i++) {
         var checker = _handledOutputCheckers[i];
@@ -206,7 +178,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
       }
     }
 
-    private void OnError(Exception error) {
+    internal void OnError(Exception error) {
       // Run each error binding that should be run.
       for (var i = 0; i < _errorCheckers.Count; i++) {
         var checker = _errorCheckers[i];
@@ -218,17 +190,21 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
       }
     }
 
+    /// <inheritdoc />
+    public void Dispose() => Dispose(true);
+
     private void Dispose(bool disposing) {
       if (disposing) {
-        LogicBlock.OnInput -= OnInput;
-        LogicBlock.OnState -= OnState;
-        LogicBlock.OnOutput -= OnOutput;
-        LogicBlock.OnError -= OnError;
         Cleanup();
       }
     }
 
-    private void Cleanup() {
+    /// <summary>Glue finalizer.</summary>
+    ~BindingBase() {
+      Dispose(false);
+    }
+
+    internal virtual void Cleanup() {
       _whenBindingCheckers.Clear();
       _whenBindingRunners.Clear();
       _handledOutputCheckers.Clear();
@@ -238,10 +214,38 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
       _inputCheckers.Clear();
       _inputRunners.Clear();
     }
+  }
 
-    /// <summary>Glue finalizer.</summary>
-    ~Binding() {
-      Dispose(false);
+  /// <summary>
+  /// <para>State bindings for a logic block.</para>
+  /// <para>
+  /// A binding allows you to select data from a logic block's state, invoke
+  /// methods when certain states occur, and handle outputs. Using bindings
+  /// enable you to write more declarative code and prevent unnecessary
+  /// updates when a state has changed but the relevant data within it has not.
+  /// </para>
+  /// </summary>
+  internal sealed class Binding : BindingBase {
+    /// <summary>Logic block that is being bound to.</summary>
+    public Logic<TState, THandler, TInputReturn, TUpdate> LogicBlock { get; }
+
+    internal Binding(
+      Logic<TState, THandler, TInputReturn, TUpdate> logicBlock
+    ) {
+      LogicBlock = logicBlock;
+
+      LogicBlock.OnInput += OnInput;
+      LogicBlock.OnState += OnState;
+      LogicBlock.OnOutput += OnOutput;
+      LogicBlock.OnError += OnError;
+    }
+
+    internal override void Cleanup() {
+      base.Cleanup();
+      LogicBlock.OnInput -= OnInput;
+      LogicBlock.OnState -= OnState;
+      LogicBlock.OnOutput -= OnOutput;
+      LogicBlock.OnError -= OnError;
     }
   }
 
@@ -306,7 +310,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     // binding.
     private readonly List<dynamic?> _bindingValues = new();
     // Callbacks for this state type registered with .Call()
-    private readonly List<Action<dynamic, TState>> _callbacks = new();
+    private readonly List<Action<dynamic, TState?>> _callbacks = new();
 
     internal WhenBinding() { }
 
@@ -324,7 +328,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     /// </summary>
     /// <param name="state">Current state.</param>
     /// <param name="previous">Previous state.</param>
-    internal void Run(TState state, TState previous) {
+    internal void Run(TState state, TState? previous) {
       for (var i = 0; i < _bindingCheckers.Count; i++) {
         var checker = _bindingCheckers[i];
         var selector = _bindingSelectors[i];
@@ -351,7 +355,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     ) where TSelectedData : notnull {
       var checker = (
         dynamic state,
-        TState previous,
+        TState? previous,
         dynamic selectedData,
         dynamic previousData
       ) => {
@@ -388,7 +392,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     /// <inheritdoc />
     public IWhenBinding<TStateType> Call(Action<TStateType> callback) {
       var handler =
-        (dynamic state, TState previous) => callback((TStateType)state);
+        (dynamic state, TState? previous) => callback((TStateType)state);
 
       _callbacks.Add(handler);
 
