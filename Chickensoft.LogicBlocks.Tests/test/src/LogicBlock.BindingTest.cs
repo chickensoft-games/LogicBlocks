@@ -6,7 +6,7 @@ using Moq;
 using Shouldly;
 using Xunit;
 
-public class BlocGlueTests {
+public class BindingTest {
   public static bool WasFinalized { get; set; }
 
   [Fact]
