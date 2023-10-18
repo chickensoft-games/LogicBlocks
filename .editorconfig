@@ -479,3 +479,6 @@ dotnet_diagnostic.RCS1197.severity = none
 dotnet_diagnostic.RCS1259.severity = none
 # Leave me alone about static members in generic types.
 dotnet_diagnostic.RCS1158.severity = none
+# Fancy collection syntax doesn't work yet for compatibility.
+dotnet_diagnostic.IDE0028.severity = none
+

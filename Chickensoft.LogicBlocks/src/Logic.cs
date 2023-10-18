@@ -14,7 +14,7 @@ using System.Collections.Generic;
 /// <typeparam name="TInputReturn">Input method return type.</typeparam>
 /// <typeparam name="TUpdate">Update callback type.</typeparam>
 public partial interface ILogic<TState, THandler, TInputReturn, TUpdate>
-where TState : Logic<TState, THandler, TInputReturn, TUpdate>.IStateLogic {
+where TState : Logic<TState, THandler, TInputReturn, TUpdate>.ILogicState {
   /// <summary>Current state of the logic block.</summary>
   TState Value { get; }
   /// <summary>
@@ -74,7 +74,7 @@ where TState : Logic<TState, THandler, TInputReturn, TUpdate>.IStateLogic {
 public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> :
   ILogic<TState, THandler, TInputReturn, TUpdate> where TState : Logic<
     TState, THandler, TInputReturn, TUpdate
-  >.IStateLogic {
+  >.ILogicState {
   internal readonly struct PendingInput {
     public object Input { get; }
     /// <summary>

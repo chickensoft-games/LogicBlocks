@@ -10,16 +10,13 @@ using System.Threading.Tasks;
 /// </para>
 /// <para>
 /// Logic blocks are essentially statecharts that are created using the state
-/// pattern. Each state is a self-contained class, record, or struct that
-/// implements <see cref="Logic{
-///   TState, THandler, TInputReturn, TUpdate
-/// }.IStateLogic"/>.
+/// pattern. Each state is a self-contained record.
 /// </para>
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
 public interface ILogicBlockAsync<TState> : ILogic<
   TState, Func<object, Task<TState>>, Task<TState>, Func<TState?, Task>
-> where TState : LogicBlockAsync<TState>.StateLogic {
+> where TState : class, LogicBlockAsync<TState>.IStateLogic {
   /// <summary>
   /// Returns the initial state of the logic block. Implementations must
   /// override this method to provide a valid initial state.
@@ -43,10 +40,7 @@ public interface ILogicBlockAsync<TState> : ILogic<
 /// </para>
 /// <para>
 /// Logic blocks are essentially statecharts that are created using the state
-/// pattern. Each state is a self-contained class, record, or struct that
-/// implements <see cref="Logic{
-///   TState, THandler, TInputReturn, TUpdate
-/// }.IStateLogic"/>.
+/// pattern. Each state is a self-contained record.
 /// </para>
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
@@ -55,7 +49,10 @@ public abstract partial class LogicBlockAsync<TState> : Logic<
   Func<object, Task<TState>>,
   Task<TState>,
   Func<TState?, Task>
->, ILogicBlockAsync<TState> where TState : LogicBlockAsync<TState>.StateLogic {
+>,
+ILogicBlockAsync<
+  TState
+> where TState : class, LogicBlockAsync<TState>.IStateLogic {
   /// <summary>
   /// The context provided to the states of the logic block.
   /// </summary>

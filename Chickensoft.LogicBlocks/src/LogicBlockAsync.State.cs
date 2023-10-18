@@ -4,19 +4,13 @@ using System;
 using System.Threading.Tasks;
 
 public partial class LogicBlockAsync<TState> {
-  /// <summary>
-  /// Logic block base state record. If you are using records for your logic
-  /// block states, you may inherit from this record rather instead of
-  /// implementing <see cref="Logic{
-  ///   TState, THandler, TInputReturn, TUpdate
-  /// }.IStateLogic"/> directly and storing a context
-  /// in each state.
-  /// </summary>
+  /// <summary>Logic block base state record implementation.</summary>
   public abstract record StateLogic : IStateLogic {
     /// <inheritdoc />
     public IContext Context { get; }
 
-    StateLogicState IStateLogic.InternalState { get; } = new();
+    /// <inheritdoc />
+    public StateLogicState InternalState { get; } = new();
 
     /// <summary>
     /// Creates a new instance of the logic block base state record.
@@ -46,13 +40,17 @@ public partial class LogicBlockAsync<TState> {
 
     /// <inheritdoc />
     public void OnEnter<TStateType>(Func<TState?, Task> handler)
-      where TStateType : IStateLogic =>
-        (this as IStateLogic).RegisterOnEnterCallback<TStateType>(handler);
+      where TStateType : class, IStateLogic =>
+        InternalState.EnterCallbacks.Enqueue(
+          new(handler, (state) => state is TStateType)
+        );
 
     /// <inheritdoc />
     public void OnExit<TStateType>(Func<TState?, Task> handler)
-      where TStateType : IStateLogic =>
-        (this as IStateLogic).RegisterOnExitCallback<TStateType>(handler);
+      where TStateType : class, IStateLogic =>
+        InternalState.ExitCallbacks.Push(
+          new(handler, (state) => state is TStateType)
+        );
 
     private async Task CallOnEnterCallbacks(
       TState? previous, TState? next, Action<Exception>? onError

@@ -90,7 +90,7 @@ jobs:
           # Use the .NET SDK from global.json in the root of the repository.
           global-json-file: global.json
 
-      - name: 📦 Publish
+      - name: 📦 Publish Package
         run: |
           # build the package
           dotnet build Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj -c Release
@@ -102,3 +102,16 @@ jobs:
 
           # publish the nuget package
           dotnet nuget push "$nuget_package" --api-key "${{ secrets.NUGET_API_KEY }}" --source "https://api.nuget.org/v3/index.json" --skip-duplicate
+
+      - name: 📦 Publish Generator Package
+        run: |
+          # build the package
+          dotnet build Chickensoft.LogicBlocks.Generator/Chickensoft.LogicBlocks.Generator.csproj -c Release
+
+          # find the built nuget package
+          generator_package=$(find . -name "Chickensoft.LogicBlocks.Generator*.nupkg")
+
+          echo "📦 Publishing package: $generator_package"
+
+          # publish the nuget package
+          dotnet nuget push "$generator_package" --api-key "${{ secrets.NUGET_API_KEY }}" --source "https://api.nuget.org/v3/index.json" --skip-duplicate
