@@ -30,7 +30,7 @@ public class LogicBlocksGenerator :
     // the source generator process is started by running `dotnet build` in
     // the project consuming the source generator
     //
-    // Debugger.Launch();
+    // System.Diagnostics.Debugger.Launch();
 
     // Add post initialization sources
     // (source code that is always generated regardless)
@@ -183,27 +183,42 @@ public class LogicBlocksGenerator :
       return null;
     }
 
+    // if stateSubtype is an interface, we want to find the first subtype that
+    // implements it and StateLogic. this is a shallow search in the
+    // logic block.
+    var primaryState = symbol.GetTypeMembers().FirstOrDefault(
+      type => type.AllInterfaces.Any(
+        (type) => SymbolEqualityComparer.Default.Equals(
+          type, stateBaseType
+        )
+      )
+    );
+
+    var concreteState = primaryState ?? stateBaseType;
+
+    // all state subtypes, found recursively
     var stateSubtypes = CodeService.GetAllTypes(
-      stateBaseType,
+      concreteState,
       (type) => CodeService.GetAllBaseTypes(type).Any(
           (baseType) => SymbolEqualityComparer.Default.Equals(
-            baseType, stateBaseType
+            baseType, concreteState
           )
         )
       );
 
     // Base state becomes the root
     var root = new LogicBlockGraph(
-      id: CodeService.GetNameFullyQualified(stateBaseType, stateBaseType.Name),
-      name: stateBaseType.Name,
+      id: CodeService.GetNameFullyQualified(concreteState, concreteState.Name),
+      name: concreteState.Name,
       baseId: CodeService.GetNameFullyQualifiedWithoutGenerics(
-        stateBaseType, stateBaseType.Name
+        concreteState, concreteState.Name
       )
     );
 
     var stateTypesById = new Dictionary<string, INamedTypeSymbol> {
-      [root.Id] = stateBaseType
+      [root.Id] = concreteState
     };
+
     var stateGraphsById = new Dictionary<string, LogicBlockGraph> {
       [root.Id] = root
     };
@@ -251,7 +266,7 @@ public class LogicBlocksGenerator :
     ) {
       foreach (var initialStateMethodSyntax in initialStateMethodSyntaxes) {
         var initialStateVisitor = new ReturnTypeVisitor(
-          model, token, CodeService, stateBaseType
+          model, token, CodeService, concreteState
         );
         initialStateVisitor.Visit(initialStateMethodSyntax);
         initialStateIds.UnionWith(initialStateVisitor.ReturnTypes);
@@ -292,13 +307,13 @@ public class LogicBlocksGenerator :
     if (subtypesByBaseType.ContainsKey(root.BaseId)) {
       // Only try to build graph of subtypes if there are any.
       root.Children.AddRange(subtypesByBaseType[root.BaseId]
-        .Select((stateType) => buildGraph(stateType, stateBaseType))
+        .Select((stateType) => buildGraph(stateType, concreteState))
       );
     }
 
     foreach (var state in stateGraphsById.Values) {
       state.Data = GetStateGraphData(
-        stateTypesById[state.Id], model, token, stateBaseType
+        stateTypesById[state.Id], model, token, concreteState
       );
     }
 

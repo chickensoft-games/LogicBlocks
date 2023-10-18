@@ -3,19 +3,13 @@ namespace Chickensoft.LogicBlocks;
 using System;
 
 public partial class LogicBlock<TState> {
-  /// <summary>
-  /// Logic block base state record. If you are using records for your logic
-  /// block states, you may inherit from this record rather instead of
-  /// implementing <see cref="Logic{
-  ///   TState, THandler, TInputReturn, TUpdate
-  /// }.IStateLogic"/> directly and storing a context
-  /// in each state.
-  /// </summary>
+  /// <summary>Logic block base state record implementation.</summary>
   public abstract record StateLogic : IStateLogic {
     /// <inheritdoc />
     public IContext Context { get; }
 
-    StateLogicState IStateLogic.InternalState { get; } = new();
+    /// <inheritdoc />
+    public StateLogicState InternalState { get; } = new();
 
     /// <summary>
     /// Creates a new instance of the logic block base state record.
@@ -25,33 +19,29 @@ public partial class LogicBlock<TState> {
       Context = context;
     }
 
-    /// <summary>
-    /// Runs all of the registered entrance callbacks for the state.
-    /// </summary>
-    /// <param name="previous">Previous state, if any.</param>
-    /// <param name="onError">Error callback, if any.</param>
+    /// <inheritdoc />
     public void Enter(
       TState? previous = default, Action<Exception>? onError = null
     ) => CallOnEnterCallbacks(previous, this as TState, onError);
 
-    /// <summary>
-    /// Runs all of the registered exit callbacks for the state.
-    /// </summary>
-    /// <param name="next">Next state, if any.</param>
-    /// <param name="onError">Error callback, if any.</param>
+    /// <inheritdoc />
     public void Exit(
       TState? next = default, Action<Exception>? onError = null
     ) => CallOnExitCallbacks(this as TState, next, onError);
 
     /// <inheritdoc />
     public void OnEnter<TStateType>(Action<TState?> handler)
-      where TStateType : IStateLogic =>
-        (this as IStateLogic).RegisterOnEnterCallback<TStateType>(handler);
+      where TStateType : class, IStateLogic =>
+        InternalState.EnterCallbacks.Enqueue(
+          new(handler, (state) => state is TStateType)
+        );
 
     /// <inheritdoc />
     public void OnExit<TStateType>(Action<TState?> handler)
-      where TStateType : IStateLogic =>
-        (this as IStateLogic).RegisterOnExitCallback<TStateType>(handler);
+      where TStateType : class, IStateLogic =>
+        InternalState.ExitCallbacks.Push(
+          new(handler, (state) => state is TStateType)
+        );
 
     private void CallOnEnterCallbacks(
       TState? previous, TState? next, Action<Exception>? onError
