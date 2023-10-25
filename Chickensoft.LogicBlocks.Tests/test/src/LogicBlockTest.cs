@@ -328,4 +328,38 @@ public class LogicBlockTest {
 
     enterCalled.ShouldBeTrue();
   }
+
+  [Fact]
+  public void StartEntersState() {
+    var enterCalled = false;
+    var block = new FakeLogicBlock() {
+      InitialState = (context) =>
+        new FakeLogicBlock.State.OnEnterState(
+          context, (previous) => enterCalled = true
+        )
+    };
+
+    enterCalled.ShouldBeFalse();
+
+    block.Start();
+
+    enterCalled.ShouldBeTrue();
+  }
+
+  [Fact]
+  public void StopExitsState() {
+    var exitCalled = false;
+    var block = new FakeLogicBlock() {
+      InitialState = (context) =>
+        new FakeLogicBlock.State.OnExitState(
+          context, (previous) => exitCalled = true
+        )
+    };
+
+    exitCalled.ShouldBeFalse();
+
+    block.Stop();
+
+    exitCalled.ShouldBeTrue();
+  }
 }

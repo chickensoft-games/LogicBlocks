@@ -89,6 +89,13 @@ public partial class FakeLogicBlockAsync {
         OnEnter<OnEnterState>(onEnter);
       }
     }
+
+    public record OnExitState : State {
+      public OnExitState(IContext context, Func<State?, Task> onExit) :
+        base(context) {
+        OnExit<OnExitState>(onExit);
+      }
+    }
   }
 
   public static class Output {

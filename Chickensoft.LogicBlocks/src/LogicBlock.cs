@@ -26,6 +26,21 @@ ILogic<
   TState GetInitialState(Logic<
     TState, Func<object, TState>, TState, Action<TState?>
   >.IContext context);
+
+  /// <summary>
+  /// Starts the logic block by entering the current state. If the logic block
+  /// hasn't initialized yet, this will create the initial state before entering
+  /// it.
+  /// </summary>
+  void Start();
+
+  /// <summary>
+  /// Stops the logic block by exiting the current state. For best results,
+  /// don't continue to give inputs to the logic block after stopping it.
+  /// Otherwise, you might end up firing the exit handler of a state more than
+  /// once.
+  /// </summary>
+  void Stop();
 }
 
 /// <summary>
@@ -107,6 +122,13 @@ where TState : class, LogicBlock<TState>.IStateLogic {
 
     return Value;
   }
+
+  /// <inheritdoc />
+  public void Start() =>
+    Value.Enter(previous: null, onError: (e) => AddError(e));
+
+  /// <inheritdoc />
+  public void Stop() => Value.Exit(next: null, onError: (e) => AddError(e));
 
   internal override Func<object, TState> GetInputHandler<TInputType>()
     => (input) => {
