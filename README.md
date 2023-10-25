@@ -678,6 +678,18 @@ Or, in the case of an async logic block:
 await logic.Start();
 ```
 
+Likewise, when you are done with your logic block, you can run the exit callbacks for the final state by calling `Stop`.
+
+```csharp
+logic.Stop(); // Runs OnExit callbacks for the current (presumably final) state.
+```
+
+Or, for an async logic block:
+
+```csharp
+await logic.Stop();
+```
+
 ### 🧪 Testing
 
 You can mock a logic block, its bindings, and its context.

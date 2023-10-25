@@ -89,6 +89,13 @@ public partial class FakeLogicBlock {
         OnEnter<OnEnterState>(onEnter);
       }
     }
+
+    public record OnExitState : State {
+      public OnExitState(IContext context, Action<State?> onExit) :
+        base(context) {
+        OnExit<OnExitState>(onExit);
+      }
+    }
   }
 
   public static class Output {

@@ -9,6 +9,7 @@
     <RootNamespace>Chickensoft.LogicBlocks.Generator</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoWarn>NU5128</NoWarn>
+    <OutputPath>./nupkg</OutputPath>
 
     <Title>LogicBlocks Generator</Title>
     <Version>3.2.0</Version>

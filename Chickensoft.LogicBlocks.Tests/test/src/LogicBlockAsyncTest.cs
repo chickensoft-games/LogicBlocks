@@ -217,4 +217,42 @@ public class LogicBlockAsyncTest {
 
     enterCalled.ShouldBeTrue();
   }
+
+  [Fact]
+  public async Task StartEntersState() {
+    var enterCalled = false;
+    var block = new FakeLogicBlockAsync() {
+      InitialState = (context) =>
+        new FakeLogicBlockAsync.State.OnEnterState(
+          context, (previous) => {
+            enterCalled = true;
+            return Task.CompletedTask;
+          })
+    };
+
+    enterCalled.ShouldBeFalse();
+
+    await block.Start();
+
+    enterCalled.ShouldBeTrue();
+  }
+
+  [Fact]
+  public async Task StopExitsState() {
+    var exitCalled = false;
+    var block = new FakeLogicBlockAsync() {
+      InitialState = (context) =>
+        new FakeLogicBlockAsync.State.OnExitState(
+          context, (previous) => {
+            exitCalled = true;
+            return Task.CompletedTask;
+          })
+    };
+
+    exitCalled.ShouldBeFalse();
+
+    await block.Stop();
+
+    exitCalled.ShouldBeTrue();
+  }
 }

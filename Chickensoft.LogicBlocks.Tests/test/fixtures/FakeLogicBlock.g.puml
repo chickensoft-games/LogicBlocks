@@ -7,6 +7,7 @@ state "FakeLogicBlock State" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogic
   state "NothingState" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_NothingState
   state "Custom" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_Custom
   state "OnEnterState" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_OnEnterState
+  state "OnExitState" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_OnExitState
   Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State : OnInputOne → OutputOne
   Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State : OnInputTwo → OutputTwo
   Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State : OnNoNewState → OutputOne
