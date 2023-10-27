@@ -1,11 +1,17 @@
+#pragma warning disable CS1998
+
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using Chickensoft.LogicBlocks.Generator;
 
-#pragma warning disable CS1998
+public interface IMyLogicBlockAsync : ILogicBlockAsync<
+  MyLogicBlockAsync.IState
+> { }
+
 [StateMachine]
-public partial class MyLogicBlockAsync :
-LogicBlockAsync<MyLogicBlockAsync.State> {
+public partial class MyLogicBlockAsync : LogicBlockAsync<
+  MyLogicBlockAsync.IState
+>, IMyLogicBlockAsync {
   public override State GetInitialState(IContext context) =>
     new State.SomeState(context);
 
@@ -14,7 +20,9 @@ LogicBlockAsync<MyLogicBlockAsync.State> {
     public readonly record struct SomeOtherInput;
   }
 
-  public abstract record State(IContext Context) : StateLogic(Context) {
+  public interface IState : IStateLogic { }
+
+  public abstract record State(IContext Context) : StateLogic(Context), IState {
     public record SomeState : State, IGet<Input.SomeInput> {
       public SomeState(IContext context) : base(context) {
         OnEnter<SomeState>(
@@ -25,17 +33,15 @@ LogicBlockAsync<MyLogicBlockAsync.State> {
         );
       }
 
-      public async Task<State> On(Input.SomeInput input) {
-        await Task.CompletedTask;
+      public async Task<IState> On(Input.SomeInput input) {
         Context.Output(new Output.SomeOutput());
         return new SomeOtherState(Context);
       }
     }
 
     public record SomeOtherState(IContext Context) : State(Context),
-      IGet<Input.SomeOtherInput> {
-      public async Task<State> On(Input.SomeOtherInput input) {
-        await Task.CompletedTask;
+    IGet<Input.SomeOtherInput> {
+      public async Task<IState> On(Input.SomeOtherInput input) {
         Context.Output(new Output.SomeOtherOutput());
         return new SomeState(Context);
       }
@@ -47,4 +53,5 @@ LogicBlockAsync<MyLogicBlockAsync.State> {
     public readonly record struct SomeOtherOutput;
   }
 }
-#pragma warning restore CS1998
+
+#pragma warning restore

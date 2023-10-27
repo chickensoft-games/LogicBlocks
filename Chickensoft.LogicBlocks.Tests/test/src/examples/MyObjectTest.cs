@@ -9,63 +9,38 @@ public class MyObjectTest {
   [Fact]
   public void DoSomethingDoesSomething() {
     // Our unit test follows the AAA pattern: Arrange, Act, Assert.
-    // Or Setup, Execute, and Verify, if you prefer. Etc.
+    // Or Setup, Execute, and Verify, if you prefer.
 
-    // Setup
-    var logic = new Mock<MyLogicBlock>();
-    var context = new Mock<MyLogicBlock.IContext>();
+    // Setup — make a fake binding and return that from our mock logic block
+    using var binding = MyLogicBlock.CreateFakeBinding();
 
-    var binding = new Mock<MyLogicBlock.IBinding>();
-    logic.Setup(logic => logic.Bind()).Returns(binding.Object);
+    var logic = new Mock<IMyLogicBlock>();
+    logic.Setup(logic => logic.Bind()).Returns(binding);
+    logic.Setup(logic => logic.Input(It.IsAny<MyLogicBlock.Input.SomeInput>()));
 
     using var myObject = new MyObject(logic.Object);
 
-    // Create a state that we expect to be returned.
-    var expectedState = new MyLogicBlock.State.SomeState(context.Object);
+    // Execute — run the method we're testing
+    myObject.DoSomething();
 
-    // Setup the mock of the logic block to return our expected state whenever
-    // it receives the input SomeInput.
-    logic.Setup(logic => logic.Input(It.IsAny<MyLogicBlock.Input.SomeInput>()))
-      .Returns(expectedState);
-
-    // Execute the method we want to test.
-    var result = myObject.DoSomething();
-
-    // Verify that method returned the correct value.
-    result.ShouldBe(expectedState);
-
-    // Verify that the method invoked our logic block as expected.
+    // Verify — check that the mock object's stubbed methods were called
     logic.VerifyAll();
   }
 
   [Fact]
-  public void ListensForSomeOutput() {
-    var logic = new Mock<MyLogicBlock>();
-    var context = new Mock<MyLogicBlock.IContext>();
-    var binding = new Mock<MyLogicBlock.IBinding>();
+  public void HandlesSomeOutput() {
+    // Setup — make a fake binding and return that from our mock logic block
+    using var binding = MyLogicBlock.CreateFakeBinding();
 
-    // Return mocked binding so we can test binding handlers manually.
-    logic.Setup(logic => logic.Bind()).Returns(binding.Object);
-
-    var output = new MyLogicBlock.Output.SomeOutput();
-    Action<MyLogicBlock.Output.SomeOutput> handler = (output) => { };
-
-    // Capture the binding handler so we can test it.
-    binding
-      .Setup(binding => binding.Handle(
-        It.IsAny<Action<MyLogicBlock.Output.SomeOutput>>()
-      ))
-      .Returns(binding.Object)
-      .Callback<Action<MyLogicBlock.Output.SomeOutput>>(
-        action => handler = action
-      );
+    var logic = new Mock<IMyLogicBlock>();
+    logic.Setup(logic => logic.Bind()).Returns(binding);
 
     using var myObject = new MyObject(logic.Object);
 
-    // Test the binding handler.
-    handler(output);
+    // Execute — trigger an output from the fake binding!
+    binding.Output(new MyLogicBlock.Output.SomeOutput());
 
-    binding.VerifyAll();
+    // Verify — verify object's callback was invoked by checking side effects
     myObject.SawSomeOutput.ShouldBeTrue();
   }
 }
