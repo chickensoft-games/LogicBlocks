@@ -19,18 +19,21 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     /// <param name="input">Input to process.</param>
     /// <typeparam name="TInputType">Type of the input.</typeparam>
     /// <returns>Logic block input return value.</returns>
-    TState Input<TInputType>(TInputType input) where TInputType : notnull;
+    void Input<TInputType>(TInputType input) where TInputType : notnull;
+
     /// <summary>
     /// Produces a logic block output value.
     /// </summary>
     /// <param name="output">Output value.</param>
     void Output(in object output);
+
     /// <summary>
     /// Gets a value from the logic block's blackboard.
     /// </summary>
     /// <typeparam name="TDataType">Type of value to retrieve.</typeparam>
     /// <returns>The requested value.</returns>
     TDataType Get<TDataType>() where TDataType : notnull;
+
     /// <summary>
     /// Adds an error to a logic block. Errors are immediately processed by the
     /// logic block's <see cref="HandleError(Exception)"/> callback.
@@ -40,7 +43,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
   }
 
   /// <summary>Logic block context provided to each logic block state.</summary>
-  internal readonly record struct Context : IContext {
+  internal record Context : IContext {
     private Logic<TState, THandler, TInputReturn, TUpdate> Logic { get; }
 
     /// <summary>
@@ -52,11 +55,8 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     }
 
     /// <inheritdoc />
-    public TState Input<TInputType>(TInputType input)
-    where TInputType : notnull {
-      Logic.Input(input);
-      return Logic.Value;
-    }
+    public void Input<TInputType>(TInputType input)
+      where TInputType : notnull => Logic.Input(input);
 
     /// <inheritdoc />
     public void Output(in object output) => Logic.OutputValue(in output);

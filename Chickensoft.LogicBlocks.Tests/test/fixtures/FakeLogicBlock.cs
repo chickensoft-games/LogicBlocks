@@ -63,7 +63,10 @@ public partial class FakeLogicBlock {
       Context, Context.Get<string>()
     );
 
-    public State On(Input.SelfInput input) => Context.Input(input.Input);
+    public State On(Input.SelfInput input) {
+      Context.Input(input.Input);
+      return this;
+    }
 
     public record StateA(IContext Context, int Value1, int Value2) :
       State(Context);
