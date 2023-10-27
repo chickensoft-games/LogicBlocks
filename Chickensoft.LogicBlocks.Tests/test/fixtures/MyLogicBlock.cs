@@ -2,8 +2,10 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using Chickensoft.LogicBlocks.Generator;
 
+public interface IMyLogicBlock : ILogicBlock<MyLogicBlock.IState> { }
+
 [StateMachine]
-public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State> {
+public partial class MyLogicBlock : LogicBlock<MyLogicBlock.IState>, IMyLogicBlock {
   public override State GetInitialState(IContext context) =>
     new State.SomeState(context);
 
@@ -12,7 +14,9 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State> {
     public readonly record struct SomeOtherInput;
   }
 
-  public abstract record State(IContext Context) : StateLogic(Context) {
+  public interface IState : IStateLogic { }
+
+  public abstract record State(IContext Context) : StateLogic(Context), IState {
     public record SomeState : State, IGet<Input.SomeInput> {
       public SomeState(IContext context) : base(context) {
         OnEnter<SomeState>(
@@ -23,7 +27,7 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State> {
         );
       }
 
-      public State On(Input.SomeInput input) {
+      public IState On(Input.SomeInput input) {
         Context.Output(new Output.SomeOutput());
         return new SomeOtherState(Context);
       }
@@ -31,7 +35,7 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State> {
 
     public record SomeOtherState(IContext Context) : State(Context),
       IGet<Input.SomeOtherInput> {
-      public State On(Input.SomeOtherInput input) {
+      public IState On(Input.SomeOtherInput input) {
         Context.Output(new Output.SomeOtherOutput());
         return new SomeState(Context);
       }

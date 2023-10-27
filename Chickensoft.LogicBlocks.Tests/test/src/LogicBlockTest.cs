@@ -362,4 +362,47 @@ public class LogicBlockTest {
 
     exitCalled.ShouldBeTrue();
   }
+
+  [Fact]
+  public void CreatesFakeContext() {
+    var context = FakeLogicBlock.CreateFakeContext();
+
+    var inputs = new List<object> { "a", 2, true };
+    var outputs = new List<object> { "b", 3, false };
+    var errors = new List<Exception> {
+      new InvalidOperationException(),
+      new InvalidCastException()
+    };
+    var blackboard = new Dictionary<Type, object> {
+      { typeof(string), "c" },
+      { typeof(int), 4 },
+      { typeof(bool), true }
+    };
+
+    context.Set(blackboard);
+    context.Set(2d);
+
+    inputs.ForEach((i) => context.Input(i));
+    outputs.ForEach((o) => context.Output(o));
+    errors.ForEach((e) => context.AddError(e));
+
+    context.Inputs.ShouldBe(inputs);
+    context.Outputs.ShouldBe(outputs);
+    context.Errors.ShouldBe(errors);
+
+    context.Get<string>().ShouldBe("c");
+    context.Get<int>().ShouldBe(4);
+    context.Get<bool>().ShouldBeTrue();
+    context.Get<double>().ShouldBe(2d);
+
+    Should.Throw<InvalidOperationException>(() => context.Get<float>());
+
+    context.Reset();
+
+    context.Inputs.ShouldBeEmpty();
+    context.Outputs.ShouldBeEmpty();
+    context.Errors.ShouldBeEmpty();
+
+    Should.Throw<InvalidOperationException>(() => context.Get<string>());
+  }
 }

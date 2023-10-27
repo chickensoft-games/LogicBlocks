@@ -692,10 +692,9 @@ await logic.Stop();
 
 ### 🧪 Testing
 
-You can mock a logic block, its bindings, and its context.
+LogicBlocks, contexts, and bindings can all be mocked. However, mocking contexts and bindings can be a bit of a chore, so LogicBlocks allows you to create fake bindings and contexts that make testing a lot simpler.
 
-- You can test logic block states in isolation by mocking the logic block context.
-- You can test components that bind to a logic block by mocking the logic block that they use.
+Let's take a look at some examples.
 
 #### Testing LogicBlock Consumers
 
@@ -705,12 +704,12 @@ The object does two things: it registers a single binding to observe `SomeOutput
 
 ```csharp
 public class MyObject : IDisposable {
-  public MyLogicBlock Logic { get; }
+  public IMyLogicBlock Logic { get; }
   public MyLogicBlock.IBinding Binding { get; }
 
   public bool SawSomeOutput { get; private set; }
 
-  public MyObject(MyLogicBlock logic) {
+  public MyObject(IMyLogicBlock logic) {
     Logic = logic;
     Binding = logic.Bind();
 
@@ -720,20 +719,18 @@ public class MyObject : IDisposable {
   }
 
   // Method we want to test
-  public MyLogicBlock.State DoSomething() =>
-    Logic.Input(new MyLogicBlock.Input.SomeInput());
+  public void DoSomething() => Logic.Input(new MyLogicBlock.Input.SomeInput());
 
   public void Dispose() {
     Binding.Dispose();
     GC.SuppressFinalize(this);
   }
 }
-
 ```
 
 To write a unit test for `MyObject`, we need to mock its dependencies and then verify that it interacts with the dependencies in the way we expect. In this case, the only dependency is the logic block. We can mock it in the same way we mock other objects.
 
-Finally, we can use Moq's `Callback` method to capture the binding functions and invoke them from a test to ensure that every part of `MyObject` is tested thoroughly.
+Since the object binds to the logic block in its constructor, we need to somehow intercept that request. We can take advantage of the static method `CreateFakeBinding()` present on every logic block and setup our mock logic block to return the fake binding when it's asked to bind. This way, the object can register binding callbacks as usual without knowing it's actually using a fake binding system under-the-hood.
 
 ```csharp
 using Moq;
@@ -744,63 +741,48 @@ public class MyObjectTest {
   [Fact]
   public void DoSomethingDoesSomething() {
     // Our unit test follows the AAA pattern: Arrange, Act, Assert.
-    // Or Setup, Execute, and Verify, if you prefer. Etc.
+    // Or Setup, Execute, and Verify, if you prefer.
 
-    // Setup
-    var logic = new Mock<MyLogicBlock>();
-    var context = new Mock<MyLogicBlock.IContext>();
+    // Setup — make a fake binding and return that from our mock logic block
+    using var binding = MyLogicBlock.CreateFakeBinding();
 
-    var binding = new Mock<MyLogicBlock.IBinding>();
-    logic.Setup(logic => logic.Bind()).Returns(binding.Object);
+    var logic = new Mock<IMyLogicBlock>();
+    logic.Setup(logic => logic.Bind()).Returns(binding);
+    logic.Setup(logic => logic.Input(It.IsAny<MyLogicBlock.Input.SomeInput>()));
 
     using var myObject = new MyObject(logic.Object);
 
-    // Create a state that we expect to be returned.
-    var expectedState = new MyLogicBlock.State.SomeState(context.Object);
+    // Execute — run the method we're testing
+    myObject.DoSomething();
 
-    // Setup the mock of the logic block to return our expected state whenever
-    // it receives the input SomeInput.
-    logic.Setup(logic => logic.Input(It.IsAny<MyLogicBlock.Input.SomeInput>()))
-      .Returns(expectedState);
-
-    // Execute the method we want to test.
-    var result = myObject.DoSomething();
-
-    // Verify that method returned the correct value.
-    result.ShouldBe(expectedState);
-
-    // Verify that the method invoked our logic block as expected.
+    // Verify — check that the mock object's stubbed methods were called
     logic.VerifyAll();
   }
 
+  // ...
+```
+
+Finally, we want to test that the bindings actually get invoked when the logic block produces the output `SomeOutput`. To do this, we can simulate an output being produced by the logic block using the fake binding's `Output()` method.
+
+> 💡 Fake bindings can also simulate changing states, adding inputs, and errors via the `SetState()`, `Input()`, and `AddError()` methods, respectively.
+
+```csharp
+  // ...
+
   [Fact]
-  public void ListensForSomeOutput() {
-    var logic = new Mock<MyLogicBlock>();
-    var context = new Mock<MyLogicBlock.IContext>();
-    var binding = new Mock<MyLogicBlock.IBinding>();
+  public void HandlesSomeOutput() {
+    // Setup — make a fake binding and return that from our mock logic block
+    using var binding = MyLogicBlock.CreateFakeBinding();
 
-    // Return mocked binding so we can test binding handlers manually.
-    logic.Setup(logic => logic.Bind()).Returns(binding.Object);
-
-    var output = new MyLogicBlock.Output.SomeOutput();
-    Action<MyLogicBlock.Output.SomeOutput> handler = (output) => { };
-
-    // Capture the binding handler so we can test it.
-    binding
-      .Setup(binding => binding.Handle(
-        It.IsAny<Action<MyLogicBlock.Output.SomeOutput>>()
-      ))
-      .Returns(binding.Object)
-      .Callback<Action<MyLogicBlock.Output.SomeOutput>>(
-        action => handler = action
-      );
+    var logic = new Mock<IMyLogicBlock>();
+    logic.Setup(logic => logic.Bind()).Returns(binding);
 
     using var myObject = new MyObject(logic.Object);
 
-    // Test the binding handler.
-    handler(output);
+    // Execute — trigger an output from the fake binding!
+    binding.Output(new MyLogicBlock.Output.SomeOutput());
 
-    binding.VerifyAll();
+    // Verify — verify object's callback was invoked by checking side effects
     myObject.SawSomeOutput.ShouldBeTrue();
   }
 }
@@ -808,9 +790,11 @@ public class MyObjectTest {
 
 #### Testing LogicBlock States
 
-We can also test that our logic block states work correctly. By mocking the context and expecting the state to call certain methods on it, we can verify whether or not the state performed the correct interactions with the context.
+We can also test that our logic block states work correctly. Traditionally, this would be done by mocking the logic block context that is given to the state and expecting the state to call certain methods on it, and then verifying that the state performed the correct interactions with the context.
 
-Imagine we want to test the state `SomeState` on `MyLogicBlock`.
+That's a lot of typing, though. Fortunately, LogicBlocks provides a `CreateFakeContext()` static method available on every logic block. The fake context allows us to see what inputs, outputs, and errors were added by the state without having to do a ton of method stubbing on our mocks.
+
+For example, let's pretend we want to test the state `SomeState` on `MyLogicBlock`.
 
 For reference, here is the definition of `SomeState`. When it's entered and exited, it outputs the output `SomeOutput`. In addition, when it receives the `SomeInput` input it also outputs `SomeOutput` again and transitions to `SomeOtherState`.
 
@@ -826,7 +810,7 @@ public record SomeState : State, IGet<Input.SomeInput> {
     );
   }
 
-  public State On(Input.SomeInput input) {
+  public IState On(Input.SomeInput input) {
     Context.Output(new Output.SomeOutput());
     return new SomeOtherState(Context);
   }
@@ -834,48 +818,142 @@ public record SomeState : State, IGet<Input.SomeInput> {
 // ...
 ```
 
-To test it, we need to mock the logic block context and verify that it is called the way we expect it to be called.
-
-To test the enter and exit callbacks, we can invoke the `Enter` and `Exit` methods on the state itself.
+We can easily test the enter and exit methods by calling `Enter()` and `Exit()` on the state itself. By providing our state with a fake context, we can verify if it performed the correct actions.
 
 ```csharp
-using Moq;
+using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Shouldly;
 using Xunit;
 
 public class SomeStateTest {
   [Fact]
-  public void HandlesSomeInput() {
-    var context = new Mock<MyLogicBlock.IContext>(MockBehavior.Strict);
-    var state = new MyLogicBlock.State.SomeState(context.Object);
+  public void SomeStateEnters() {
+    var context = MyLogicBlock.CreateFakeContext();
 
-    var someOutputs = 0;
+    var state = new MyLogicBlock.State.SomeState(context);
 
-    // Expect our state to output SomeOutput when SomeInput is received.
-    context
-      .Setup(context => context.Output(
-        It.IsAny<MyLogicBlock.Output.SomeOutput>()
-      )).Callback(() => someOutputs++);
-
-    // Perform the action we are testing on our state.
-    // In this case, we are testing the input handler for SomeInput
-    var result = state.On(new MyLogicBlock.Input.SomeInput());
-
-    // Make sure the input handler returned the correct next state.
-    result.ShouldBeOfType<MyLogicBlock.State.SomeOtherState>();
-
-    // Simulate enter/exit callbacks.
     state.Enter();
+
+    context.Outputs.ShouldBe(
+      new object[] { new MyLogicBlock.Output.SomeOutput() }
+    );
+  }
+
+  [Fact]
+  public void SomeStateExits() {
+    var context = MyLogicBlock.CreateFakeContext();
+
+    var state = new MyLogicBlock.State.SomeState(context);
+
     state.Exit();
 
-    // Make sure we got 3 outputs:
-    // 1 from input handler, 1 from enter, and 1 from exit.
-    someOutputs.ShouldBe(3);
-
-    // Make sure the output we expected was produced by ensuring our mock
-    // context was called the same way we set it up.
-    context.VerifyAll();
+    context.Outputs.ShouldBe(
+      new object[] { new MyLogicBlock.Output.SomeOutput() }
+    );
   }
+
+  // ...
+```
+
+We checked the outputs added to the fake context to make sure they were correct. We could also check the inputs and errors, too.
+
+> 💡 If you need to reset the fake context and clear everything it recorded, you can call `context.Reset()`.
+
+Finally, we can test the input handler by calling the `On()` method on the state itself. Once again, we can use the fake context to verify that the state added the correct outputs.
+
+```csharp
+  // ...
+
+  [Fact]
+  public void GoesToSomeOtherStateOnSomeInput() {
+    var context = MyLogicBlock.CreateFakeContext();
+
+    var state = new MyLogicBlock.State.SomeState(context);
+
+    var nextState = state.On(new MyLogicBlock.Input.SomeInput());
+
+    nextState.ShouldBeOfType<MyLogicBlock.State.SomeOtherState>();
+
+    context.Outputs.ShouldBe(
+      new object[] { new MyLogicBlock.Output.SomeOutput() }
+    );
+  }
+}
+```
+
+#### Fake Binding
+
+Fake bindings allow you to simulate a number of actions:
+
+```csharp
+[Fact]
+public void MyTest() {
+  using var binding = MyLogicBlock.CreateFakeBinding();
+
+  var logic = new Mock<IMyLogicBlock>();
+  logic.Setup(logic => logic.Bind()).Returns(binding);
+
+  // ...
+
+  // Simulate a state change
+  binding.SetState(new MyLogicBlock.State.SomeState());
+
+  // Simulate an input
+  binding.Input(new MyLogicBlock.Input.SomeInput());
+
+  // Simulate an output
+  binding.Output(new MyLogicBlock.Output.SomeOutput());
+
+  // Simulate an error being added
+  binding.AddError(new InvalidOperationException("Oops!"));
+
+  // ...
+}
+```
+
+#### Fake Context
+
+A fake context allows you to record interactions triggered by the state you're testing.
+
+```csharp
+[Fact]
+public void MyTest() {
+  var context = MyLogicBlock.CreateFakeContext();
+
+  var state = new MyLogicBlock.State.SomeState(context);
+
+  // ...
+
+  // Set blackboard dependency
+  context.Set<IMyDependency>(new Mock<IMyDependency>());
+
+  // Set multiple blackboard dependencies at once
+  context.Set(
+    new Dictionary<Type, object>() {
+      [typeof(IMyDependency)] = new Mock<IMyDependency>(),
+      [typeof(IMyOtherDependency)] = new Mock<IMyOtherDependency>()
+    }
+  );
+
+  // Check the inputs added by the state
+  context.Inputs.ShouldBe(
+    new object[] { new MyLogicBlock.Input.SomeInput() }
+  );
+
+  // Check the outputs added by the state
+  context.Outputs.ShouldBe(
+    new object[] { new MyLogicBlock.Output.SomeOutput() }
+  );
+
+  // Check the errors added by the state
+  context.Errors.ShouldBe(
+    new Exception[] { new InvalidOperationException("Oops!") }
+  );
+
+  // Reset the context, clearing all recorded interactions and dependencies
+  context.Reset();
+
+  // ...
 }
 ```
 
