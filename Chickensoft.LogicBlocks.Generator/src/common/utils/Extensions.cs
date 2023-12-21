@@ -8,7 +8,7 @@ public static class Extensions {
   /// Normalizes line endings to '\n' or your endings.
   /// Borrowed from https://github.com/HavenDV/H.Generators.Extensions (MIT)
   /// </summary>
-  /// <param name="text"></param>
+  /// <param name="text">Text to normalize.</param>
   /// <param name="newLine">'\n' by default</param>
   /// <returns>String with normalized line endings.</returns>
   /// <exception cref="ArgumentNullException"></exception>
@@ -41,7 +41,9 @@ public static class Extensions {
     }
 
     var escaped = Regex.Escape(newLine);
+#pragma warning disable RCS1262
     var regex = new Regex($$"""({{escaped}}){3,}""");
+#pragma warning restore RCS1262
 
     return regex.Replace(string.Join(newLine, lines), newLine);
   }

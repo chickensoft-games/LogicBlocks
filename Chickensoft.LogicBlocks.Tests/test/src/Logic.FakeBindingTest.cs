@@ -1,6 +1,5 @@
 namespace Chickensoft.LogicBlocks.Tests;
 
-
 using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Moq;
 using Shouldly;
@@ -14,7 +13,6 @@ public class FakeBindingTest {
     logic.Setup(logic => logic.Bind()).Returns(binding);
 
     var consumer = new LogicBlockConsumer(logic.Object);
-
 
     binding.Input(new MyLogicBlock.Input.SomeInput());
 
