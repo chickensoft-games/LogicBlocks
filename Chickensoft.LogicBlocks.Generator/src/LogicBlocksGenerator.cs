@@ -183,7 +183,7 @@ public class LogicBlocksGenerator :
       return null;
     }
 
-    // if stateSubtype is an interface, we want to find the first subtype that
+    // if stateBaseType is an interface, we want to find the first subtype that
     // implements it and StateLogic. this is a shallow search in the
     // logic block.
     var primaryState = symbol.GetTypeMembers().FirstOrDefault(

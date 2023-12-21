@@ -288,7 +288,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> :
   /// Adds data to the blackboard. Data is retrieved by its type, so do not add
   /// more than one piece of data with the same type.
   /// </summary>
-  /// <param name="data">Closure which returns the data.</param>
+  /// <param name="data">Data to write to the blackboard.</param>
   /// <typeparam name="TData">Type of the data to add.</typeparam>
   /// <exception cref="ArgumentException">Thrown if data of the provided type
   /// has already been added.</exception>
@@ -301,4 +301,14 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> :
     }
     _blackboard.Add(type, data);
   }
+
+  /// <summary>
+  /// Adds new data or overwrites existing data in the blackboard. Data is
+  /// retrieved by its type, so this will overwrite any existing data of the
+  /// given type, unlike <see cref="Set{TData}(TData)" />.
+  /// </summary>
+  /// <param name="data">Data to write to the blackboard.</param>
+  /// <typeparam name="TData">Type of the data to add or overwrite.</typeparam>
+  protected void Overwrite<TData>(TData data) where TData : notnull =>
+    _blackboard[typeof(TData)] = data;
 }
