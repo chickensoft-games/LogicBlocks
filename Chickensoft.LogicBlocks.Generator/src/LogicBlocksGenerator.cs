@@ -138,9 +138,9 @@ public class LogicBlocksGenerator :
   /// inheritance hierarchy, and builds a state graph from it based on the
   /// state type given to the logic block type in the inheritance hierarchy.
   /// </summary>
-  /// <param name="logicBlockClassDecl"></param>
-  /// <param name="model"></param>
-  /// <param name="token"></param>
+  /// <param name="logicBlockClassDecl">Logic block class declaration.</param>
+  /// <param name="model">Semantic model.</param>
+  /// <param name="token">Cancellation token.</param>
   /// <returns>Logic block graph.</returns>
   public LogicBlockImplementation? DiscoverStateGraph(
     ClassDeclarationSyntax logicBlockClassDecl,
