@@ -353,12 +353,12 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     public IWhenBinding<TStateType> Use<TSelectedData>(
       Func<TStateType, TSelectedData> data, Action<TSelectedData> to
     ) where TSelectedData : notnull {
-      var checker = (
+      bool checker(
         dynamic state,
         TState? previous,
         dynamic selectedData,
         dynamic previousData
-      ) => {
+      ) {
         // If previous data is null, it indicates that we don't have any
         // previous data because the binding hadn't been run before. So we don't
         // try to compare the previous data.
@@ -376,10 +376,10 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
           }
         }
         return true;
-      };
+      }
 
-      var selector = (dynamic state) => data((TStateType)state) as dynamic;
-      var runner = (dynamic value) => to((TSelectedData)value);
+      dynamic selector(dynamic state) => data((TStateType)state);
+      void runner(dynamic value) => to((TSelectedData)value);
 
       _bindingCheckers.Add(checker);
       _bindingSelectors.Add(selector);
@@ -391,8 +391,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
 
     /// <inheritdoc />
     public IWhenBinding<TStateType> Call(Action<TStateType> callback) {
-      var handler =
-        (dynamic state, TState? previous) => callback((TStateType)state);
+      void handler(dynamic state, TState? previous) => callback((TStateType)state);
 
       _callbacks.Add(handler);
 

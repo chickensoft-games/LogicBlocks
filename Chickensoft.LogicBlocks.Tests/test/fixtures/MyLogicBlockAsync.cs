@@ -12,8 +12,7 @@ public interface IMyLogicBlockAsync : ILogicBlockAsync<
 public partial class MyLogicBlockAsync : LogicBlockAsync<
   MyLogicBlockAsync.IState
 >, IMyLogicBlockAsync {
-  public override State GetInitialState(IContext context) =>
-    new State.SomeState(context);
+  public override State GetInitialState() => new State.SomeState();
 
   public static class Input {
     public readonly record struct SomeInput;
@@ -22,28 +21,28 @@ public partial class MyLogicBlockAsync : LogicBlockAsync<
 
   public interface IState : IStateLogic { }
 
-  public abstract record State(IContext Context) : StateLogic(Context), IState {
+  public abstract record State : StateLogic, IState {
     public record SomeState : State, IGet<Input.SomeInput> {
-      public SomeState(IContext context) : base(context) {
+      public SomeState() {
         OnEnter<SomeState>(
-          async (previous) => context.Output(new Output.SomeOutput())
+          async (previous) => Context.Output(new Output.SomeOutput())
         );
         OnExit<SomeState>(
-          async (previous) => context.Output(new Output.SomeOutput())
+          async (previous) => Context.Output(new Output.SomeOutput())
         );
       }
 
       public async Task<IState> On(Input.SomeInput input) {
         Context.Output(new Output.SomeOutput());
-        return new SomeOtherState(Context);
+        return new SomeOtherState();
       }
     }
 
-    public record SomeOtherState(IContext Context) : State(Context),
+    public record SomeOtherState : State,
     IGet<Input.SomeOtherInput> {
       public async Task<IState> On(Input.SomeOtherInput input) {
         Context.Output(new Output.SomeOtherOutput());
-        return new SomeState(Context);
+        return new SomeState();
       }
     }
   }

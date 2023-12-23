@@ -75,6 +75,7 @@
     "typeparam",
     "typeparamref",
     "ulong",
+    "VBCS",
     "Xunit"
   ]
 }

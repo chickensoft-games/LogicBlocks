@@ -11,13 +11,13 @@ public class HierarchicalCallbackLogicTest {
     var log = new List<string>();
     var callbackLogic = new HierarchicalCallbackLogic(log) {
       InitialState =
-        (context) => new HierarchicalCallbackLogic.State.Substate(context)
+        () => new HierarchicalCallbackLogic.State.Substate()
     };
 
-    var context = new Mock<HierarchicalCallbackLogic.IContext>();
+    var context = new Mock<IContext>();
 
     callbackLogic.Value.Enter(
-      new Mock<HierarchicalCallbackLogic.State>(context.Object).Object
+      new Mock<HierarchicalCallbackLogic.State>().Object
     );
     log.ShouldBe(new List<string> { "substate" });
 
@@ -32,13 +32,13 @@ public class HierarchicalCallbackLogicTest {
     var log = new List<string>();
     var callbackLogic = new HierarchicalCallbackLogic(log) {
       InitialState =
-        (context) => new HierarchicalCallbackLogic.State.Substate(context)
+        () => new HierarchicalCallbackLogic.State.Substate()
     };
 
-    var context = new Mock<HierarchicalCallbackLogic.IContext>();
+    var context = new Mock<IContext>();
 
     callbackLogic.Value.Exit(
-      new Mock<HierarchicalCallbackLogic.State>(context.Object).Object
+      new Mock<HierarchicalCallbackLogic.State>().Object
     );
     log.ShouldBe(new List<string> { "substate" });
 

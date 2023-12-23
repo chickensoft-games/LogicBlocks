@@ -32,26 +32,21 @@ using Chickensoft.LogicBlocks.Generator;
 
 [StateMachine]
 public class LightSwitch : LogicBlock<LightSwitch.State> {
-  public override State GetInitialState(IContext context) =>
-    new State.TurnedOff(context);
+  public override State GetInitialState() => new State.SwitchedOff();
 
   public static class Input {
     public readonly record struct Toggle;
   }
 
-  public abstract record State(IContext Context) : StateLogic(Context) {
+  public abstract record State : StateLogic {
     // "On" state
-    public record TurnedOn : State, IGet<Input.Toggle> {
-      public TurnedOn(IContext context) : base(context) { }
-
-      public State On(Input.Toggle input) => new TurnedOff(Context);
+    public record SwitchedOn : State, IGet<Input.Toggle> {
+      public State On(Input.Toggle input) => new SwitchedOff();
     }
 
     // "Off" state
-    public record TurnedOff : State, IGet<Input.Toggle> {
-      public TurnedOff(IContext context) : base(context) { }
-
-      public State On(Input.Toggle input) => new TurnedOn(Context);
+    public record SwitchedOff : State, IGet<Input.Toggle> {
+      public State On(Input.Toggle input) => new SwitchedOn();
     }
   }
 }
@@ -233,11 +228,11 @@ More on that in a moment, though.
 
 #### Declaring the Logic Block
 
-We need to create a basic scaffold for our logic block that includes a base state type. All of the other states used by the logic block will extend the base state type (or at least be descendants of it in their inheritance hierarchies). The base state has to be defined inside the logic block as a [nested type][nested-types] so that it can access the `IContext` object provided by LogicBlocks.
+We need to create a basic scaffold for our logic block that includes a base state type. All of the other states used by the logic block will extend the base state type (or at least be descendants of it in their inheritance hierarchies). The base state has to be defined inside the logic block as a [nested type][nested-types] so that it can access the types needed by LogicBlocks under-the-hood.
 
-> Whenever a logic block state is created, it'll get its own copy of the logic  block context. The logic block context allows states to produce outputs, access any dependencies from the blackboard, and even add inputs to the logic block that they belong to.
+> Whenever a logic block state is attached to a logic block as the current state, it'll get its own copy of the logic block's context. The logic block context allows states to produce outputs, access dependencies from the blackboard, and even add inputs to the logic block that they belong to.
 
-We also need to create a constructor that accepts any dependencies that our logic block states will need. In this case, we'll need the aforementioned temperature sensor object. In the constructor, we'll add it to the logic block's *blackboard* — the shared collection of data that can be accessed by any logic block state.
+We'll also create a constructor that accepts the dependencies our logic block states will need. In this case, we'll need the aforementioned temperature sensor object. In the constructor, we'll add it to the logic block's *blackboard* — the shared collection of data that can be accessed by any logic block state.
 
 ```csharp
 using Chickensoft.LogicBlocks;
@@ -247,7 +242,7 @@ using Chickensoft.LogicBlocks.Generator;
 public class Heater : LogicBlock<Heater.State> {
     public static class Input { }
 
-    public abstract record State(IContext Context) : StateLogic(Context) { }
+    public abstract record State : StateLogic { }
     
     public abstract record Output { }
 
@@ -265,12 +260,10 @@ In general, Logic block state types should be records that extend the `StateLogi
 > [C# records][records] are just reference types that are identical to classes, with the added improvement of providing shallow equality comparison for free.
 >
 > LogicBlocks is optimized to avoid transitioning to identical subsequent states, so using records allows us to take advantage of that without any effort on our part.
->
-> If you must, you can implement the `IStateLogic` interface yourself. This will let you use a non-record type for your states.
 
 We've also created a couple of empty static classes, `Input`, and `Output`. These aren't required for LogicBlocks, it just helps organize our inputs and outputs so we can see them all in one place. It's nice to be able to scroll up or down in your file and see what all inputs and outputs a logic block can use.
 
-Finally, we added the `[StateMachine]` attribute to our logic block class to tell the LogicBlock source generator about our machine. Putting the `[StateMachine]` attribute on a logic block allows the LogicBlocks generator to find the logic block and generate the UML diagram code needed to visualize it as a picture.
+Finally, we added the `[StateMachine]` attribute to our logic block class to tell the LogicBlocks source generator about our machine. Putting the `[StateMachine]` attribute on a logic block allows the LogicBlocks generator to find the logic block and generate the UML diagram code needed to visualize it as a picture.
 
 ### ⤵️ Defining Inputs and Outputs
 
@@ -313,8 +306,6 @@ public class Heater : LogicBlock<Heater.State> {
   public abstract record State : StateLogic, IGet<Input.TargetTempChanged> {
     public double TargetTemp { get; init; }
 
-    public State(IContext context) : base(context) { }
-
     public State On(Input.TargetTempChanged input) => this with {
       TargetTemp = input.Temp
     };
@@ -330,18 +321,16 @@ Let's make our `Off` state. It'll be pretty simple. It just needs to receive the
 
 ```csharp
 public record Off : State, IGet<Input.TurnOn> {
-  public Off(IContext context) : base(context) { }
-
   public State On(Input.TurnOn input) {
     var tempSensor = Context.Get<ITemperatureSensor>();
 
     if (tempSensor.AirTemp >= TargetTemp) {
       // Room is already hot enough.
-      return new Idle(Context) { TargetTemp = TargetTemp };
+      return new Idle() { TargetTemp = TargetTemp };
     }
 
     // Room is too cold — start heating.
-    return new Heating(Context) { TargetTemp = TargetTemp };
+    return new Heating() { TargetTemp = TargetTemp };
   }
 }
 ```
@@ -352,22 +341,28 @@ We'll need to use the inheritance trick again: both our `Idle` and `Heating` sta
 
 ```csharp
 public abstract record Powered : State, IGet<Input.TurnOff> {
-  public Powered(IContext context) : base(context) {
-    var tempSensor = context.Get<ITemperatureSensor>();
+  public Powered() {
+    // Whenever a Powered state is entered, play a chime to
+    // alert the user that the heater is on. Subsequent states that
+    // inherit from Powered will not play a chime until a different
+    // state has been entered before returning to a Powered state.
+    OnEnter<Powered>((previous) => Context.Output(new Output.Chime()));
 
-    // When we enter the state, subscribe to changes in temperature.
-    OnEnter<Powered>(
-      (previous) => tempSensor.OnTemperatureChanged += OnTemperatureChanged
+    // Unlike OnEnter, OnAttach will run for every state instance that
+    // inherits from this record. Use these to setup your state.
+    //
+    // Attach and detach are great for setting up long-running operations.
+    OnAttach(
+      () => Get<ITemperatureSensor>().OnTemperatureChanged += OnTemperatureChanged
     );
 
-    // When we exit this state, unsubscribe from changes in temperature.
-    OnExit<Powered>(
-      (next) => tempSensor.OnTemperatureChanged -= OnTemperatureChanged
+    OnDetach(
+      () => Get<ITemperatureSensor>().OnTemperatureChanged -= OnTemperatureChanged
     );
   }
 
   public State On(Input.TurnOff input) =>
-    new Off(Context) { TargetTemp = TargetTemp };
+    new Off() { TargetTemp = TargetTemp };
 
   // Whenever our temperature sensor gives us a reading, we will just
   // provide an input to ourselves. This lets us have a chance to change
@@ -377,22 +372,28 @@ public abstract record Powered : State, IGet<Input.TurnOff> {
 }
 ```
 
-The `Powered` state is a lot more interesting. The constructor registers entrance and exit callbacks to know when its is entering the `Powered` state and when it's exiting it.
+The `Powered` state is a lot more interesting. The constructor registers attach and detach callbacks, which will be called for every instance of a state that extends the `Powered` class. It also registers an entrance callback that will be called whenever the state machine transitions into a state that inherits from a Powered state after being in a non-powered state.
 
-In the entrance callback, the `Powered` state subscribes to the `OnTemperatureChanged` event of the temperature sensor. Likewise, it unsubscribes before leaving the state.
+> 💡 `OnAttach` and `OnDetach` are different from `OnEnter` and `OnExit`. `OnEnter` and `OnExit` respect a state's type hierarchy: i.e., if you enter into a state that extends `Powered`, and then enter into a different state that also extends `Powered`, the OnEnter callbacks for `Powered` will only be invoked once. On the other hand, `OnAttach` and `OnDetach` are invoked for every state that extends `Powered` that is entered into.
+>
+> You should think of `OnEnter` and `OnExit` as the place to execute theoretically-correct behavior (like producing outputs), and `OnEnter` and `OnExit` to setup your practical behavior (such as registering event handlers or performing mundane setup).
+>
+> Finally, *the distinction between state attachment and entrance is important for serialization*. When deserializing a state machine, you don't want to re-invoke entrance callbacks, but you do need to perform any setup that would have been done before the state machine was serialized. Attachment callbacks allow states to be spun back up when deserializing without producing unintended side-effects.
+
+In the attachment callback, the `Powered` state subscribes to the `OnTemperatureChanged` event of the temperature sensor. Likewise, it unsubscribes before detaching from the logic block.
 
 Whenever the air temperature sensor informs us of a new value, the private method on the state, `OnTemperatureChanged` is invoked. It uses the context to fire an input on the logic block that owns the state. The input will be handled by the logic block's current state, which in this case would just be the state that's triggering the input, `Powered`. This is a nice trick for creating subscriptions to services that allow a state to trigger state transitions in response to an event happening elsewhere.
+
+> Note that we used a method provided on our state `Get<TDataType>()`: it's shorthand for the `Context.Get` method shown above, but saves us some typing.
 
 Now let's add the `Idle` state. All it needs to do is respond to changes in air temperature and start heating once the temperature drops too far below the target temperature. Since `Idle` will extend `Powered`, it will automatically be subscribed to the changes in air temperature, which will cause it to receive `AirTempSensorChanged` inputs.
 
 ```csharp
 public record Idle : Powered, IGet<Input.AirTempSensorChanged> {
-  public Idle(IContext context) : base(context) { }
-
   public State On(Input.AirTempSensorChanged input) {
     if (input.AirTemp < TargetTemp - 3.0d) {
       // Temperature has fallen too far below target temp — start heating.
-      return new Heating(Context) { TargetTemp = TargetTemp };
+      return new Heating() { TargetTemp = TargetTemp };
     }
     // Room is still hot enough — keep waiting.
     return this;
@@ -404,13 +405,11 @@ Finally, we need to make the `Heating` state. It'll function like Idle, but inst
 
 ```csharp
 public record Heating : Powered, IGet<Input.AirTempSensorChanged> {
-  public Heating(IContext context) : base(context) { }
-
   public State On(Input.AirTempSensorChanged input) {
     if (input.AirTemp >= TargetTemp) {
       // We're done heating!
       Context.Output(new Output.FinishedHeating());
-      return new Idle(Context) { TargetTemp = TargetTemp };
+      return new Idle() { TargetTemp = TargetTemp };
     }
     // Room isn't hot enough — keep heating.
     return this;
@@ -428,8 +427,9 @@ public class Heater :
   LogicBlock<Heater.Input, Heater.State> {
   ...
 
-  public override State GetInitialState(IContext context) =>
-    new State.Off(context) { TargetTemp = 72.0 };
+  public override State GetInitialState() => new State.Off() {
+    TargetTemp = 72.0
+  };
 
   ...
 }
@@ -541,13 +541,12 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State> {
 
     // Add pre-created states to the blackboard so that states can look them up
     // instead of having to create them.
-    Set(new State.MyFirstState(Context));
-    Set(new State.MySecondState(Context));
+    Set(new State.MyFirstState());
+    Set(new State.MySecondState());
   }
 
   // Return the initial state by looking it up in the blackboard.
-  public override State GetInitialState(IContext context) =>
-    Context.Get<MyFirstState>();
+  public override State GetInitialState() => Context.Get<MyFirstState>();
 }
 ```
 
@@ -555,8 +554,6 @@ Elsewhere, inside your states, you can lookup the state you want to transition t
 
 ```csharp
 public record MyFirstState : IGet<Input.SomeInput> {
-  public MyFirstState(IContext context) : base(context) { }
-
   public State On(Input.SomeInput input) {
     // Lookup the state we want to go to.
     var nextState = Context.Get<MySecondState>();
@@ -792,7 +789,7 @@ Finally, we want to test that the bindings actually get invoked when the logic b
 
 We can also test that our logic block states work correctly. Traditionally, this would be done by mocking the logic block context that is given to the state and expecting the state to call certain methods on it, and then verifying that the state performed the correct interactions with the context.
 
-That's a lot of typing, though. Fortunately, LogicBlocks provides a `CreateFakeContext()` static method available on every logic block. The fake context allows us to see what inputs, outputs, and errors were added by the state without having to do a ton of method stubbing on our mocks.
+That's a lot of typing, though. Fortunately, LogicBlocks provides a `CreateFakeContext()` method available on every logic block state. The fake context allows us to see what inputs, outputs, and errors were added by the state without having to do a ton of method stubbing on our mocks.
 
 For example, let's pretend we want to test the state `SomeState` on `MyLogicBlock`.
 
@@ -801,18 +798,18 @@ For reference, here is the definition of `SomeState`. When it's entered and exit
 ```csharp
 // ...
 public record SomeState : State, IGet<Input.SomeInput> {
-  public SomeState(IContext context) : base(context) {
+  public SomeState() {
     OnEnter<SomeState>(
-      (previous) => context.Output(new Output.SomeOutput())
+      (previous) => Context.Output(new Output.SomeOutput())
     );
     OnExit<SomeState>(
-      (previous) => context.Output(new Output.SomeOutput())
+      (previous) => Context.Output(new Output.SomeOutput())
     );
   }
 
   public IState On(Input.SomeInput input) {
     Context.Output(new Output.SomeOutput());
-    return new SomeOtherState(Context);
+    return new SomeOtherState();
   }
 }
 // ...
@@ -828,9 +825,8 @@ using Xunit;
 public class SomeStateTest {
   [Fact]
   public void SomeStateEnters() {
-    var context = MyLogicBlock.CreateFakeContext();
-
-    var state = new MyLogicBlock.State.SomeState(context);
+    var state = new MyLogicBlock.State.SomeState();
+    var context = state.CreateFakeContext();
 
     state.Enter();
 
@@ -841,9 +837,8 @@ public class SomeStateTest {
 
   [Fact]
   public void SomeStateExits() {
-    var context = MyLogicBlock.CreateFakeContext();
-
-    var state = new MyLogicBlock.State.SomeState(context);
+    var state = new MyLogicBlock.State.SomeState();
+    var context = state.CreateFakeContext();
 
     state.Exit();
 
@@ -866,9 +861,8 @@ Finally, we can test the input handler by calling the `On()` method on the state
 
   [Fact]
   public void GoesToSomeOtherStateOnSomeInput() {
-    var context = MyLogicBlock.CreateFakeContext();
-
-    var state = new MyLogicBlock.State.SomeState(context);
+    var state = new MyLogicBlock.State.SomeState();
+    var context = state.CreateFakeContext();
 
     var nextState = state.On(new MyLogicBlock.Input.SomeInput());
 
@@ -918,9 +912,8 @@ A fake context allows you to record interactions triggered by the state you're t
 ```csharp
 [Fact]
 public void MyTest() {
-  var context = MyLogicBlock.CreateFakeContext();
-
-  var state = new MyLogicBlock.State.SomeState(context);
+  var state = new MyLogicBlock.State.SomeState();
+  var context = state.CreateFakeContext();
 
   // ...
 

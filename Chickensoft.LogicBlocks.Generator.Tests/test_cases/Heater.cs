@@ -27,8 +27,8 @@ public class Heater : LogicBlock<Heater.State> {
     Set(tempSensor);
   }
 
-  public override State GetInitialState(IContext context) =>
-    new State.Off(context) { TargetTemp = 72.0 };
+  public override State GetInitialState() =>
+    new State.Off() { TargetTemp = 72.0 };
 
   public static class Input {
     public readonly record struct TurnOn;
@@ -40,29 +40,33 @@ public class Heater : LogicBlock<Heater.State> {
   public abstract record State : StateLogic, IGet<Input.TargetTempChanged> {
     public double TargetTemp { get; init; }
 
-    public State(IContext context) : base(context) { }
-
     public State On(Input.TargetTempChanged input) => this with {
       TargetTemp = input.Temp
     };
 
     public abstract record Powered : State, IGet<Input.TurnOff> {
-      public Powered(IContext context) : base(context) {
-        var tempSensor = context.Get<ITemperatureSensor>();
+      public Powered() {
+        // Whenever a Powered state is entered, play a chime to
+        // alert the user that the heater is on. Subsequent states that
+        // inherit from Powered will not play a chime until a different
+        // state has been entered before returning to a Powered state.
+        OnEnter<Powered>((previous) => Context.Output(new Output.Chime()));
 
-        // When we enter the state, subscribe to changes in temperature.
-        OnEnter<Powered>(
-          (previous) => tempSensor.OnTemperatureChanged += OnTemperatureChanged
+        // Unlike OnEnter, OnAttach will run for every state instance that
+        // inherits from this record. Use these to setup your state.
+        //
+        // Attach and detach are great for setting up long-running operations.
+        OnAttach(
+          () => Get<ITemperatureSensor>().OnTemperatureChanged += OnTemperatureChanged
         );
 
-        // When we exit this state, unsubscribe from changes in temperature.
-        OnExit<Powered>(
-          (next) => tempSensor.OnTemperatureChanged -= OnTemperatureChanged
+        OnDetach(
+          () => Get<ITemperatureSensor>().OnTemperatureChanged -= OnTemperatureChanged
         );
       }
 
       public State On(Input.TurnOff input) =>
-        new Off(Context) { TargetTemp = TargetTemp };
+        new Off() { TargetTemp = TargetTemp };
 
       // Whenever our temperature sensor gives us a reading, we will just
       // provide an input to ourselves. This lets us have a chance to change
@@ -72,29 +76,25 @@ public class Heater : LogicBlock<Heater.State> {
     }
 
     public record Off : State, IGet<Input.TurnOn> {
-      public Off(IContext context) : base(context) { }
-
       public State On(Input.TurnOn input) {
         // Get the temperature sensor from the blackboard.
-        var tempSensor = Context.Get<ITemperatureSensor>();
+        var tempSensor = Get<ITemperatureSensor>();
 
         if (tempSensor.AirTemp >= TargetTemp) {
           // Room is already hot enough.
-          return new Idle(Context) { TargetTemp = TargetTemp };
+          return new Idle() { TargetTemp = TargetTemp };
         }
 
         // Room is too cold — start heating.
-        return new Heating(Context) { TargetTemp = TargetTemp };
+        return new Heating() { TargetTemp = TargetTemp };
       }
     }
 
     public record Idle : Powered, IGet<Input.AirTempSensorChanged> {
-      public Idle(IContext context) : base(context) { }
-
       public State On(Input.AirTempSensorChanged input) {
         if (input.AirTemp < TargetTemp - 3.0d) {
           // Temperature has fallen too far below target temp — start heating.
-          return new Heating(Context) { TargetTemp = TargetTemp };
+          return new Heating() { TargetTemp = TargetTemp };
         }
         // Room is still hot enough — keep waiting.
         return this;
@@ -102,13 +102,11 @@ public class Heater : LogicBlock<Heater.State> {
     }
 
     public record Heating : Powered, IGet<Input.AirTempSensorChanged> {
-      public Heating(IContext context) : base(context) { }
-
       public State On(Input.AirTempSensorChanged input) {
         if (input.AirTemp >= TargetTemp) {
           // We're done heating!
           Context.Output(new Output.FinishedHeating());
-          return new Idle(Context) { TargetTemp = TargetTemp };
+          return new Idle() { TargetTemp = TargetTemp };
         }
         // Room isn't hot enough — keep heating.
         return this;
@@ -118,5 +116,6 @@ public class Heater : LogicBlock<Heater.State> {
 
   public static class Output {
     public readonly record struct FinishedHeating;
+    public readonly record struct Chime;
   }
 }

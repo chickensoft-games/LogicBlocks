@@ -7,9 +7,8 @@ using Xunit;
 public class SomeStateTest {
   [Fact]
   public void SomeStateEnters() {
-    var context = MyLogicBlock.CreateFakeContext();
-
-    var state = new MyLogicBlock.State.SomeState(context);
+    var state = new MyLogicBlock.State.SomeState();
+    var context = state.CreateFakeContext();
 
     state.Enter();
 
@@ -20,9 +19,8 @@ public class SomeStateTest {
 
   [Fact]
   public void SomeStateExits() {
-    var context = MyLogicBlock.CreateFakeContext();
-
-    var state = new MyLogicBlock.State.SomeState(context);
+    var state = new MyLogicBlock.State.SomeState();
+    var context = state.CreateFakeContext();
 
     state.Exit();
 
@@ -33,9 +31,8 @@ public class SomeStateTest {
 
   [Fact]
   public void GoesToSomeOtherStateOnSomeInput() {
-    var context = MyLogicBlock.CreateFakeContext();
-
-    var state = new MyLogicBlock.State.SomeState(context);
+    var state = new MyLogicBlock.State.SomeState();
+    var context = state.CreateFakeContext();
 
     var nextState = state.On(new MyLogicBlock.Input.SomeInput());
 

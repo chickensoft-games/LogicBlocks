@@ -481,4 +481,5 @@ dotnet_diagnostic.RCS1259.severity = none
 dotnet_diagnostic.RCS1158.severity = none
 # Fancy collection syntax doesn't work yet for compatibility.
 dotnet_diagnostic.IDE0028.severity = none
-
+# You're wrong about redundant constructors.
+dotnet_diagnostic.RCS1074.severity = none

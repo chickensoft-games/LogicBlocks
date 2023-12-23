@@ -11,13 +11,13 @@ public class HierarchicalCallbackLogicAsyncTest {
     var log = new List<string>();
     var callbackLogic = new HierarchicalCallbackLogicAsync(log) {
       InitialState =
-        (context) => new HierarchicalCallbackLogicAsync.State.Substate(context)
+        () => new HierarchicalCallbackLogicAsync.State.Substate()
     };
 
-    var context = new Mock<HierarchicalCallbackLogicAsync.IContext>();
+    var context = new Mock<IContext>();
 
     await callbackLogic.Value.Enter(
-      new Mock<HierarchicalCallbackLogicAsync.State>(context.Object).Object
+      new Mock<HierarchicalCallbackLogicAsync.State>().Object
     );
     log.ShouldBe(new List<string> { "substate" });
 
@@ -32,13 +32,13 @@ public class HierarchicalCallbackLogicAsyncTest {
     var log = new List<string>();
     var callbackLogic = new HierarchicalCallbackLogicAsync(log) {
       InitialState =
-        (context) => new HierarchicalCallbackLogicAsync.State.Substate(context)
+        () => new HierarchicalCallbackLogicAsync.State.Substate()
     };
 
-    var context = new Mock<HierarchicalCallbackLogicAsync.IContext>();
+    var context = new Mock<IContext>();
 
     await callbackLogic.Value.Exit(
-      new Mock<HierarchicalCallbackLogicAsync.State>(context.Object).Object
+      new Mock<HierarchicalCallbackLogicAsync.State>().Object
     );
     log.ShouldBe(new List<string> { "substate" });
 

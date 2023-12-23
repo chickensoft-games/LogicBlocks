@@ -1,8 +1,7 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 [StateMachine]
 public class ToasterOven : LogicBlock<ToasterOven.State> {
-  public override State GetInitialState(IContext context) =>
-    new State.Toasting(context, 0);
+  public override State GetInitialState() => new State.Toasting(0);
 
   public static class Input {
     public readonly record struct OpenDoor;
@@ -11,9 +10,9 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
     public readonly record struct StartToasting(int ToastColor);
   }
 
-  public abstract record State(IContext Context) : StateLogic(Context) {
+  public abstract record State : StateLogic {
     public record Heating : State, IGet<Input.OpenDoor> {
-      public Heating(IContext context) : base(context) {
+      public Heating() {
         OnEnter<Heating>(
           (previous) => Context.Output(new Output.TurnHeaterOn())
         );
@@ -22,13 +21,13 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         );
       }
 
-      public State On(Input.OpenDoor input) => new DoorOpen(Context);
+      public State On(Input.OpenDoor input) => new DoorOpen();
     }
 
     public record Toasting : Heating, IGet<Input.StartBaking> {
       public int ToastColor { get; }
 
-      public Toasting(IContext context, int toastColor) : base(context) {
+      public Toasting(int toastColor) {
         ToastColor = toastColor;
 
         OnEnter<Toasting>(
@@ -39,15 +38,13 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         );
       }
 
-      public State On(Input.StartBaking input) => new Baking(
-        Context, input.Temperature
-      );
+      public State On(Input.StartBaking input) => new Baking(input.Temperature);
     }
 
     public record Baking : Heating, IGet<Input.StartToasting> {
       public int Temperature { get; }
 
-      public Baking(IContext context, int temperature) : base(context) {
+      public Baking(int temperature) {
         Temperature = temperature;
 
         OnEnter<Baking>(
@@ -59,12 +56,12 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
       }
 
       public State On(Input.StartToasting input) => new Toasting(
-        Context, input.ToastColor
+        input.ToastColor
       );
     }
 
     public record DoorOpen : State, IGet<Input.CloseDoor> {
-      public DoorOpen(IContext context) : base(context) {
+      public DoorOpen() {
         OnEnter<DoorOpen>(
           (previous) => Context.Output(new Output.TurnLampOn())
         );
@@ -74,7 +71,7 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
       }
 
       public State On(Input.CloseDoor input) => new Toasting(
-        Context, input.ToastColor
+        input.ToastColor
       );
     }
   }

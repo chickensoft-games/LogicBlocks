@@ -7,33 +7,32 @@ using Chickensoft.LogicBlocks.Generator;
 [StateMachine]
 public class HierarchicalCallbackLogicAsync :
   LogicBlockAsync<HierarchicalCallbackLogicAsync.State> {
-  public Func<IContext, State> InitialState { get; init; } =
-    (context) => new State(context);
+  public Func<State> InitialState { get; init; } =
+    () => new State();
 
-  public override State GetInitialState(IContext context) =>
-    InitialState(context);
+  public override State GetInitialState() => InitialState();
 
   public HierarchicalCallbackLogicAsync(List<string> log) {
     Set(log);
   }
 
   public record State : StateLogic {
-    public State(IContext context) : base(context) {
+    public State() {
       OnEnter<State>(
-        async (previous) => context.Get<List<string>>().Add("state")
+        async (previous) => Context.Get<List<string>>().Add("state")
       );
       OnExit<State>(
-        async (previous) => context.Get<List<string>>().Add("state")
+        async (next) => Context.Get<List<string>>().Add("state")
       );
     }
 
     public record Substate : State {
-      public Substate(IContext context) : base(context) {
+      public Substate() {
         OnEnter<Substate>(
-          async (previous) => context.Get<List<string>>().Add("substate")
+          async (previous) => Context.Get<List<string>>().Add("substate")
         );
         OnExit<Substate>(
-          async (previous) => context.Get<List<string>>().Add("substate")
+          async (next) => Context.Get<List<string>>().Add("substate")
         );
       }
     }

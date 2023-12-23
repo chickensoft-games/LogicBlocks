@@ -8,7 +8,7 @@ public class LogicStateLogicTest {
   [Fact]
   public void Initializes() {
     var logic = new TestMachine();
-    var stateLogic = new TestMachine.State.Deactivated(logic.Context);
+    var stateLogic = new TestMachine.State.Deactivated();
     stateLogic.GetHashCode().ShouldBeOfType<int>();
   }
 }

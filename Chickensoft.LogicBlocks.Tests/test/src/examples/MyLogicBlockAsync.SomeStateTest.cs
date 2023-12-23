@@ -1,39 +1,45 @@
 namespace Chickensoft.LogicBlocks.Tests.Examples;
 
 using Chickensoft.LogicBlocks.Tests.Fixtures;
-using Moq;
 using Shouldly;
 using Xunit;
 
 public class SomeStateAsyncTest {
   [Fact]
-  public async Task HandlesSomeInput() {
-    var context = new Mock<MyLogicBlockAsync.IContext>(MockBehavior.Strict);
-    var state = new MyLogicBlockAsync.State.SomeState(context.Object);
+  public async Task SomeStateEnters() {
+    var state = new MyLogicBlockAsync.State.SomeState();
+    var context = state.CreateFakeContext();
 
-    var someOutputs = 0;
-    // Expect our state to output SomeOutput when SomeInput is received.
-    context
-      .Setup(context => context.Output(
-        It.Ref<MyLogicBlockAsync.Output.SomeOutput>.IsAny
-      )).Callback(() => someOutputs++);
-
-    // Perform the action we are testing on our state.
-    var result = await state.On(new MyLogicBlockAsync.Input.SomeInput());
-
-    // Make sure we got the next state.
-    result.ShouldBeOfType<MyLogicBlockAsync.State.SomeOtherState>();
-
-    // Simulate enter/exit callbacks
     await state.Enter();
+
+    context.Outputs.ShouldBe(
+      new object[] { new MyLogicBlockAsync.Output.SomeOutput() }
+    );
+  }
+
+  [Fact]
+  public async Task SomeStateExits() {
+    var state = new MyLogicBlockAsync.State.SomeState();
+    var context = state.CreateFakeContext();
+
     await state.Exit();
 
-    // Make sure we got 3 outputs:
-    // 1 from enter, 1 from input handler, and 1 from exit.
-    someOutputs.ShouldBe(3);
+    context.Outputs.ShouldBe(
+      new object[] { new MyLogicBlockAsync.Output.SomeOutput() }
+    );
+  }
 
-    // Make sure the output we expected was produced by ensuring our mock
-    // context was called the same way we set it up.
-    context.VerifyAll();
+  [Fact]
+  public async Task GoesToSomeOtherStateOnSomeInput() {
+    var state = new MyLogicBlockAsync.State.SomeState();
+    var context = state.CreateFakeContext();
+
+    var nextState = await state.On(new MyLogicBlockAsync.Input.SomeInput());
+
+    nextState.ShouldBeOfType<MyLogicBlockAsync.State.SomeOtherState>();
+
+    context.Outputs.ShouldBe(
+      new object[] { new MyLogicBlockAsync.Output.SomeOutput() }
+    );
   }
 }

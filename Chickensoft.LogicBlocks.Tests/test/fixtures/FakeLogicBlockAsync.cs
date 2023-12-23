@@ -18,7 +18,7 @@ public partial class FakeLogicBlockAsync {
     public readonly record struct Custom(Func<IContext, State> Next);
   }
 
-  public abstract record State(IContext Context) : StateLogic(Context),
+  public abstract record State : StateLogic,
     IGet<Input.InputOne>,
     IGet<Input.InputTwo>,
     IGet<Input.InputThree>,
@@ -30,16 +30,16 @@ public partial class FakeLogicBlockAsync {
     IGet<Input.Custom> {
     public async Task<State> On(Input.InputOne input) {
       Context.Output(new Output.OutputOne(1));
-      return new StateA(Context, input.Value1, input.Value2);
+      return new StateA(input.Value1, input.Value2);
     }
 
     public async Task<State> On(Input.InputTwo input) {
       Context.Output(new Output.OutputTwo("2"));
-      return new StateB(Context, input.Value1, input.Value2);
+      return new StateB(input.Value1, input.Value2);
     }
 
     public async Task<State> On(Input.InputThree input) => new StateD(
-      Context, input.Value1, input.Value2
+      input.Value1, input.Value2
     );
 
     public async Task<State> On(Input.InputError input)
@@ -58,7 +58,7 @@ public partial class FakeLogicBlockAsync {
     public async Task<State> On(Input.Custom input) => input.Next(Context);
 
     public async Task<State> On(Input.GetString input) => new StateC(
-      Context, Context.Get<string>()
+      Context.Get<string>()
     );
 
     public async Task<State> On(Input.SelfInput input) {
@@ -68,31 +68,28 @@ public partial class FakeLogicBlockAsync {
       return this;
     }
 
-    public record StateA(IContext Context, int Value1, int Value2) :
-      State(Context);
-    public record StateB(IContext Context, string Value1, string Value2) :
-      State(Context);
-    public record StateC(IContext Context, string Value) :
-      State(Context);
-    public record StateD(IContext Context, string Value1, string Value2) :
-      State(Context);
+    public record StateA(int Value1, int Value2) :
+      State();
+    public record StateB(string Value1, string Value2) :
+      State();
+    public record StateC(string Value) :
+      State();
+    public record StateD(string Value1, string Value2) :
+      State();
     public record Custom : State {
-      public Custom(IContext context, Action<IContext> setupCallback) :
-        base(context) {
+      public Custom(IContext context, Action<IContext> setupCallback) {
         setupCallback(context);
       }
     }
 
     public record OnEnterState : State {
-      public OnEnterState(IContext context, Func<State?, Task> onEnter) :
-        base(context) {
+      public OnEnterState(Func<State?, Task> onEnter) {
         OnEnter<OnEnterState>(onEnter);
       }
     }
 
     public record OnExitState : State {
-      public OnExitState(IContext context, Func<State?, Task> onExit) :
-        base(context) {
+      public OnExitState(Func<State?, Task> onExit) {
         OnExit<OnExitState>(onExit);
       }
     }
@@ -106,12 +103,12 @@ public partial class FakeLogicBlockAsync {
 
 public partial class FakeLogicBlockAsync :
 LogicBlockAsync<FakeLogicBlockAsync.State> {
-  public Func<IContext, State>? InitialState { get; init; }
+  public Func<State>? InitialState { get; init; }
 
   public List<Exception> Exceptions { get; } = new();
 
-  public override State GetInitialState(IContext context) =>
-    InitialState?.Invoke(context) ?? new State.StateA(context, 1, 2);
+  public override State GetInitialState() =>
+    InitialState?.Invoke() ?? new State.StateA(1, 2);
 
   private readonly Action<Exception>? _onError;
 

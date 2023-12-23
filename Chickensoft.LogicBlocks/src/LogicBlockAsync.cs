@@ -15,23 +15,11 @@ using System.Threading.Tasks;
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
 public interface ILogicBlockAsync<TState> : ILogic<
-  TState, Func<object, Task<TState>>, Task<TState>, Func<TState?, Task>
+  TState,
+  Func<object, Task<TState>>,
+  Task<TState>,
+  Func<TState?, Task>
 > where TState : class, LogicBlockAsync<TState>.IStateLogic {
-  /// <summary>
-  /// Returns the initial state of the logic block. Implementations must
-  /// override this method to provide a valid initial state.
-  /// </summary>
-  /// <param name="context">Logic block context.</param>
-  /// <returns>Initial state of the logic block.</returns>
-  TState GetInitialState(
-    Logic<
-      TState,
-      Func<object, Task<TState>>,
-      Task<TState>,
-      Func<TState?, Task>
-    >.IContext context
-  );
-
   /// <summary>
   /// Starts the logic block by entering the current state. If the logic block
   /// hasn't initialized yet, this will create the initial state before entering
@@ -69,11 +57,6 @@ ILogicBlockAsync<
   TState
 > where TState : class, LogicBlockAsync<TState>.IStateLogic {
   /// <summary>
-  /// The context provided to the states of the logic block.
-  /// </summary>
-  public new IContext Context { get; }
-
-  /// <summary>
   /// Whether or not the logic block is processing inputs.
   /// </summary>
   public override bool IsProcessing => !_processTask.Task.IsCompleted;
@@ -84,36 +67,34 @@ ILogicBlockAsync<
   /// Creates a new asynchronous logic block.
   /// </summary>
   protected LogicBlockAsync() {
-    Context = new Context(this);
     _processTask.SetResult(default!);
   }
 
   /// <inheritdoc />
-  public sealed override TState GetInitialState() => GetInitialState(Context);
-
-  /// <inheritdoc />
-  public abstract TState GetInitialState(IContext context);
+  public abstract override TState GetInitialState();
 
   internal override Task<TState> Process() {
     if (IsProcessing) {
       return _processTask.Task;
     }
 
-    ProcessInputs().ContinueWith((task) => {
-      if (task.IsFaulted) {
-        // Logic blocks are designed to catch all errors in state changes,
-        // so if this happens it means the logic block overrode HandleError
-        // and re-threw the exception.
-        //
-        // In that case, we want to respect the decision to stop execution and
-        // end the task with the exception.
-        _processTask.SetException(task.Exception!);
-        return;
-      }
-      _processTask.SetResult(Value);
-    });
+    ProcessInputs().ContinueWith(Continuation);
 
     return _processTask.Task;
+  }
+
+  private void Continuation(Task<TState> task) {
+    if (task.IsFaulted) {
+      // Logic blocks are designed to catch all errors in state changes,
+      // so if this happens it means the logic block overrode HandleError
+      // and re-threw the exception.
+      //
+      // In that case, we want to respect the decision to stop execution and
+      // end the task with the exception.
+      _processTask.SetException(task.Exception!);
+      return;
+    }
+    _processTask.SetResult(Value);
   }
 
   private async Task<TState> ProcessInputs() {
@@ -138,12 +119,16 @@ ILogicBlockAsync<
       var previous = Value;
 
       // Exit the previous state.
-      await previous.Exit(state, (e) => AddError(e));
+      await previous.Exit(state, AddError);
+
+      previous.Detach();
 
       SetState(state);
 
+      state.Attach(Context);
+
       // Enter the next state.
-      await state.Enter(previous, (e) => AddError(e));
+      await state.Enter(previous, AddError);
 
       FinalizeStateChange(state);
     }

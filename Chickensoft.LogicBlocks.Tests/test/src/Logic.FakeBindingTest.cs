@@ -47,14 +47,13 @@ public class FakeBindingTest {
 
   [Fact]
   public void SimulatesAState() {
-    var context = new Mock<MyLogicBlock.IContext>();
     var logic = new Mock<MyLogicBlock>();
     var binding = MyLogicBlock.CreateFakeBinding();
     logic.Setup(logic => logic.Bind()).Returns(binding);
 
     var consumer = new LogicBlockConsumer(logic.Object);
 
-    binding.SetState(new MyLogicBlock.State.SomeOtherState(context.Object));
+    binding.SetState(new MyLogicBlock.State.SomeOtherState());
 
     consumer.SawState.ShouldBeTrue();
   }
