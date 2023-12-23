@@ -10,7 +10,7 @@ public partial class PartialLogic : LogicBlock<PartialLogic.State> {
   public static class Input {
     public readonly record struct One;
   }
-  public abstract partial record State(IContext Context) : StateLogic(Context);
+  public abstract partial record State : StateLogic;
   public static class Output {
     public readonly record struct OutputA;
     public readonly record struct OutputEnterA;

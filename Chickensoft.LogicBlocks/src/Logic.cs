@@ -2,6 +2,7 @@ namespace Chickensoft.LogicBlocks;
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 /// <summary>
 /// A logic block. Logic blocks are machines that receive input, maintain a
@@ -15,6 +16,10 @@ using System.Collections.Generic;
 /// <typeparam name="TUpdate">Update callback type.</typeparam>
 public partial interface ILogic<TState, THandler, TInputReturn, TUpdate>
 where TState : Logic<TState, THandler, TInputReturn, TUpdate>.ILogicState {
+  /// <summary>
+  /// Logic block execution context.
+  /// </summary>
+  IContext Context { get; }
   /// <summary>Current state of the logic block.</summary>
   TState Value { get; }
   /// <summary>
@@ -71,7 +76,12 @@ where TState : Logic<TState, THandler, TInputReturn, TUpdate>.ILogicState {
 /// <typeparam name="THandler">Input handler type.</typeparam>
 /// <typeparam name="TInputReturn">Input method return type.</typeparam>
 /// <typeparam name="TUpdate">Update callback type.</typeparam>
-public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> :
+public abstract partial class Logic<
+  TState,
+  THandler,
+  TInputReturn,
+  TUpdate
+> :
   ILogic<TState, THandler, TInputReturn, TUpdate> where TState : Logic<
     TState, THandler, TInputReturn, TUpdate
   >.ILogicState {
@@ -94,13 +104,6 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> :
   /// </summary>
   /// <returns>Fake binding.</returns>
   public static IFakeBinding CreateFakeBinding() => new FakeBinding();
-
-  /// <summary>
-  /// Creates a fake context that can be used to more easily test logic block
-  /// states.
-  /// </summary>
-  /// <returns>Fake context.</returns>
-  public static IFakeContext CreateFakeContext() => new FakeContext();
 
   internal readonly struct UpdateCallback {
     public TUpdate Callback { get; }
@@ -135,11 +138,27 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> :
   /// <inheritdoc />
   public event Action<Exception>? OnError;
 
+  /// <summary>
+  /// The context provided to the states of the logic block.
+  /// </summary>
+  public IContext Context { get; }
+
   /// <inheritdoc />
-  public TState Value => _value ??= GetInitialState();
+  public TState Value {
+    get {
+      if (_value is null) {
+        _value = GetInitialState();
+        _value.Attach(Context);
+      }
+
+      return _value;
+    }
+  }
 
   /// <inheritdoc />
   public abstract bool IsProcessing { get; }
+
+  IContext ILogic<TState, THandler, TInputReturn, TUpdate>.Context => throw new NotImplementedException();
 
   internal TState? _value;
 
@@ -155,7 +174,9 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> :
   /// machine.
   /// </para>
   /// </summary>
-  internal Logic() { }
+  internal Logic() {
+    Context = new DefaultContext(this);
+  }
 
   /// <inheritdoc />
   public virtual IBinding Bind() => new Binding(this);
@@ -265,12 +286,15 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> :
     return false;
   }
 
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
   internal void SetState(TState state) => _value = state;
 
   // Announce state change.
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
   internal void FinalizeStateChange(TState state) =>
     OnState?.Invoke(state);
 
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
   internal void AnnounceInput(object input) =>
     OnInput?.Invoke(input);
 

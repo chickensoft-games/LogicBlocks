@@ -32,6 +32,19 @@ public class LogicBlocksGenerator :
     //
     // System.Diagnostics.Debugger.Launch();
 
+    // while (!System.Diagnostics.Debugger.IsAttached) {
+    //   // You can debug a source generator in Visual Studio on Windows by
+    //   // simply uncommenting the Debugger.Launch line above.
+
+    //   // To debug on macOS with VSCode, you can pull open the command palette
+    //   // and select "Debug: Attach to a .NET 5+ or .NET Core process"
+    //   // (csharp.attachToProcess) and then search "VBCS" and select the
+    //   // matching compiler process. Once it attaches, this will stop sleeping
+    //   // and you're on your merry way!
+    //   Thread.Sleep(500);
+    // }
+    // System.Diagnostics.Debugger.Break();
+
     // Add post initialization sources
     // (source code that is always generated regardless)
     foreach (var postInitSource in Constants.PostInitializationSources) {

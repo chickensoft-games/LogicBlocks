@@ -5,29 +5,29 @@ using Chickensoft.LogicBlocks.Generator;
 [StateMachine]
 public class HierarchicalCallbackLogic :
   LogicBlock<HierarchicalCallbackLogic.State> {
-  public Func<IContext, State> InitialState { get; init; } =
-    (context) => new State(context);
+  public Func<State> InitialState { get; init; } =
+    () => new State();
 
   public override State GetInitialState(IContext context) =>
-    InitialState(context);
+    InitialState();
 
   public HierarchicalCallbackLogic(List<string> log) {
     Set(log);
   }
 
   public record State : StateLogic {
-    public State(IContext context) : base(context) {
-      OnEnter<State>((previous) => context.Get<List<string>>().Add("state"));
-      OnExit<State>((previous) => context.Get<List<string>>().Add("state"));
+    public State() {
+      OnEnter<State>((previous) => Context.Get<List<string>>().Add("state"));
+      OnExit<State>((next) => Context.Get<List<string>>().Add("state"));
     }
 
     public record Substate : State {
-      public Substate(IContext context) : base(context) {
+      public Substate() {
         OnEnter<Substate>(
-          (previous) => context.Get<List<string>>().Add("substate")
+          (previous) => Context.Get<List<string>>().Add("substate")
         );
         OnExit<Substate>(
-          (previous) => context.Get<List<string>>().Add("substate")
+          (next) => Context.Get<List<string>>().Add("substate")
         );
       }
     }

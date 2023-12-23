@@ -13,11 +13,11 @@ public partial class VendingMachine {
     public readonly record struct VendingCompleted;
   }
 
-  public abstract record State(IContext Context) : StateLogic(Context) {
+  public abstract record State : StateLogic {
     public record Idle : State,
       IGet<Input.SelectionEntered>, IGet<Input.PaymentReceived> {
-      public Idle(IContext context) : base(context) {
-        OnEnter<Idle>((previous) => context.Output(
+      public Idle() {
+        OnEnter<Idle>((previous) => Context.Output(
           new Output.ClearTransactionTimeOutTimer()
         ));
       }
@@ -25,7 +25,7 @@ public partial class VendingMachine {
       public State On(Input.SelectionEntered input) {
         if (Context.Get<VendingMachineStock>().HasItem(input.Type)) {
           return new TransactionActive.Started(
-            Context, input.Type, Prices[input.Type], 0
+            input.Type, Prices[input.Type], 0
           );
         }
         return this;
@@ -49,8 +49,8 @@ public partial class VendingMachine {
       public int AmountReceived { get; }
 
       public TransactionActive(
-        IContext context, ItemType type, int price, int amountReceived
-      ) : base(context) {
+        ItemType type, int price, int amountReceived
+      ) {
         Type = type;
         Price = price;
         AmountReceived = amountReceived;
@@ -78,10 +78,10 @@ public partial class VendingMachine {
             )
           );
           Context.Get<VendingMachineStock>().Vend(Type);
-          return new Vending(Context, Type, Price);
+          return new Vending(Type, Price);
         }
 
-        return new PaymentPending(Context, Type, Price, total);
+        return new PaymentPending(Type, Price, total);
       }
 
       public State On(Input.TransactionTimedOut input) {
@@ -89,16 +89,16 @@ public partial class VendingMachine {
           // Give any money received back before timing out.
           Context.Output(new Output.MakeChange(AmountReceived));
         }
-        return new Idle(Context);
+        return new Idle();
       }
 
       public record Started : TransactionActive,
         IGet<Input.SelectionEntered> {
         public Started(
-          IContext context, ItemType type, int price, int amountReceived
-        ) : base(context, type, price, amountReceived) {
+          ItemType type, int price, int amountReceived
+        ) : base(type, price, amountReceived) {
           OnEnter<Started>(
-            (previous) => context.Output(new Output.TransactionStarted())
+            (previous) => Context.Output(new Output.TransactionStarted())
           );
         }
 
@@ -106,25 +106,24 @@ public partial class VendingMachine {
         public State On(Input.SelectionEntered input) {
           if (Context.Get<VendingMachineStock>().HasItem(input.Type)) {
             return new Started(
-              Context, input.Type, Prices[input.Type], AmountReceived
+              input.Type, Prices[input.Type], AmountReceived
             );
           }
           // Item not in stock — clear selection.
-          return new Idle(Context);
+          return new Idle();
         }
       }
 
       public record PaymentPending(
-        IContext Context, ItemType Type, int Price, int AmountReceived
-      ) : TransactionActive(Context, Type, Price, AmountReceived);
+        ItemType Type, int Price, int AmountReceived
+      ) : TransactionActive(Type, Price, AmountReceived);
     }
 
     public record Vending : State, IGet<Input.VendingCompleted> {
       public ItemType Type { get; }
       public int Price { get; }
 
-      public Vending(IContext context, ItemType type, int price) :
-        base(context) {
+      public Vending(ItemType type, int price) {
         Type = type;
         Price = price;
 
@@ -134,7 +133,7 @@ public partial class VendingMachine {
       }
 
       public State On(Input.VendingCompleted input) =>
-        new Idle(Context);
+        new Idle();
     }
   }
 
@@ -168,8 +167,7 @@ public partial class VendingMachine : LogicBlock<VendingMachine.State> {
     Set(stock);
   }
 
-  public override State GetInitialState(IContext context)
-    => new State.Idle(context);
+  public override State GetInitialState(IContext context) => new State.Idle();
 }
 
 // Just a domain layer repository that manages the stock for a vending machine.

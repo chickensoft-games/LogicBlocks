@@ -13,7 +13,8 @@
       "cwd": "${workspaceFolder}/Chickensoft.LogicBlocks.Example",
       "console": "integratedTerminal",
       "stopAtEntry": false,
-      "internalConsoleOptions": "neverOpen"
+      "internalConsoleOptions": "neverOpen",
+      "enableStepFiltering": false,
     },
   ]
 }

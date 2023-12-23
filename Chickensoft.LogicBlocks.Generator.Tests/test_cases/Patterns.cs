@@ -5,24 +5,24 @@ public class Patterns : LogicBlock<Patterns.State> {
   public enum Mode { One, Two, Three }
 
   public override State GetInitialState(IContext context) =>
-    new State.One(context);
+    new State.One();
 
   public static class Input {
     public readonly record struct SetMode(Mode Mode);
   }
 
-  public abstract record State(IContext Context) : StateLogic(Context), IGet<Input.SetMode> {
+  public abstract record State : StateLogic, IGet<Input.SetMode> {
     public State On(Input.SetMode input) => input.Mode switch {
-      Mode.One => new One(Context),
-      Mode.Two => new Two(Context),
+      Mode.One => new One(),
+      Mode.Two => new Two(),
       Mode.Three => true switch {
-        true => new Three(Context),
+        true => new Three(),
         false => throw new NotImplementedException()
       },
       _ => throw new NotImplementedException()
     };
-    public record One(IContext Context) : State(Context);
-    public record Two(IContext Context) : State(Context);
-    public record Three(IContext Context) : State(Context);
+    public record One : State;
+    public record Two : State;
+    public record Three : State;
   }
 }

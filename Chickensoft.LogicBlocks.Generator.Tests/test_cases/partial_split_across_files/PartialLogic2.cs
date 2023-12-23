@@ -3,7 +3,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 public partial class PartialLogic : LogicBlock<PartialLogic.State> {
   public abstract partial record State : StateLogic {
     public partial record A : State, IGet<Input.One> {
-      public A(IContext context) : base(context) {
+      public A() {
         OnEnter<A>(
           (previous) => Context.Output(new Output.OutputEnterA())
         );
@@ -13,6 +13,6 @@ public partial class PartialLogic : LogicBlock<PartialLogic.State> {
       }
     }
 
-    public record B(IContext Context) : State(Context);
+    public record B : State;
   }
 }

@@ -14,57 +14,56 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
     public readonly record struct Deactivate();
   }
 
-  public abstract record State(IContext Context) : StateLogic(Context),
-    IGet<Input.Activate> {
+  public abstract record State : StateLogic, IGet<Input.Activate> {
     public State On(Input.Activate input) =>
       input.Secondary switch {
-        SecondaryState.Blooped => new Activated.Blooped(Context),
-        SecondaryState.Bopped => new Activated.Bopped(Context),
+        SecondaryState.Blooped => new Activated.Blooped(),
+        SecondaryState.Bopped => new Activated.Bopped(),
         _ => throw new ArgumentException("Unrecognized secondary state.")
       };
 
     public abstract record Activated : State, IGet<Input.Deactivate> {
-      public Activated(IContext context) : base(context) {
+      public Activated() {
         OnEnter<Activated>(
-          (previous) => context.Output(new Output.Activated())
+          (previous) => Context.Output(new Output.Activated())
         );
         OnExit<Activated>(
-          (next) => context.Output(new Output.ActivatedCleanUp())
+          (next) => Context.Output(new Output.ActivatedCleanUp())
         );
       }
 
-      public State On(Input.Deactivate input) => new Deactivated(Context);
+      public State On(Input.Deactivate input) => new Deactivated();
 
       public record Blooped : Activated {
-        public Blooped(IContext context) : base(context) {
+        public Blooped() {
           OnEnter<Blooped>(
-            (previous) => context.Output(new Output.Blooped())
+            (previous) => Context.Output(new Output.Blooped())
           );
           OnExit<Blooped>(
-            (next) => context.Output(new Output.BloopedCleanUp())
+            (next) => Context.Output(new Output.BloopedCleanUp())
           );
         }
       }
 
       public record Bopped : Activated {
-        public Bopped(IContext context) : base(context) {
+        public Bopped() {
           OnEnter<Bopped>(
-            (previous) => context.Output(new Output.Bopped())
+            (previous) => Context.Output(new Output.Bopped())
           );
           OnExit<Bopped>(
-            (next) => context.Output(new Output.BoppedCleanUp())
+            (next) => Context.Output(new Output.BoppedCleanUp())
           );
         }
       }
     }
 
     public record Deactivated : State {
-      public Deactivated(IContext context) : base(context) {
+      public Deactivated() {
         OnEnter<Deactivated>(
-          (previous) => context.Output(new Output.Deactivated())
+          (previous) => Context.Output(new Output.Deactivated())
         );
         OnExit<Deactivated>(
-          (next) => context.Output(new Output.DeactivatedCleanUp())
+          (next) => Context.Output(new Output.DeactivatedCleanUp())
         );
       }
     }
@@ -82,5 +81,5 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
   }
 
   public override State GetInitialState(IContext context) =>
-    new State.Deactivated(context);
+    new State.Deactivated();
 }

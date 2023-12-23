@@ -8,14 +8,14 @@ public class LogicBlockAsyncTest {
   [Fact]
   public void Initializes() {
     var block = new TestMachineAsync();
-    var context = new TestMachineAsync.Context(block);
+    var context = new TestMachineAsync.DefaultContext(block);
     block.Value.ShouldBe(block.GetInitialState(context));
   }
 
   [Fact]
   public async Task CallsEnterAndExitOnStatesInProperOrder() {
     var logic = new TestMachineAsync();
-    var context = new TestMachineAsync.Context(logic);
+    var context = new TestMachineAsync.DefaultContext(logic);
 
     var outputs = new List<object>();
 
@@ -124,7 +124,6 @@ public class LogicBlockAsyncTest {
 
     await block.Input(new FakeLogicBlockAsync.Input.Custom(
       (context) => new FakeLogicBlockAsync.State.OnEnterState(
-          context,
           (previous) =>
             throw new InvalidOperationException("Error from OnEnter")
         )
@@ -139,8 +138,7 @@ public class LogicBlockAsyncTest {
   [Fact]
   public async Task InvokesErrorEventFromUpdateHandlerManually() {
     var block = new FakeLogicBlockAsync() {
-      InitialState = (context) => new FakeLogicBlockAsync.State.OnEnterState(
-        context,
+      InitialState = () => new FakeLogicBlockAsync.State.OnEnterState(
         (previous) =>
           throw new InvalidOperationException("Error from OnEnter")
       )
@@ -154,7 +152,7 @@ public class LogicBlockAsyncTest {
   [Fact]
   public async Task DoesNothingOnUnhandledInput() {
     var block = new FakeLogicBlockAsync();
-    var context = new FakeLogicBlockAsync.Context(block);
+    var context = new FakeLogicBlockAsync.DefaultContext(block);
     await block.Input(new FakeLogicBlockAsync.Input.InputUnknown());
     block.Value.ShouldBe(block.GetInitialState(context));
   }
@@ -201,9 +199,9 @@ public class LogicBlockAsyncTest {
   public async Task StartsManuallyAndIgnoresStartWhenProcessing() {
     var enterCalled = false;
     var block = new FakeLogicBlockAsync() {
-      InitialState = (context) =>
+      InitialState = () =>
         new FakeLogicBlockAsync.State.OnEnterState(
-          context, (previous) => {
+          (previous) => {
             enterCalled = true;
             return Task.CompletedTask;
           }
@@ -222,9 +220,9 @@ public class LogicBlockAsyncTest {
   public async Task StartEntersState() {
     var enterCalled = false;
     var block = new FakeLogicBlockAsync() {
-      InitialState = (context) =>
+      InitialState = () =>
         new FakeLogicBlockAsync.State.OnEnterState(
-          context, (previous) => {
+          (previous) => {
             enterCalled = true;
             return Task.CompletedTask;
           })
@@ -241,9 +239,9 @@ public class LogicBlockAsyncTest {
   public async Task StopExitsState() {
     var exitCalled = false;
     var block = new FakeLogicBlockAsync() {
-      InitialState = (context) =>
+      InitialState = () =>
         new FakeLogicBlockAsync.State.OnExitState(
-          context, (previous) => {
+          (previous) => {
             exitCalled = true;
             return Task.CompletedTask;
           })

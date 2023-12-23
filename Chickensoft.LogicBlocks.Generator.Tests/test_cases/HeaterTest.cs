@@ -73,10 +73,12 @@ public class HeaterTest {
 
     heater.Input(new Heater.Input.TurnOn());
 
-    // Dropping the temp below target should move it from idling to heating
+    // Dropping the temp below target should move it from idle to heating
     tempSensor.UpdateReading(66.0);
-    // Raising the temp above target should move it from heating back to idling
+    heater.Value.ShouldBeOfType<Heater.State.Heating>();
+    // Raising the temp above target should move it from heating back to idle
     tempSensor.UpdateReading(74);
+    heater.Value.ShouldBeOfType<Heater.State.Idle>();
 
     messages.ShouldBe(new string[] {
       "Heater is powered",

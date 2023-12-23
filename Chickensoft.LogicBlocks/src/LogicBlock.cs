@@ -23,9 +23,7 @@ ILogic<
   /// </summary>
   /// <param name="context">Logic block context.</param>
   /// <returns>Initial state of the logic block.</returns>
-  TState GetInitialState(Logic<
-    TState, Func<object, TState>, TState, Action<TState?>
-  >.IContext context);
+  TState GetInitialState(IContext context);
 
   /// <summary>
   /// Starts the logic block by entering the current state. If the logic block
@@ -57,13 +55,7 @@ ILogic<
 public abstract partial class LogicBlock<TState> :
 Logic<
   TState, Func<object, TState>, TState, Action<TState?>
->, ILogicBlock<TState>
-where TState : class, LogicBlock<TState>.IStateLogic {
-  /// <summary>
-  /// The context provided to the states of the logic block.
-  /// </summary>
-  public new IContext Context { get; }
-
+>, ILogicBlock<TState> where TState : class, LogicBlock<TState>.IStateLogic {
   /// <summary>
   /// Whether or not the logic block is processing inputs.
   /// </summary>
@@ -72,9 +64,7 @@ where TState : class, LogicBlock<TState>.IStateLogic {
   private bool _isProcessing;
 
   /// <summary>Creates a new logic block.</summary>
-  protected LogicBlock() {
-    Context = new Context(this);
-  }
+  protected LogicBlock() { }
 
   /// <inheritdoc />
   public sealed override TState GetInitialState() => GetInitialState(Context);
@@ -108,12 +98,16 @@ where TState : class, LogicBlock<TState>.IStateLogic {
       var previous = Value;
 
       // Exit the previous state.
-      previous.Exit(state, (e) => AddError(e));
+      previous.Exit(state, AddError);
+
+      previous.Detach();
 
       SetState(state);
 
+      state.Attach(Context);
+
       // Enter the next state.
-      state.Enter(previous, (e) => AddError(e));
+      state.Enter(previous, AddError);
 
       FinalizeStateChange(state);
     }

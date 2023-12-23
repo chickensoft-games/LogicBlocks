@@ -8,14 +8,14 @@ public class LogicBlockTest {
   [Fact]
   public void Initializes() {
     var block = new FakeLogicBlock();
-    var context = new FakeLogicBlock.Context(block);
+    var context = new FakeLogicBlock.FakeContext();
     block.Value.ShouldBe(block.GetInitialState(context));
   }
 
   [Fact]
   public void GetsAndSetsBlackboardData() {
     var block = new FakeLogicBlock();
-    var context = new FakeLogicBlock.Context(block);
+    var context = new FakeLogicBlock.FakeContext();
     block.PublicSet("data");
     block.Get<string>().ShouldBe("data");
 
@@ -23,7 +23,7 @@ public class LogicBlockTest {
     Should.Throw<ArgumentException>(() => block.PublicSet("other"));
     Should.Throw<KeyNotFoundException>(() => block.Get<int>());
     block.Input(new FakeLogicBlock.Input.GetString());
-    block.Value.ShouldBe(new FakeLogicBlock.State.StateC(context, "data"));
+    block.Value.ShouldBe(new FakeLogicBlock.State.StateC("data"));
   }
 
   [Fact]
@@ -75,10 +75,9 @@ public class LogicBlockTest {
   [Fact]
   public void InvokesStateEvent() {
     var block = new FakeLogicBlock();
-    var context = new FakeLogicBlock.Context(block);
 
     var called = 0;
-    var state = new FakeLogicBlock.State.StateA(context, 2, 3);
+    var state = new FakeLogicBlock.State.StateA(2, 3);
 
     void handler(FakeLogicBlock.State state) {
       state.ShouldBe(state);
@@ -140,7 +139,7 @@ public class LogicBlockTest {
   [Fact]
   public void DoesNothingOnUnhandledInput() {
     var block = new FakeLogicBlock();
-    var context = new FakeLogicBlock.Context(block);
+    var context = new FakeLogicBlock.DefaultContext(block);
     block.Input(new FakeLogicBlock.Input.InputUnknown());
     block.Value.ShouldBe(block.GetInitialState(context));
   }
@@ -148,7 +147,7 @@ public class LogicBlockTest {
   [Fact]
   public void CallsEnterAndExitOnStatesInProperOrder() {
     var logic = new TestMachine();
-    var context = new TestMachine.Context(logic);
+    var context = new TestMachine.DefaultContext(logic);
 
     var outputs = new List<object>();
 
@@ -248,7 +247,7 @@ public class LogicBlockTest {
   [Fact]
   public void ReturnsCurrentValueIfProcessingInputs() {
     var block = new FakeLogicBlock();
-    var context = new FakeLogicBlock.Context(block);
+    var context = new FakeLogicBlock.DefaultContext(block);
     var called = false;
     var value = block.Input(new FakeLogicBlock.Input.InputCallback(
       () => {
@@ -257,7 +256,7 @@ public class LogicBlockTest {
         value.ShouldBe(block.GetInitialState(context));
         called = true;
       },
-      (context) => new FakeLogicBlock.State.StateA(context, 2, 3)
+      (context) => new FakeLogicBlock.State.StateA(2, 3)
     ));
     called.ShouldBeTrue();
   }
@@ -288,8 +287,9 @@ public class LogicBlockTest {
 
   [Fact]
   public void InvokesErrorEventFromUpdateHandlerManually() {
+    var context = new FakeLogicBlock.FakeContext();
     var block = new FakeLogicBlock() {
-      InitialState = (context) => new FakeLogicBlock.State.OnEnterState(
+      InitialState = () => new FakeLogicBlock.State.OnEnterState(
         context,
         (previous) =>
           throw new InvalidOperationException("Error from OnEnter")
@@ -314,8 +314,9 @@ public class LogicBlockTest {
   [Fact]
   public void StartsManuallyAndIgnoresStartWhenProcessing() {
     var enterCalled = false;
+    var context = new FakeLogicBlock.FakeContext();
     var block = new FakeLogicBlock() {
-      InitialState = (context) =>
+      InitialState = () =>
         new FakeLogicBlock.State.OnEnterState(
           context, (previous) => enterCalled = true
         )
@@ -332,8 +333,9 @@ public class LogicBlockTest {
   [Fact]
   public void StartEntersState() {
     var enterCalled = false;
+    var context = new FakeLogicBlock.FakeContext();
     var block = new FakeLogicBlock() {
-      InitialState = (context) =>
+      InitialState = () =>
         new FakeLogicBlock.State.OnEnterState(
           context, (previous) => enterCalled = true
         )
@@ -349,8 +351,9 @@ public class LogicBlockTest {
   [Fact]
   public void StopExitsState() {
     var exitCalled = false;
+    var context = new FakeLogicBlock.FakeContext();
     var block = new FakeLogicBlock() {
-      InitialState = (context) =>
+      InitialState = () =>
         new FakeLogicBlock.State.OnExitState(
           context, (previous) => exitCalled = true
         )
@@ -365,8 +368,6 @@ public class LogicBlockTest {
 
   [Fact]
   public void CreatesFakeContext() {
-    var context = FakeLogicBlock.CreateFakeContext();
-
     var inputs = new List<object> { "a", 2, true };
     var outputs = new List<object> { "b", 3, false };
     var errors = new List<Exception> {
@@ -378,6 +379,8 @@ public class LogicBlockTest {
       { typeof(int), 4 },
       { typeof(bool), true }
     };
+
+    var context = new FakeLogicBlock.FakeContext();
 
     context.Set(blackboard);
     context.Set(2d);
