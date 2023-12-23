@@ -103,7 +103,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
         return fakeContext;
       }
       var context = new FakeContext();
-      Attach(context);
+      InternalState.ContextAdapter.Adapt(context);
       return context;
     }
 
