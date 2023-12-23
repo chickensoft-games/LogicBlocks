@@ -70,7 +70,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     internal InternalState InternalState { get; } = new();
 
     /// <inheritdoc />
-    public TDataType Get<TDataType>() where TDataType : notnull =>
+    protected TDataType Get<TDataType>() where TDataType : notnull =>
       Context.Get<TDataType>();
 
     /// <inheritdoc />
