@@ -111,8 +111,8 @@ LogicBlockAsync<TestMachineReusableAsync.State> {
     Set(new State.Deactivated());
   }
 
-  public override State GetInitialState(IContext context) =>
-    context.Get<State.Deactivated>();
+  public override State GetInitialState() =>
+    Get<State.Deactivated>();
 }
 
 #pragma warning restore CS1998

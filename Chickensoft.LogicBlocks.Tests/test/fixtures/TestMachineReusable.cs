@@ -82,6 +82,6 @@ LogicBlock<TestMachineReusable.State> {
     Set(new State.Deactivated());
   }
 
-  public override State GetInitialState(IContext context) =>
-    Context.Get<State.Deactivated>();
+  public override State GetInitialState() =>
+    Get<State.Deactivated>();
 }

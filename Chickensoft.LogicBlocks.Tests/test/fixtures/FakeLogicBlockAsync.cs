@@ -107,7 +107,7 @@ LogicBlockAsync<FakeLogicBlockAsync.State> {
 
   public List<Exception> Exceptions { get; } = new();
 
-  public override State GetInitialState(IContext context) =>
+  public override State GetInitialState() =>
     InitialState?.Invoke() ?? new State.StateA(1, 2);
 
   private readonly Action<Exception>? _onError;

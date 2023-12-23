@@ -126,7 +126,6 @@ public class BindingTest {
   [Fact]
   public void CallsSubstateTransitionsOnlyOnce() {
     var block = new FakeLogicBlock();
-    var context = new FakeLogicBlock.DefaultContext(block);
 
     using var binding = block.Bind();
 
@@ -141,7 +140,7 @@ public class BindingTest {
 
     callStateA.ShouldBe(0);
     callStateB.ShouldBe(0);
-    block.Value.ShouldBe(block.GetInitialState(context));
+    block.Value.ShouldBe(block.GetInitialState());
 
     // State is StateA initially, so switch to State B
     block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));

@@ -12,8 +12,7 @@ public interface IMyLogicBlockAsync : ILogicBlockAsync<
 public partial class MyLogicBlockAsync : LogicBlockAsync<
   MyLogicBlockAsync.IState
 >, IMyLogicBlockAsync {
-  public override State GetInitialState(IContext context) =>
-    new State.SomeState();
+  public override State GetInitialState() => new State.SomeState();
 
   public static class Input {
     public readonly record struct SomeInput;

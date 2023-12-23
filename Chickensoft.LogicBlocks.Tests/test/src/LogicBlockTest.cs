@@ -8,8 +8,7 @@ public class LogicBlockTest {
   [Fact]
   public void Initializes() {
     var block = new FakeLogicBlock();
-    var context = new FakeLogicBlock.FakeContext();
-    block.Value.ShouldBe(block.GetInitialState(context));
+    block.Value.ShouldBe(block.GetInitialState());
   }
 
   [Fact]
@@ -141,7 +140,7 @@ public class LogicBlockTest {
     var block = new FakeLogicBlock();
     var context = new FakeLogicBlock.DefaultContext(block);
     block.Input(new FakeLogicBlock.Input.InputUnknown());
-    block.Value.ShouldBe(block.GetInitialState(context));
+    block.Value.ShouldBe(block.GetInitialState());
   }
 
   [Fact]
@@ -253,7 +252,7 @@ public class LogicBlockTest {
       () => {
         // This gets run from the input handler of InputCallback.
         var value = block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
-        value.ShouldBe(block.GetInitialState(context));
+        value.ShouldBe(block.GetInitialState());
         called = true;
       },
       (context) => new FakeLogicBlock.State.StateA(2, 3)

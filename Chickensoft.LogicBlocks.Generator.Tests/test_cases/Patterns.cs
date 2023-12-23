@@ -4,8 +4,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 public class Patterns : LogicBlock<Patterns.State> {
   public enum Mode { One, Two, Three }
 
-  public override State GetInitialState(IContext context) =>
-    new State.One();
+  public override State GetInitialState() => new State.One();
 
   public static class Input {
     public readonly record struct SetMode(Mode Mode);

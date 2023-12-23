@@ -2,8 +2,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 
 [StateMachine]
 public class LightSwitchAdvanced : LogicBlock<LightSwitchAdvanced.State> {
-  public override State GetInitialState(IContext context) =>
-    new State.Off();
+  public override State GetInitialState() => new State.Off();
 
   public static class Input {
     public readonly record struct Toggle;

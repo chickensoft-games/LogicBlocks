@@ -8,14 +8,12 @@ public class LogicBlockAsyncTest {
   [Fact]
   public void Initializes() {
     var block = new TestMachineAsync();
-    var context = new TestMachineAsync.DefaultContext(block);
-    block.Value.ShouldBe(block.GetInitialState(context));
+    block.Value.ShouldBe(block.GetInitialState());
   }
 
   [Fact]
   public async Task CallsEnterAndExitOnStatesInProperOrder() {
     var logic = new TestMachineAsync();
-    var context = new TestMachineAsync.DefaultContext(logic);
 
     var outputs = new List<object>();
 
@@ -152,9 +150,8 @@ public class LogicBlockAsyncTest {
   [Fact]
   public async Task DoesNothingOnUnhandledInput() {
     var block = new FakeLogicBlockAsync();
-    var context = new FakeLogicBlockAsync.DefaultContext(block);
     await block.Input(new FakeLogicBlockAsync.Input.InputUnknown());
-    block.Value.ShouldBe(block.GetInitialState(context));
+    block.Value.ShouldBe(block.GetInitialState());
   }
 
   [Fact]

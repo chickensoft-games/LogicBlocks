@@ -4,8 +4,7 @@ using System;
 
 [StateMachine]
 public partial class PartialLogic : LogicBlock<PartialLogic.State> {
-  public override State GetInitialState(IContext context) =>
-    throw new NotImplementedException();
+  public override State GetInitialState() => throw new NotImplementedException();
 
   public static class Input {
     public readonly record struct One;

@@ -2,7 +2,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 
 [StateMachine]
 public class SingleState : LogicBlock<SingleState.State> {
-  public override State GetInitialState(IContext context) => new();
+  public override State GetInitialState() => new();
 
   public static class Input {
     public readonly record struct MyInput;

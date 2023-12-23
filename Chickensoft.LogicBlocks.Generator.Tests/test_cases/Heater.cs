@@ -27,7 +27,7 @@ public class Heater : LogicBlock<Heater.State> {
     Set(tempSensor);
   }
 
-  public override State GetInitialState(IContext context) =>
+  public override State GetInitialState() =>
     new State.Off() { TargetTemp = 72.0 };
 
   public static class Input {

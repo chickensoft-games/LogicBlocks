@@ -21,14 +21,6 @@ public interface ILogicBlockAsync<TState> : ILogic<
   Func<TState?, Task>
 > where TState : class, LogicBlockAsync<TState>.IStateLogic {
   /// <summary>
-  /// Returns the initial state of the logic block. Implementations must
-  /// override this method to provide a valid initial state.
-  /// </summary>
-  /// <param name="context">Logic block context.</param>
-  /// <returns>Initial state of the logic block.</returns>
-  TState GetInitialState(IContext context);
-
-  /// <summary>
   /// Starts the logic block by entering the current state. If the logic block
   /// hasn't initialized yet, this will create the initial state before entering
   /// it.
@@ -79,10 +71,7 @@ ILogicBlockAsync<
   }
 
   /// <inheritdoc />
-  public sealed override TState GetInitialState() => GetInitialState(Context);
-
-  /// <inheritdoc />
-  public abstract TState GetInitialState(IContext context);
+  public abstract override TState GetInitialState();
 
   internal override Task<TState> Process() {
     if (IsProcessing) {

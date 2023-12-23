@@ -6,8 +6,7 @@ public interface IMyLogicBlock : ILogicBlock<MyLogicBlock.IState> { }
 
 [StateMachine]
 public partial class MyLogicBlock : LogicBlock<MyLogicBlock.IState>, IMyLogicBlock {
-  public override State GetInitialState(IContext context) =>
-    new State.SomeState();
+  public override State GetInitialState() => new State.SomeState();
 
   public static class Input {
     public readonly record struct SomeInput;

@@ -1,8 +1,7 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 [StateMachine]
 public class ToasterOven : LogicBlock<ToasterOven.State> {
-  public override State GetInitialState(IContext context) =>
-    new State.Toasting(0);
+  public override State GetInitialState() => new State.Toasting(0);
 
   public static class Input {
     public readonly record struct OpenDoor;

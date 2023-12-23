@@ -80,6 +80,5 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
     public readonly record struct BoppedCleanUp;
   }
 
-  public override State GetInitialState(IContext context) =>
-    new State.Deactivated();
+  public override State GetInitialState() => new State.Deactivated();
 }

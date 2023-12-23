@@ -2,8 +2,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 
 [StateMachine]
 public class LightSwitchInterface : LogicBlock<LightSwitchInterface.IState> {
-  public override IState GetInitialState(IContext context) =>
-    new State.TurnedOff();
+  public override IState GetInitialState() => new State.TurnedOff();
 
   public interface IState : IStateLogic { }
 

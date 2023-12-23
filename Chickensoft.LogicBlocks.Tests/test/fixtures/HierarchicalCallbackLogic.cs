@@ -8,8 +8,7 @@ public class HierarchicalCallbackLogic :
   public Func<State> InitialState { get; init; } =
     () => new State();
 
-  public override State GetInitialState(IContext context) =>
-    InitialState();
+  public override State GetInitialState() => InitialState();
 
   public HierarchicalCallbackLogic(List<string> log) {
     Set(log);

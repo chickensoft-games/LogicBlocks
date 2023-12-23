@@ -167,7 +167,7 @@ public partial class VendingMachine : LogicBlock<VendingMachine.State> {
     Set(stock);
   }
 
-  public override State GetInitialState(IContext context) => new State.Idle();
+  public override State GetInitialState() => new State.Idle();
 }
 
 // Just a domain layer repository that manages the stock for a vending machine.

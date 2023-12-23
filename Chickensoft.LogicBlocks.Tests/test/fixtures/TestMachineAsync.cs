@@ -102,8 +102,7 @@ LogicBlockAsync<TestMachineAsync.State> {
     public readonly record struct BoppedCleanUp;
   }
 
-  public override State GetInitialState(IContext context) =>
-    new State.Deactivated();
+  public override State GetInitialState() => new State.Deactivated();
 }
 
 #pragma warning restore CS1998
