@@ -40,28 +40,28 @@ public class Heater : LogicBlock<Heater.State> {
   public abstract record State : StateLogic, IGet<Input.TargetTempChanged> {
     public double TargetTemp { get; init; }
 
-    public State() { }
-
     public State On(Input.TargetTempChanged input) => this with {
       TargetTemp = input.Temp
     };
 
     public abstract record Powered : State, IGet<Input.TurnOff> {
       public Powered() {
-        // When we enter the state, subscribe to changes in temperature.
+        // Whenever a Powered state is entered, play a chime to
+        // alert the user that the heater is on. Subsequent states that
+        // inherit from Powered will not play a chime until a different
+        // state has been entered before returning to a Powered state.
+        OnEnter<Powered>((previous) => Context.Output(new Output.Chime()));
+
+        // Unlike OnEnter, OnAttach will run for every state instance that
+        // inherits from this record. Use these to setup your state.
+        //
+        // Attach and detach are great for setting up long-running operations.
         OnAttach(
-          () => {
-            var tempSensor = Get<ITemperatureSensor>();
-            tempSensor.OnTemperatureChanged += OnTemperatureChanged;
-          }
+          () => Get<ITemperatureSensor>().OnTemperatureChanged += OnTemperatureChanged
         );
 
-        // When we exit this state, unsubscribe from changes in temperature.
         OnDetach(
-          () => {
-            var tempSensor = Get<ITemperatureSensor>();
-            tempSensor.OnTemperatureChanged -= OnTemperatureChanged;
-          }
+          () => Get<ITemperatureSensor>().OnTemperatureChanged -= OnTemperatureChanged
         );
       }
 
@@ -76,8 +76,6 @@ public class Heater : LogicBlock<Heater.State> {
     }
 
     public record Off : State, IGet<Input.TurnOn> {
-      public Off() { }
-
       public State On(Input.TurnOn input) {
         // Get the temperature sensor from the blackboard.
         var tempSensor = Get<ITemperatureSensor>();
@@ -93,8 +91,6 @@ public class Heater : LogicBlock<Heater.State> {
     }
 
     public record Idle : Powered, IGet<Input.AirTempSensorChanged> {
-      public Idle() { }
-
       public State On(Input.AirTempSensorChanged input) {
         if (input.AirTemp < TargetTemp - 3.0d) {
           // Temperature has fallen too far below target temp — start heating.
@@ -106,8 +102,6 @@ public class Heater : LogicBlock<Heater.State> {
     }
 
     public record Heating : Powered, IGet<Input.AirTempSensorChanged> {
-      public Heating() { }
-
       public State On(Input.AirTempSensorChanged input) {
         if (input.AirTemp >= TargetTemp) {
           // We're done heating!
@@ -122,5 +116,6 @@ public class Heater : LogicBlock<Heater.State> {
 
   public static class Output {
     public readonly record struct FinishedHeating;
+    public readonly record struct Chime;
   }
 }

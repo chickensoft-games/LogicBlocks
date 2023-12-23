@@ -1,11 +1,11 @@
 @startuml LightSwitch
 state "LightSwitch State" as Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State {
-  state "TurnedOn" as Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_TurnedOn
-  state "TurnedOff" as Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_TurnedOff
+  state "SwitchedOn" as Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_SwitchedOn
+  state "SwitchedOff" as Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_SwitchedOff
 }
 
-Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_TurnedOff --> Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_TurnedOn : Toggle
-Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_TurnedOn --> Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_TurnedOff : Toggle
+Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_SwitchedOff --> Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_SwitchedOn : Toggle
+Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_SwitchedOn --> Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_SwitchedOff : Toggle
 
-[*] --> Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_TurnedOff
+[*] --> Chickensoft_LogicBlocks_Generator_Tests_LightSwitch_State_SwitchedOff
 @enduml

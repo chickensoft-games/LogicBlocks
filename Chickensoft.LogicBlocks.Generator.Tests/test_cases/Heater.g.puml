@@ -5,6 +5,7 @@ state "Heater State" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State {
     state "Heating" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating {
       Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating : OnAirTempSensorChanged → FinishedHeating
     }
+    Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Powered : OnEnter → Chime
   }
   state "Off" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Off
 }

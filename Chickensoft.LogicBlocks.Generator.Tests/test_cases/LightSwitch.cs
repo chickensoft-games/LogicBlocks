@@ -2,7 +2,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 
 [StateMachine]
 public class LightSwitch : LogicBlock<LightSwitch.State> {
-  public override State GetInitialState() => new State.TurnedOff();
+  public override State GetInitialState() => new State.SwitchedOff();
 
   public static class Input {
     public readonly record struct Toggle;
@@ -10,17 +10,13 @@ public class LightSwitch : LogicBlock<LightSwitch.State> {
 
   public abstract record State : StateLogic {
     // "On" state
-    public record TurnedOn : State, IGet<Input.Toggle> {
-      public TurnedOn() { }
-
-      public State On(Input.Toggle input) => new TurnedOff();
+    public record SwitchedOn : State, IGet<Input.Toggle> {
+      public State On(Input.Toggle input) => new SwitchedOff();
     }
 
     // "Off" state
-    public record TurnedOff : State, IGet<Input.Toggle> {
-      public TurnedOff() { }
-
-      public State On(Input.Toggle input) => new TurnedOn();
+    public record SwitchedOff : State, IGet<Input.Toggle> {
+      public State On(Input.Toggle input) => new SwitchedOn();
     }
   }
 }
