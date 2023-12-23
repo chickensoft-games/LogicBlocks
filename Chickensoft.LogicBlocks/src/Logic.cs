@@ -158,8 +158,6 @@ public abstract partial class Logic<
   /// <inheritdoc />
   public abstract bool IsProcessing { get; }
 
-  IContext ILogic<TState, THandler, TInputReturn, TUpdate>.Context => throw new NotImplementedException();
-
   internal TState? _value;
 
   private readonly Queue<PendingInput> _inputs = new();
