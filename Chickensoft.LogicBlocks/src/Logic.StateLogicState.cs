@@ -67,7 +67,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     public IContext Context => InternalState.ContextAdapter;
 
     /// <inheritdoc />
-    internal StateLogicState InternalState { get; } = new();
+    internal InternalState InternalState { get; } = new();
 
     /// <inheritdoc />
     public void OnAttach(Action handler) =>
@@ -131,7 +131,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
   /// Internal state stored in each logic block state. This is used to store
   /// entrance and exit callbacks without tripping up equality checking.
   /// </summary>
-  public readonly struct StateLogicState {
+  public readonly struct InternalState {
     /// <summary>
     /// Callbacks to be invoked when the state is entered.
     /// </summary>
@@ -166,7 +166,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     internal ContextAdapter ContextAdapter { get; }
 
     /// <summary>Creates a new state logic internal state.</summary>
-    public StateLogicState() {
+    public InternalState() {
       EnterCallbacks = new();
       ExitCallbacks = new();
       ContextAdapter = new();
