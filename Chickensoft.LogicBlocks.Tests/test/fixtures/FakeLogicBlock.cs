@@ -111,6 +111,9 @@ public partial class FakeLogicBlock : LogicBlock<FakeLogicBlock.State> {
 
   public void PublicSet<T>(T value) where T : notnull => Set(value);
 
+  public void PublicOverwrite<T>(T value) where T : notnull =>
+    Overwrite(value);
+
   public override State GetInitialState() =>
     InitialState?.Invoke() ?? new State.StateA(1, 2);
 

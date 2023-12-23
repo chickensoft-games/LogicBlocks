@@ -17,12 +17,14 @@ public class LogicBlockTest {
     var context = new FakeLogicBlock.FakeContext();
     block.PublicSet("data");
     block.Get<string>().ShouldBe("data");
+    block.PublicOverwrite("string");
+    block.Get<string>().ShouldBe("string");
 
     // Can't change values once set.
     Should.Throw<ArgumentException>(() => block.PublicSet("other"));
     Should.Throw<KeyNotFoundException>(() => block.Get<int>());
     block.Input(new FakeLogicBlock.Input.GetString());
-    block.Value.ShouldBe(new FakeLogicBlock.State.StateC("data"));
+    block.Value.ShouldBe(new FakeLogicBlock.State.StateC("string"));
   }
 
   [Fact]
