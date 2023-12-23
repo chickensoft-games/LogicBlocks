@@ -23,7 +23,7 @@ public partial class VendingMachine {
       }
 
       public State On(Input.SelectionEntered input) {
-        if (Context.Get<VendingMachineStock>().HasItem(input.Type)) {
+        if (Get<VendingMachineStock>().HasItem(input.Type)) {
           return new TransactionActive.Started(
             input.Type, Prices[input.Type], 0
           );
@@ -77,7 +77,7 @@ public partial class VendingMachine {
               AmountPaid: total
             )
           );
-          Context.Get<VendingMachineStock>().Vend(Type);
+          Get<VendingMachineStock>().Vend(Type);
           return new Vending(Type, Price);
         }
 
@@ -104,7 +104,7 @@ public partial class VendingMachine {
 
         // While in this state, user can change selection as much as they want.
         public State On(Input.SelectionEntered input) {
-          if (Context.Get<VendingMachineStock>().HasItem(input.Type)) {
+          if (Get<VendingMachineStock>().HasItem(input.Type)) {
             return new Started(
               input.Type, Prices[input.Type], AmountReceived
             );

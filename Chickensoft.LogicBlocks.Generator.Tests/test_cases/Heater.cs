@@ -51,7 +51,7 @@ public class Heater : LogicBlock<Heater.State> {
         // When we enter the state, subscribe to changes in temperature.
         OnAttach(
           () => {
-            var tempSensor = Context.Get<ITemperatureSensor>();
+            var tempSensor = Get<ITemperatureSensor>();
             tempSensor.OnTemperatureChanged += OnTemperatureChanged;
           }
         );
@@ -59,7 +59,7 @@ public class Heater : LogicBlock<Heater.State> {
         // When we exit this state, unsubscribe from changes in temperature.
         OnDetach(
           () => {
-            var tempSensor = Context.Get<ITemperatureSensor>();
+            var tempSensor = Get<ITemperatureSensor>();
             tempSensor.OnTemperatureChanged -= OnTemperatureChanged;
           }
         );
@@ -80,7 +80,7 @@ public class Heater : LogicBlock<Heater.State> {
 
       public State On(Input.TurnOn input) {
         // Get the temperature sensor from the blackboard.
-        var tempSensor = Context.Get<ITemperatureSensor>();
+        var tempSensor = Get<ITemperatureSensor>();
 
         if (tempSensor.AirTemp >= TargetTemp) {
           // Room is already hot enough.
