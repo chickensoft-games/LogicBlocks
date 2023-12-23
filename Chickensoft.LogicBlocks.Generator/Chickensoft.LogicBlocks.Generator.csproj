@@ -12,7 +12,7 @@
     <OutputPath>./nupkg</OutputPath>
 
     <Title>LogicBlocks Generator</Title>
-    <Version>3.4.0</Version>
+    <Version>4.0.0</Version>
     <Description>See what your hierarchical state machine code looks like as a diagram!</Description>
     <Copyright>© 2023 Chickensoft Games</Copyright>
     <Authors>Chickensoft</Authors>
