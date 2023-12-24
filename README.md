@@ -1030,6 +1030,37 @@ java -jar /opt/homebrew/Cellar/plantuml/1.2023.9/libexec/plantuml.jar -picoweb
 
 Once the server is running, you can preview the diagram by opening the VSCode command menu and selecting "PlantUML: Preview Current Diagram".
 
+## 🐛 Troubleshooting
+
+### `Cannot get value from a logic block with an uninitialized context.`
+
+Since version 4.x, LogicBlocks initializes the context lazily. The context is not available in the constructor outside of the `OnEnter/Exit/Attach/Detach` methods.
+
+Wrong:
+
+```c#
+public Active() {
+  var value = Get<int>();
+  OnEnter<Active>(
+    (previous) => Context.Output(new Output.ValueChanged(value));
+  );
+}
+```
+
+Correct:
+
+```c#
+public Active() {
+  OnEnter<Active>(
+    (previous) => {
+      var value = Get<int>();
+      Context.Output(new Output.ValueChanged(value));
+    }
+  );
+}
+```
+
+
 ## 📺 Credits
 
 Conceptually, logic blocks draw from a number of inspirations:
