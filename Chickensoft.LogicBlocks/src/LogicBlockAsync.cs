@@ -73,7 +73,28 @@ ILogicBlockAsync<
   /// <inheritdoc />
   public abstract override TState GetInitialState();
 
+  /// <inheritdoc />
+  public override TState Value => _value ?? AttachState();
+
+  private TState AttachState() {
+    _value = GetInitialState();
+    _value.Attach(Context);
+
+    // If inputs were added to the logic block during the attach callbacks,
+    // this will kickstart the asynchronous process of handling them. Otherwise,
+    // nothing happens.
+    Process();
+
+    // Return the current state, regardless if it's about to change.
+    return _value;
+  }
+
   internal override Task<TState> Process() {
+    if (_value is null) {
+      // No state yet.
+      AttachState();
+    }
+
     if (IsProcessing) {
       return _processTask.Task;
     }

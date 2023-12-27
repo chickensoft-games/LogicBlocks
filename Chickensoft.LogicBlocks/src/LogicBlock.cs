@@ -61,7 +61,23 @@ Logic<
   /// <inheritdoc />
   public abstract override TState GetInitialState();
 
+  /// <inheritdoc />
+  public override TState Value => _value ?? AttachState();
+
+  private TState AttachState() {
+    _isProcessing = true;
+    _value = GetInitialState();
+    _value.Attach(Context);
+    _isProcessing = false;
+    return Process();
+  }
+
   internal override TState Process() {
+    if (_value is null) {
+      // No state yet.
+      return AttachState(); // Calls Process() again.
+    }
+
     if (IsProcessing) {
       return Value;
     }

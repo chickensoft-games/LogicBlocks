@@ -144,16 +144,7 @@ public abstract partial class Logic<
   public IContext Context { get; }
 
   /// <inheritdoc />
-  public TState Value {
-    get {
-      if (_value is null) {
-        _value = GetInitialState();
-        _value.Attach(Context);
-      }
-
-      return _value;
-    }
-  }
+  public abstract TState Value { get; }
 
   /// <inheritdoc />
   public abstract bool IsProcessing { get; }
