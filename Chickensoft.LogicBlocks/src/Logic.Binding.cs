@@ -312,8 +312,6 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     // Callbacks for this state type registered with .Call()
     private readonly List<Action<dynamic, TState?>> _callbacks = new();
 
-    internal WhenBinding() { }
-
     /// <summary>
     /// Determines if this binding should run for a given state.
     /// </summary>

@@ -10,3 +10,4 @@ obj/
 .generated/
 .vs/
 .DS_Store
+*.DotSettings.user

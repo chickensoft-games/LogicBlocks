@@ -14,7 +14,7 @@ using System.Runtime.CompilerServices;
 /// <typeparam name="THandler">Input handler type.</typeparam>
 /// <typeparam name="TInputReturn">Input method return type.</typeparam>
 /// <typeparam name="TUpdate">Update callback type.</typeparam>
-public partial interface ILogic<TState, THandler, TInputReturn, TUpdate>
+public interface ILogic<TState, THandler, TInputReturn, TUpdate>
 where TState : Logic<TState, THandler, TInputReturn, TUpdate>.ILogicState {
   /// <summary>
   /// Logic block execution context.
@@ -64,6 +64,16 @@ where TState : Logic<TState, THandler, TInputReturn, TUpdate>.ILogicState {
   /// </summary>
   /// <returns>Logic block binding.</returns>
   Logic<TState, THandler, TInputReturn, TUpdate>.IBinding Bind();
+
+  /// <summary>
+  /// Restores the logic block from a state. This method can only be called
+  /// before the logic block has been started. The state provided to this method
+  /// takes precedence over <see cref="GetInitialState"/>, ensuring that the
+  /// logic block's first state will be the one provided here.
+  /// </summary>
+  /// <param name="state">State to use as the logic block's initial state.
+  /// </param>
+  void Restore(TState state);
 }
 
 /// <summary>
@@ -115,20 +125,6 @@ public abstract partial class Logic<
     }
   }
 
-  /// <summary>
-  /// Signature of a callback action which can be invoked when a transition
-  /// occurs from one state to another.
-  /// </summary>
-  /// <param name="stateA">Starting (previous) state.</param>
-  /// <param name="stateB">Ending (current) state.</param>
-  /// <typeparam name="TStateTypeA">Type of the starting (previous) state.
-  /// </typeparam>
-  /// <typeparam name="TStateTypeB">Type of the ending (current) state.
-  /// </typeparam>
-  public delegate void Transition<TStateTypeA, TStateTypeB>(
-    TStateTypeA stateA, TStateTypeB stateB
-  ) where TStateTypeA : TState where TStateTypeB : TState;
-
   /// <inheritdoc />
   public event Action<object>? OnInput;
   /// <inheritdoc />
@@ -150,6 +146,7 @@ public abstract partial class Logic<
   public abstract bool IsProcessing { get; }
 
   internal TState? _value;
+  private TState? _restoredState;
 
   private readonly Queue<PendingInput> _inputs = new();
   private readonly Dictionary<Type, dynamic> _blackboard = new();
@@ -169,6 +166,26 @@ public abstract partial class Logic<
 
   /// <inheritdoc />
   public virtual IBinding Bind() => new Binding(this);
+
+  /// <inheritdoc />
+  public void Restore(TState state) {
+    if (_restoredState is not null) {
+      throw new InvalidOperationException(
+        $"Logic block was already restored. Note that a logic block cannot " +
+        "be restored more than once."
+      );
+    }
+
+    if (_value is not null) {
+      throw new InvalidOperationException(
+        $"Attempted to restore a logic block that was already started. Note " +
+        "that a logic block cannot be restored after its first state is " +
+        "created."
+      );
+    }
+
+    _restoredState = state;
+  }
 
   /// <inheritdoc />
   public abstract TState GetInitialState();
@@ -287,6 +304,19 @@ public abstract partial class Logic<
   internal void AnnounceInput(object input) =>
     OnInput?.Invoke(input);
 
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  internal TState GetStartState() {
+    if (_restoredState is not { } state) {
+      // No state to restore from, so let the developer's override of
+      // GetInitialState determine the start state.
+      return GetInitialState();
+    }
+
+    // Clear restored state and return it as the first state.
+    _restoredState = default;
+    return state;
+  }
+
   /// <inheritdoc />
   public TData Get<TData>() where TData : notnull {
     var type = typeof(TData);
@@ -307,12 +337,11 @@ public abstract partial class Logic<
   /// has already been added.</exception>
   protected void Set<TData>(TData data) where TData : notnull {
     var type = typeof(TData);
-    if (_blackboard.ContainsKey(type)) {
+    if (!_blackboard.TryAdd(type, data)) {
       throw new ArgumentException(
         $"Data of type {type} already exists in the blackboard."
       );
     }
-    _blackboard.Add(type, data);
   }
 
   /// <summary>

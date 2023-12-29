@@ -409,4 +409,33 @@ public class LogicBlockTest {
 
     Should.Throw<InvalidOperationException>(() => context.Get<string>());
   }
+
+  [Fact]
+  public void Restores() {
+    var block = new FakeLogicBlock();
+
+    var state = new FakeLogicBlock.State.StateB("a", "b");
+    block.Restore(state);
+
+    block.Value.ShouldBe(state);
+  }
+
+  [Fact]
+  public void RestoreThrowsIfAlreadyStarted() {
+    var block = new FakeLogicBlock();
+    block.Start();
+
+    var state = new FakeLogicBlock.State.StateB("a", "b");
+    Should.Throw<InvalidOperationException>(() => block.Restore(state));
+  }
+
+  [Fact]
+  public void RestoreThrowsIfAlreadyRestored() {
+    var block = new FakeLogicBlock();
+    block.Restore(new FakeLogicBlock.State.StateB("a", "b"));
+
+    var state = new FakeLogicBlock.State.StateC("c");
+    Should.Throw<InvalidOperationException>(() => block.Restore(state));
+    block.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
+  }
 }

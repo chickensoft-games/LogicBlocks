@@ -71,13 +71,10 @@ ILogicBlockAsync<
   }
 
   /// <inheritdoc />
-  public abstract override TState GetInitialState();
-
-  /// <inheritdoc />
   public override TState Value => _value ?? AttachState();
 
   private TState AttachState() {
-    _value = GetInitialState();
+    _value = GetStartState();
     _value.Attach(Context);
 
     // If inputs were added to the logic block during the attach callbacks,
@@ -159,10 +156,10 @@ ILogicBlockAsync<
 
   /// <inheritdoc />
   public Task Start() =>
-    Value.Enter(previous: null, onError: (e) => AddError(e));
+    Value.Enter(previous: null, onError: AddError);
 
   /// <inheritdoc />
-  public Task Stop() => Value.Exit(next: null, onError: (e) => AddError(e));
+  public Task Stop() => Value.Exit(next: null, onError: AddError);
 
   internal override Func<object, Task<TState>> GetInputHandler<TInputType>()
     => (input) => {
