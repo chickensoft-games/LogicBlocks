@@ -1,0 +1,20 @@
+<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+
+	<s:Boolean x:Key="/Default/CodeInspection/NamespaceProvider/NamespaceFoldersToSkip/=badges/@EntryIndexedValue">True</s:Boolean>
+
+	<s:Boolean x:Key="/Default/CodeInspection/NamespaceProvider/NamespaceFoldersToSkip/=coverage/@EntryIndexedValue">True</s:Boolean>
+
+	<s:Boolean x:Key="/Default/CodeInspection/NamespaceProvider/NamespaceFoldersToSkip/=test/@EntryIndexedValue">True</s:Boolean>
+
+	<s:Boolean x:Key="/Default/CodeInspection/NamespaceProvider/NamespaceFoldersToSkip/=coverage_005Creport/@EntryIndexedValue">True</s:Boolean>
+
+	<s:Boolean x:Key="/Default/CodeInspection/NamespaceProvider/NamespaceFoldersToSkip/=test_005Csrc/@EntryIndexedValue">True</s:Boolean>
+
+	<s:Boolean x:Key="/Default/CodeInspection/NamespaceProvider/NamespaceFoldersToSkip/=test_005Cfixtures/@EntryIndexedValue">True</s:Boolean>
+
+	<s:Boolean x:Key="/Default/CodeInspection/NamespaceProvider/NamespaceFoldersToSkip/=test_005Ctest_utils/@EntryIndexedValue">True</s:Boolean>
+
+	<s:Boolean x:Key="/Default/CodeInspection/NamespaceProvider/NamespaceFoldersToSkip/=test_005Csrc_005Cutilities/@EntryIndexedValue">True</s:Boolean>
+
+	<s:Boolean x:Key="/Default/CodeInspection/NamespaceProvider/NamespaceFoldersToSkip/=test_005Csrc_005Cexamples/@EntryIndexedValue">True</s:Boolean>
+</wpf:ResourceDictionary>

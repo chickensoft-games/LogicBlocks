@@ -59,14 +59,11 @@ Logic<
   protected LogicBlock() { }
 
   /// <inheritdoc />
-  public abstract override TState GetInitialState();
-
-  /// <inheritdoc />
   public override TState Value => _value ?? AttachState();
 
   private TState AttachState() {
     _isProcessing = true;
-    _value = GetInitialState();
+    _value = GetStartState();
     _value.Attach(Context);
     _isProcessing = false;
     return Process();
@@ -124,10 +121,10 @@ Logic<
 
   /// <inheritdoc />
   public void Start() =>
-    Value.Enter(previous: null, onError: (e) => AddError(e));
+    Value.Enter(previous: null, onError: AddError);
 
   /// <inheritdoc />
-  public void Stop() => Value.Exit(next: null, onError: (e) => AddError(e));
+  public void Stop() => Value.Exit(next: null, onError: AddError);
 
   internal override Func<object, TState> GetInputHandler<TInputType>()
     => (input) => {
