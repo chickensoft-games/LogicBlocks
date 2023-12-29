@@ -4,6 +4,8 @@
   ],
   "ignorePaths": [
     "**/*.tscn",
+    "**/*.DotSettings",
+    "**/*.DotSettings.user",
     "**/*.import",
     "Chickensoft.LogicBlocks.Tests/badges/**/*.*",
     "Chickensoft.LogicBlocks.Tests/coverage/**/*.*",
