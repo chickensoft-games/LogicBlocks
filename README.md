@@ -376,7 +376,7 @@ The `Powered` state is a lot more interesting. The constructor registers attach 
 
 > 💡 `OnAttach` and `OnDetach` are different from `OnEnter` and `OnExit`. `OnEnter` and `OnExit` respect a state's type hierarchy: i.e., if you enter into a state that extends `Powered`, and then enter into a different state that also extends `Powered`, the OnEnter callbacks for `Powered` will only be invoked once. On the other hand, `OnAttach` and `OnDetach` are invoked for every state that extends `Powered` that is entered into.
 >
-> You should think of `OnEnter` and `OnExit` as the place to execute theoretically-correct behavior (like producing outputs), and `OnEnter` and `OnExit` to setup your practical behavior (such as registering event handlers or performing mundane setup).
+> You should think of `OnEnter` and `OnExit` as the place to execute theoretically-correct behavior (like producing outputs), and `OnAttach` and `OnDetach` to setup your practical behavior (such as registering event handlers or performing mundane setup).
 >
 > Finally, *the distinction between state attachment and entrance is important for serialization*. When deserializing a state machine, you don't want to re-invoke entrance callbacks, but you do need to perform any setup that would have been done before the state machine was serialized. Attachment callbacks allow states to be spun back up when deserializing without producing unintended side-effects.
 
