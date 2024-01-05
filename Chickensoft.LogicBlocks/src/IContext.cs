@@ -24,7 +24,7 @@ public interface IContext {
   /// Produces a logic block output value.
   /// </summary>
   /// <param name="output">Output value.</param>
-  void Output(in object output);
+  void Output<T>(in T output) where T : struct;
 
   /// <summary>
   /// Gets a value from the logic block's blackboard.
