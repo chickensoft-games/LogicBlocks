@@ -36,7 +36,8 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     public void Input<TInputType>(TInputType input)
       where TInputType : notnull => _inputs.Add(input);
 
-    public void Output(in object output) => _outputs.Add(output);
+    public void Output<T>(in T output) where T : struct =>
+      _outputs.Add(output);
 
     public void AddError(Exception e) => _errors.Add(e);
 

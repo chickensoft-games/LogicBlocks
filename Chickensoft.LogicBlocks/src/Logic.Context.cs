@@ -22,7 +22,8 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
       where TInputType : notnull => Logic.Input(input);
 
     /// <inheritdoc />
-    public void Output(in object output) => Logic.OutputValue(in output);
+    public void Output<T>(in T output) where T : struct =>
+      Logic.OutputValue(output);
 
     /// <inheritdoc />
     public TDataType Get<TDataType>() where TDataType : notnull =>
@@ -57,8 +58,8 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     }
 
     /// <inheritdoc />
-    public void Output(in object output) {
-      if (Context is not IContext context) {
+    public void Output<T>(in T output) where T : struct {
+      if (Context is not { } context) {
         throw new InvalidOperationException(
           "Cannot add output to a logic block with an uninitialized context."
         );

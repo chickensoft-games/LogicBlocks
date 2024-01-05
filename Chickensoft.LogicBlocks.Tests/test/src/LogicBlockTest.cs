@@ -370,7 +370,7 @@ public class LogicBlockTest {
   [Fact]
   public void CreatesFakeContext() {
     var inputs = new List<object> { "a", 2, true };
-    var outputs = new List<object> { "b", 3, false };
+    var outputs = new List<int> { 1, 2 };
     var errors = new List<Exception> {
       new InvalidOperationException(),
       new InvalidCastException()
@@ -391,7 +391,7 @@ public class LogicBlockTest {
     errors.ForEach((e) => context.AddError(e));
 
     context.Inputs.ShouldBe(inputs);
-    context.Outputs.ShouldBe(outputs);
+    context.Outputs.ShouldBe(outputs.Select(static t => t as object));
     context.Errors.ShouldBe(errors);
 
     context.Get<string>().ShouldBe("c");
