@@ -6,7 +6,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/Chickensoft.LogicBlocks.Example/bin/Debug/net6.0/Chickensoft.LogicBlocks.Example.dll",
+      "program": "${workspaceFolder}/Chickensoft.LogicBlocks.Example/bin/Debug/net7.0/Chickensoft.LogicBlocks.Example.dll",
       "args": [
         // "${input:args}"
       ],

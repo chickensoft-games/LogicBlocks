@@ -124,7 +124,11 @@ Logic<
     Value.Enter(previous: null, onError: AddError);
 
   /// <inheritdoc />
-  public void Stop() => Value.Exit(next: null, onError: AddError);
+  public void Stop() {
+    Value.Exit(next: null, onError: AddError);
+    Value.Detach();
+    SetState(null!);
+  }
 
   internal override Func<object, TState> GetInputHandler<TInputType>()
     => (input) => {

@@ -8,11 +8,11 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Chickensoft.LogicBlocks.Generator.Common.Models;
+using Chickensoft.LogicBlocks.Generator.Common.Services;
 using Chickensoft.SourceGeneratorUtils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using SuperNodes.Common.Services;
 
 [Generator]
 public class LogicBlocksGenerator :
