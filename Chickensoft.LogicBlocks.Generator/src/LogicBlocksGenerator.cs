@@ -502,8 +502,7 @@ public class LogicBlocksGenerator :
       (interfaceType) => CodeService.GetNameFullyQualifiedWithoutGenerics(
         interfaceType, interfaceType.Name
       ) is
-        Constants.LOGIC_BLOCK_INPUT_INTERFACE_ID or
-        Constants.LOGIC_BLOCK_INPUT_ASYNC_INTERFACE_ID &&
+        Constants.LOGIC_BLOCK_INPUT_INTERFACE_ID &&
         interfaceType.TypeArguments.Length == 1
     );
 

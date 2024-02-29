@@ -14,7 +14,6 @@ public class Constants {
   public const string LOGIC_BLOCK_STATE_LOGIC_ON_EXIT = "OnExit";
   public const string LOGIC_BLOCK_CLASS_ID = "global::Chickensoft.LogicBlocks.Logic";
   public const string LOGIC_BLOCK_INPUT_INTERFACE_ID = "global::Chickensoft.LogicBlocks.LogicBlock.IGet";
-  public const string LOGIC_BLOCK_INPUT_ASYNC_INTERFACE_ID = "global::Chickensoft.LogicBlocks.LogicBlockAsync.IGet";
   public const string STATE_MACHINE_ATTRIBUTE_NAME = "StateMachine";
   public const string STATE_MACHINE_ATTRIBUTE_SOURCE = """
   namespace Chickensoft.LogicBlocks.Generator;
