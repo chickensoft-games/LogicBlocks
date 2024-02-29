@@ -3,12 +3,11 @@ namespace Chickensoft.LogicBlocks.Generator;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
+using Chickensoft.LogicBlocks.Generator.Common.Services;
 using Chickensoft.SourceGeneratorUtils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-
-using SuperNodes.Common.Services;
 
 public class ReturnTypeVisitor : CSharpSyntaxWalker {
   public SemanticModel Model { get; }

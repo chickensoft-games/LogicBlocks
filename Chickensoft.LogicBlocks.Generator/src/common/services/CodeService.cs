@@ -1,4 +1,4 @@
-namespace SuperNodes.Common.Services;
+namespace Chickensoft.LogicBlocks.Generator.Common.Services;
 
 using System;
 using System.Collections.Generic;
