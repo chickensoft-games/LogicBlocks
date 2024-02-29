@@ -143,13 +143,11 @@ Logic blocks attempt to achieve the following goals:
   
   An output may be produced at any point during the execution of a logic block. Producing outputs from state input handlers allows you to trigger side effects in the outside world without your logic block having to know about it.
 
-- 🔄 **Synchronous and asynchronous input processing**.
+- 🔄 **Synchronous input processing**.
 
-  Logic blocks come in two varieties: `LogicBlock` and `LogicBlockAsync`.
+  Logic blocks always handle inputs synchronously, allowing them to power responsive user interfaces by responding to user input immediately. To handle long-running operations, you can leverage an event-driven pattern or hang onto ongoing `Task` references yourself from the state that's leveraging them.
   
-  As you might have guessed, all input and lifecycle handlers are asynchronous in the async version. Using async handlers can be helpful when your states need to interact with services that are inherently asynchronous, such as network requests or file I/O.
-  
-  On the other hand, keeping things synchronous is great where performance or simplicity is a concern, such as in a single-threaded game loop.
+  Being synchronous-by-default also helps with performance and simplicity, which makes single-threaded game logic a cinch.
 
 - 📝 **Ordered input processing.**
 
@@ -205,7 +203,7 @@ Since LogicBlocks are based on statecharts, it helps to understand the basics of
 
 To make a logic block, you'll need an idea for a state machine or statechart. Drawing one out from a diagram (or implementing an existing diagram) is a great way to get started.
 
-Once you have a basic idea of what you want to build, create a new class that represents your machine and extends either `LogicBlock` or `LogicBlockAsync`.
+Once you have a basic idea of what you want to build, create a new class for your machine and simply extend `LogicBlock`.
 
 For this example, we'll create a simple state machine that models a space heater — the type you might use to a heat a room when it's cold outside.
 
@@ -646,15 +644,11 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State> {
 
 ### 💥 Initial State Side Effects
 
-By default, LogicBlocks doesn't invoke any `OnEnter` callbacks registered by the initial state, for a couple of reasons:
-
-- The state property lazily creates the initial state the first time it is accessed. This allows the LogicBlocks API to be more ergonomic. If the state wasn't initialized lazily, the base LogicBlock constructor would have to set the first state before you have a chance to add anything to the logic block's blackboard, which make it hard to create states that have blackboard dependencies.
-- The `Value` property of logic blocks is synchronous, and async logic blocks need to await the invocation of each registered enter callback.
-- In many scenarios, you don't actually want to trigger the side effects of the initial state since it represents the default start state, and any bindings that get invoked as a result would just be updating redundant values.
+By default, LogicBlocks doesn't invoke any `OnEnter` callbacks registered by the initial state, since the state property lazily creates the initial state the first time it is accessed. Lazily creating the state allows the LogicBlocks API to be more ergonomic. If the state wasn't initialized lazily, the base LogicBlock constructor would have to set the first state before you have a chance to add anything to the logic block's blackboard, which make it hard to create states that have blackboard dependencies.
 
 That being said, **there are plenty of times when you *do* want to run the entrance callbacks for the initial state because you *do* want the bindings to trigger**.
 
-To that end, LogicBlocks provides a simple `Start` method that will trigger the initial state's entrance callbacks (or, technically speaking, the entrance callbacks of the current state).
+To force the LogicBlock to run the entrance callbacks and create the initial state (if it hasn't already), simply call the `Start()` method on your logic block.
 
 ```csharp
 var logic = new MyLogicBlock();
@@ -669,22 +663,10 @@ binding.Handle<MyLogicBlock.Output.SomeOutput>(
 logic.Start();
 ```
 
-Or, in the case of an async logic block:
-
-```csharp
-await logic.Start();
-```
-
 Likewise, when you are done with your logic block, you can run the exit callbacks for the final state by calling `Stop`.
 
 ```csharp
 logic.Stop(); // Runs OnExit callbacks for the current (presumably final) state.
-```
-
-Or, for an async logic block:
-
-```csharp
-await logic.Stop();
 ```
 
 ### 🧪 Testing
@@ -1060,7 +1042,6 @@ public Active() {
 }
 ```
 
-
 ## 📺 Credits
 
 Conceptually, logic blocks draw from a number of inspirations:
@@ -1075,7 +1056,7 @@ Conceptually, logic blocks draw from a number of inspirations:
 
 - 🧊 [Bloc][bloc]
 
-  Logic blocks borrow heavily from the conventions put forth by bloc: notably, `On<TInput>`-style input handlers, inheritance-based states, `AddError`, `OnError`, and asynchronous input processing.
+  Logic blocks borrow heavily from the conventions put forth by bloc: notably, `On<TInput>`-style input handlers, inheritance-based states, `AddError`, and `OnError`.
 
 - 🎰 [Finite state machines][state-machines].
 

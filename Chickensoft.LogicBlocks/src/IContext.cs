@@ -8,10 +8,6 @@ public interface IContext {
   /// Adds an input value to the logic block's internal input queue and
   /// returns the current state.
   /// <br />
-  /// Async logic blocks cannot await an input they add from a state. If they
-  /// did, input processing would hang forever in a type of input processing
-  /// deadlock.
-  /// <br />
   /// Instead, represent loading as a state or a property of a state while you
   /// add un-awaited inputs from a state.
   /// </summary>

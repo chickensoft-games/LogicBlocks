@@ -1,5 +1,0 @@
-@startuml HierarchicalCallbackLogic
-state "HierarchicalCallbackLogic State" as Chickensoft_LogicBlocks_Tests_Fixtures_HierarchicalCallbackLogic_State {
-  state "Substate" as Chickensoft_LogicBlocks_Tests_Fixtures_HierarchicalCallbackLogic_State_Substate
-}
-@enduml

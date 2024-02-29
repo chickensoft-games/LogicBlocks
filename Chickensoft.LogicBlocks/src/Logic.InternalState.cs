@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
   /// <summary>
-  /// State common to both synchronous and asynchronous logic block states.
+  /// Common state.
   /// </summary>
   public interface ILogicState {
     /// <summary>Logic block context.</summary>
@@ -57,10 +57,8 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
   }
 
   /// <summary>
-  /// Common state superclass shared between synchronous and asynchronous
-  /// logic block states. Don't use this yourself, use
-  /// <see cref="LogicBlock{TState}.StateLogic"/> or
-  /// <see cref="LogicBlockAsync{TState}.StateLogic"/> instead.
+  /// Common state superclass. Don't use this yourself. Instead, use
+  /// <see cref="LogicBlock{TState}.StateLogic"/>.
   /// </summary>
   public abstract record InternalSharedState : ILogicState {
     /// <inheritdoc />
