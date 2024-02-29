@@ -159,7 +159,11 @@ ILogicBlockAsync<
     Value.Enter(previous: null, onError: AddError);
 
   /// <inheritdoc />
-  public Task Stop() => Value.Exit(next: null, onError: AddError);
+  public async Task Stop() {
+    await Value.Exit(next: null, onError: AddError);
+    Value.Detach();
+    SetState(null!);
+  }
 
   internal override Func<object, Task<TState>> GetInputHandler<TInputType>()
     => (input) => {
