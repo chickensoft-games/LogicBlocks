@@ -1,6 +1,6 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 
-[StateMachine]
+[StateDiagram(typeof(State))]
 public class LightSwitch : LogicBlock<LightSwitch.State> {
   public override State GetInitialState() => new State.SwitchedOff();
 
@@ -8,7 +8,7 @@ public class LightSwitch : LogicBlock<LightSwitch.State> {
     public readonly record struct Toggle;
   }
 
-  public abstract record State : StateLogic {
+  public abstract record State : StateLogic<State> {
     // "On" state
     public record SwitchedOn : State, IGet<Input.Toggle> {
       public State On(Input.Toggle input) => new SwitchedOff();

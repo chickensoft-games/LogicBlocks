@@ -2,7 +2,7 @@ namespace Chickensoft.LogicBlocks;
 
 using System;
 
-public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
+public abstract partial class LogicBlock<TState> {
   /// <summary>
   /// Fake binding that allows bindings to be triggered manually. Makes testing
   /// objects that bind to logic blocks easier.
@@ -33,9 +33,9 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
   internal sealed class FakeBinding : BindingBase, IFakeBinding {
     internal FakeBinding() { }
 
-    public void Input(object input) => OnInput(input);
-    public void SetState(TState state) => OnState(state);
-    public void Output(object output) => OnOutput(output);
-    public void AddError(Exception error) => OnError(error);
+    public void Input(object input) => InternalOnInput(input);
+    public void SetState(TState state) => InternalOnState(state);
+    public void Output(object output) => InternalOnOutput(output);
+    public void AddError(Exception error) => InternalOnError(error);
   }
 }

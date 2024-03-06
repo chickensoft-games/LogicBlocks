@@ -14,7 +14,7 @@ public class LogicBlockTest {
   [Fact]
   public void GetsAndSetsBlackboardData() {
     var block = new FakeLogicBlock();
-    var context = new FakeLogicBlock.FakeContext();
+    var context = new FakeContext();
     block.PublicSet("data");
     block.Get<string>().ShouldBe("data");
     block.PublicOverwrite("string");
@@ -22,7 +22,7 @@ public class LogicBlockTest {
 
     // Can't change values once set.
     Should.Throw<ArgumentException>(() => block.PublicSet("other"));
-    Should.Throw<KeyNotFoundException>(() => block.Get<int>());
+    Should.Throw<KeyNotFoundException>(() => block.Get<string[]>());
     block.Input(new FakeLogicBlock.Input.GetString());
     block.Value.ShouldBe(new FakeLogicBlock.State.StateC("string"));
   }
@@ -288,7 +288,7 @@ public class LogicBlockTest {
 
   [Fact]
   public void InvokesErrorEventFromUpdateHandlerManually() {
-    var context = new FakeLogicBlock.FakeContext();
+    var context = new FakeContext();
     var block = new FakeLogicBlock() {
       InitialState = () => new FakeLogicBlock.State.OnEnterState(
         context,
@@ -315,7 +315,7 @@ public class LogicBlockTest {
   [Fact]
   public void StartsManuallyAndIgnoresStartWhenProcessing() {
     var enterCalled = false;
-    var context = new FakeLogicBlock.FakeContext();
+    var context = new FakeContext();
     var block = new FakeLogicBlock() {
       InitialState = () =>
         new FakeLogicBlock.State.OnEnterState(
@@ -334,7 +334,7 @@ public class LogicBlockTest {
   [Fact]
   public void StartEntersState() {
     var enterCalled = false;
-    var context = new FakeLogicBlock.FakeContext();
+    var context = new FakeContext();
     var block = new FakeLogicBlock() {
       InitialState = () =>
         new FakeLogicBlock.State.OnEnterState(
@@ -352,7 +352,7 @@ public class LogicBlockTest {
   [Fact]
   public void StopExitsState() {
     var exitCalled = false;
-    var context = new FakeLogicBlock.FakeContext();
+    var context = new FakeContext();
     var block = new FakeLogicBlock() {
       InitialState = () =>
         new FakeLogicBlock.State.OnExitState(
@@ -381,10 +381,10 @@ public class LogicBlockTest {
       { typeof(bool), true }
     };
 
-    var context = new FakeLogicBlock.FakeContext();
+    var context = new FakeContext();
 
     context.Set(blackboard);
-    context.Set(2d);
+    context.Set(new InvalidOperationException());
 
     inputs.ForEach((i) => context.Input(i));
     outputs.ForEach((o) => context.Output(o));
@@ -395,11 +395,11 @@ public class LogicBlockTest {
     context.Errors.ShouldBe(errors);
 
     context.Get<string>().ShouldBe("c");
-    context.Get<int>().ShouldBe(4);
-    context.Get<bool>().ShouldBeTrue();
-    context.Get<double>().ShouldBe(2d);
+    context.Get<InvalidOperationException>().ShouldNotBeNull();
 
-    Should.Throw<InvalidOperationException>(() => context.Get<float>());
+    Should.Throw<InvalidOperationException>(
+      () => context.Get<IndexOutOfRangeException>()
+    );
 
     context.Reset();
 

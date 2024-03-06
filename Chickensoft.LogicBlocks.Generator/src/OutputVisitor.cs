@@ -41,82 +41,89 @@ public class OutputVisitor : CSharpSyntaxWalker {
   public override void VisitInvocationExpression(
     InvocationExpressionSyntax node
   ) {
-    var methodName = "";
-    if (node.Expression is MemberAccessExpressionSyntax memberAccess) {
-      var id = memberAccess.Expression;
-      if (id is not IdentifierNameSyntax identifierName) {
-        base.VisitInvocationExpression(node);
-        return;
+    void pushContext(IOutputContext context) {
+      _outputContexts.Push(context);
+      var pushedContext = true;
+
+      base.VisitInvocationExpression(node);
+
+      if (pushedContext) {
+        _outputContexts.Pop();
       }
-
-      var lhsType =
-        GetModel(identifierName).GetTypeInfo(identifierName, Token).Type;
-      if (lhsType is null) {
-        base.VisitInvocationExpression(node);
-        return;
-      }
-
-      var lhsTypeId = CodeService.GetNameFullyQualifiedWithoutGenerics(
-        lhsType, lhsType.Name
-      );
-      methodName = memberAccess.Name.Identifier.ValueText;
-
-      if (
-        lhsTypeId != Constants.LOGIC_BLOCK_CONTEXT_ID ||
-        methodName != Constants.LOGIC_BLOCK_CONTEXT_OUTPUT
-      ) {
-        base.VisitInvocationExpression(node);
-        return;
-      }
-
-      var args = node.ArgumentList.Arguments;
-
-      if (args.Count != 1) {
-        base.VisitInvocationExpression(node);
-        return;
-      }
-
-      var rhs = node.ArgumentList.Arguments[0].Expression;
-      var rhsType = GetModel(rhs).GetTypeInfo(rhs, Token).Type;
-
-      if (rhsType is null) {
-        base.VisitInvocationExpression(node);
-        return;
-      }
-
-      var rhsTypeId = CodeService.GetNameFullyQualifiedWithoutGenerics(
-        rhsType, rhsType.Name
-      );
-
-      AddOutput(rhsTypeId, rhsType.Name);
-
-      return;
     }
 
-    if (node.Expression is not GenericNameSyntax genericName) {
+
+    if (node.Expression is not MemberAccessExpressionSyntax memberAccess) {
       base.VisitInvocationExpression(node);
       return;
     }
 
-    // void log(string message) => LogicBlocksGenerator.Log.Print(message);
+    if (memberAccess.Expression is ThisExpressionSyntax) {
+      if (
+        memberAccess.Name.Identifier.ValueText is
+          Constants.LOGIC_BLOCK_STATE_LOGIC_ON_ENTER
+      ) {
+        pushContext(OutputContexts.OnEnter);
+        return;
+      }
 
-    methodName = genericName.Identifier.ValueText;
-
-    var pushedContext = false;
-    if (methodName == Constants.LOGIC_BLOCK_STATE_LOGIC_ON_ENTER) {
-      _outputContexts.Push(OutputContexts.OnEnter);
-      pushedContext = true;
+      if (
+        memberAccess.Name.Identifier.ValueText is
+          Constants.LOGIC_BLOCK_STATE_LOGIC_ON_EXIT
+      ) {
+        pushContext(OutputContexts.OnExit);
+        return;
+      }
     }
-    else if (methodName == Constants.LOGIC_BLOCK_STATE_LOGIC_ON_EXIT) {
-      _outputContexts.Push(OutputContexts.OnExit);
-      pushedContext = true;
+
+    var methodName = "";
+
+    var id = memberAccess.Expression;
+    if (id is not IdentifierNameSyntax identifierName) {
+      base.VisitInvocationExpression(node);
+      return;
     }
 
-    base.VisitInvocationExpression(node);
-
-    if (pushedContext) {
-      _outputContexts.Pop();
+    var lhsType =
+      GetModel(identifierName).GetTypeInfo(identifierName, Token).Type;
+    if (lhsType is null) {
+      base.VisitInvocationExpression(node);
+      return;
     }
+
+    var lhsTypeId = CodeService.GetNameFullyQualifiedWithoutGenerics(
+      lhsType, lhsType.Name
+    );
+    methodName = memberAccess.Name.Identifier.ValueText;
+
+    if (
+      lhsTypeId != Constants.LOGIC_BLOCK_CONTEXT_ID ||
+      methodName != Constants.LOGIC_BLOCK_CONTEXT_OUTPUT
+    ) {
+      base.VisitInvocationExpression(node);
+      return;
+    }
+
+    var args = node.ArgumentList.Arguments;
+
+    if (args.Count != 1) {
+      base.VisitInvocationExpression(node);
+      return;
+    }
+
+    var rhs = node.ArgumentList.Arguments[0].Expression;
+    var rhsType = GetModel(rhs).GetTypeInfo(rhs, Token).Type;
+
+    if (rhsType is null) {
+      base.VisitInvocationExpression(node);
+      return;
+    }
+
+    var rhsTypeId = CodeService.GetNameFullyQualifiedWithoutGenerics(
+      rhsType, rhsType.Name
+    );
+
+    AddOutput(rhsTypeId, rhsType.Name);
   }
 
   // Don't visit nested types.

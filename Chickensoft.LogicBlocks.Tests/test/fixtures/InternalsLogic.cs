@@ -1,11 +1,11 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 public class InternalsLogic : LogicBlock<InternalsLogic.State> {
-  public record State : StateLogic {
+  public record State : StateLogic<State> {
     public Action? OnAttachAction { get; init; }
     public Action? OnDetachAction { get; init; }
 
-    public TDataType PublicGet<TDataType>() where TDataType : notnull =>
+    public TDataType PublicGet<TDataType>() where TDataType : class =>
       Get<TDataType>();
 
     public State() {

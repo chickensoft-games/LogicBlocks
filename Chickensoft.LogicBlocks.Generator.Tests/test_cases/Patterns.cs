@@ -1,6 +1,6 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 
-[StateMachine]
+[StateDiagram(typeof(State))]
 public class Patterns : LogicBlock<Patterns.State> {
   public enum Mode { One, Two, Three }
 
@@ -10,7 +10,7 @@ public class Patterns : LogicBlock<Patterns.State> {
     public readonly record struct SetMode(Mode Mode);
   }
 
-  public abstract record State : StateLogic, IGet<Input.SetMode> {
+  public abstract record State : StateLogic<State>, IGet<Input.SetMode> {
     public State On(Input.SetMode input) => input.Mode switch {
       Mode.One => new One(),
       Mode.Two => new Two(),

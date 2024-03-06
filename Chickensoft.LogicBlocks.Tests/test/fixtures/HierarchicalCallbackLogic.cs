@@ -2,7 +2,7 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using Chickensoft.LogicBlocks.Generator;
 
-[StateMachine]
+[StateDiagram(typeof(State))]
 public class HierarchicalCallbackLogic :
   LogicBlock<HierarchicalCallbackLogic.State> {
   public Func<State> InitialState { get; init; } =
@@ -14,20 +14,16 @@ public class HierarchicalCallbackLogic :
     Set(log);
   }
 
-  public record State : StateLogic {
+  public record State : StateLogic<State> {
     public State() {
-      OnEnter<State>((previous) => Context.Get<List<string>>().Add("state"));
-      OnExit<State>((next) => Context.Get<List<string>>().Add("state"));
+      this.OnEnter(() => Context.Get<List<string>>().Add("state"));
+      this.OnExit(() => Context.Get<List<string>>().Add("state"));
     }
 
     public record Substate : State {
       public Substate() {
-        OnEnter<Substate>(
-          (previous) => Context.Get<List<string>>().Add("substate")
-        );
-        OnExit<Substate>(
-          (next) => Context.Get<List<string>>().Add("substate")
-        );
+        this.OnEnter(() => Context.Get<List<string>>().Add("substate"));
+        this.OnExit(() => Context.Get<List<string>>().Add("substate"));
       }
     }
   }

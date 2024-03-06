@@ -2,7 +2,7 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using Chickensoft.LogicBlocks.Generator;
 
-[StateMachine]
+[StateDiagram(typeof(State))]
 public partial class FakeLogicBlock {
   public static class Input {
     public readonly record struct InputOne(int Value1, int Value2);
@@ -20,7 +20,7 @@ public partial class FakeLogicBlock {
     public readonly record struct Custom(Func<IContext, State> Next);
   }
 
-  public abstract record State : StateLogic,
+  public abstract record State : StateLogic<State>,
     IGet<Input.InputOne>,
     IGet<Input.InputTwo>,
     IGet<Input.InputThree>,
@@ -68,14 +68,10 @@ public partial class FakeLogicBlock {
       return this;
     }
 
-    public record StateA(int Value1, int Value2) :
-      State;
-    public record StateB(string Value1, string Value2) :
-      State;
-    public record StateC(string Value) :
-      State;
-    public record StateD(string Value1, string Value2) :
-      State;
+    public record StateA(int Value1, int Value2) : State;
+    public record StateB(string Value1, string Value2) : State;
+    public record StateC(string Value) : State;
+    public record StateD(string Value1, string Value2) : State;
 
     public record NothingState : State;
 
@@ -87,13 +83,13 @@ public partial class FakeLogicBlock {
 
     public record OnEnterState : State {
       public OnEnterState(IContext context, Action<State?> onEnter) {
-        OnEnter<OnEnterState>(onEnter);
+        this.OnEnter(onEnter);
       }
     }
 
     public record OnExitState : State {
       public OnExitState(IContext context, Action<State?> onExit) {
-        OnExit<OnExitState>(onExit);
+        this.OnExit(onExit);
       }
     }
   }
@@ -109,9 +105,9 @@ public partial class FakeLogicBlock : LogicBlock<FakeLogicBlock.State> {
 
   public List<Exception> Exceptions { get; } = new();
 
-  public void PublicSet<T>(T value) where T : notnull => Set(value);
+  public void PublicSet<T>(T value) where T : class => Set(value);
 
-  public void PublicOverwrite<T>(T value) where T : notnull =>
+  public void PublicOverwrite<T>(T value) where T : class =>
     Overwrite(value);
 
   public override State GetInitialState() =>

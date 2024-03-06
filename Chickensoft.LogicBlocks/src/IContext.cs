@@ -27,14 +27,20 @@ public interface IContext {
   /// </summary>
   /// <typeparam name="TDataType">Type of value to retrieve.</typeparam>
   /// <returns>The requested value.</returns>
-  TDataType Get<TDataType>() where TDataType : notnull;
+  TDataType Get<TDataType>() where TDataType : class;
 
   /// <summary>
   /// Adds an error to a logic block. Errors are immediately processed by the
-  /// logic block's <see cref="Logic{
-  ///   TState, THandler, TInputReturn, TUpdate
-  /// }.HandleError(Exception)"/> callback.
+  /// logic block's <see cref="LogicBlock{TState}.HandleError(Exception)"/>
+  /// callback.
   /// </summary>
   /// <param name="e">Exception to add.</param>
   void AddError(Exception e);
+}
+
+internal interface IContextAdapter : IContext {
+  IContext? Context { get; }
+
+  void Adapt(IContext context);
+  void Clear();
 }

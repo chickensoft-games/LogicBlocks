@@ -1,5 +1,6 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
-[StateMachine]
+
+[StateDiagram(typeof(State))]
 public class ToasterOven : LogicBlock<ToasterOven.State> {
   public override State GetInitialState() => new State.Toasting(0);
 
@@ -10,15 +11,11 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
     public readonly record struct StartToasting(int ToastColor);
   }
 
-  public abstract record State : StateLogic {
+  public abstract record State : StateLogic<State> {
     public record Heating : State, IGet<Input.OpenDoor> {
       public Heating() {
-        OnEnter<Heating>(
-          (previous) => Context.Output(new Output.TurnHeaterOn())
-        );
-        OnExit<Heating>(
-          (next) => Context.Output(new Output.TurnHeaterOff())
-        );
+        this.OnEnter(() => Context.Output(new Output.TurnHeaterOn()));
+        this.OnExit(() => Context.Output(new Output.TurnHeaterOff()));
       }
 
       public State On(Input.OpenDoor input) => new DoorOpen();
@@ -30,12 +27,8 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
       public Toasting(int toastColor) {
         ToastColor = toastColor;
 
-        OnEnter<Toasting>(
-          (previous) => Context.Output(new Output.SetTimer(ToastColor))
-        );
-        OnExit<Toasting>(
-          (next) => Context.Output(new Output.ResetTimer())
-        );
+        this.OnEnter(() => Context.Output(new Output.SetTimer(ToastColor)));
+        this.OnExit(() => Context.Output(new Output.ResetTimer()));
       }
 
       public State On(Input.StartBaking input) => new Baking(input.Temperature);
@@ -47,11 +40,11 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
       public Baking(int temperature) {
         Temperature = temperature;
 
-        OnEnter<Baking>(
-          (previous) => Context.Output(new Output.SetTemperature(Temperature))
+        this.OnEnter(
+          () => Context.Output(new Output.SetTemperature(Temperature))
         );
-        OnExit<Baking>(
-          (next) => Context.Output(new Output.SetTemperature(0))
+        this.OnExit(
+          () => Context.Output(new Output.SetTemperature(0))
         );
       }
 
@@ -62,12 +55,8 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
 
     public record DoorOpen : State, IGet<Input.CloseDoor> {
       public DoorOpen() {
-        OnEnter<DoorOpen>(
-          (previous) => Context.Output(new Output.TurnLampOn())
-        );
-        OnExit<DoorOpen>(
-          (next) => Context.Output(new Output.TurnLampOff())
-        );
+        this.OnEnter(() => Context.Output(new Output.TurnLampOn()));
+        this.OnExit(() => Context.Output(new Output.TurnLampOff()));
       }
 
       public State On(Input.CloseDoor input) => new Toasting(

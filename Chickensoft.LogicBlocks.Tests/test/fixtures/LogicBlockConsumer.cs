@@ -18,7 +18,6 @@ public class LogicBlockConsumer {
       .Watch<MyLogicBlock.Input.SomeInput>(input => SawInput = true)
       .Handle<MyLogicBlock.Output.SomeOutput>(output => SawOutput = true)
       .Catch<Exception>(e => SawError = true)
-      .When<MyLogicBlock.State.SomeOtherState>()
-        .Call(state => SawState = true);
+      .When<MyLogicBlock.State.SomeOtherState>(state => SawState = true);
   }
 }

@@ -20,7 +20,7 @@ public record TemperatureSensor : ITemperatureSensor {
   }
 }
 
-[StateMachine]
+[StateDiagram(typeof(State))]
 public class Heater : LogicBlock<Heater.State> {
   public Heater(ITemperatureSensor tempSensor) {
     // Make sure states can access the temperature sensor.
@@ -37,7 +37,7 @@ public class Heater : LogicBlock<Heater.State> {
     public readonly record struct AirTempSensorChanged(double AirTemp);
   }
 
-  public abstract record State : StateLogic, IGet<Input.TargetTempChanged> {
+  public abstract record State : StateLogic<State>, IGet<Input.TargetTempChanged> {
     public double TargetTemp { get; init; }
 
     public State On(Input.TargetTempChanged input) => this with {
@@ -50,7 +50,7 @@ public class Heater : LogicBlock<Heater.State> {
         // alert the user that the heater is on. Subsequent states that
         // inherit from Powered will not play a chime until a different
         // state has been entered before returning to a Powered state.
-        OnEnter<Powered>((previous) => Context.Output(new Output.Chime()));
+        this.OnEnter(() => Context.Output(new Output.Chime()));
 
         // Unlike OnEnter, OnAttach will run for every state instance that
         // inherits from this record. Use these to setup your state.

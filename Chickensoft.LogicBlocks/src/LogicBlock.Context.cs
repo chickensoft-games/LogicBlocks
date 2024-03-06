@@ -2,17 +2,17 @@ namespace Chickensoft.LogicBlocks;
 
 using System;
 
-public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
+public abstract partial class LogicBlock<TState> {
   /// <summary>Logic block context provided to each logic block state.</summary>
   internal readonly struct DefaultContext : IContext {
-    public Logic<TState, THandler, TInputReturn, TUpdate> Logic { get; }
+    public LogicBlock<TState> Logic { get; }
 
     /// <summary>
     /// Creates a new logic block context for the given logic block.
     /// </summary>
     /// <param name="logic">Logic block.</param>
     public DefaultContext(
-      Logic<TState, THandler, TInputReturn, TUpdate> logic
+      LogicBlock<TState> logic
     ) {
       Logic = logic;
     }
@@ -26,7 +26,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
       Logic.OutputValue(output);
 
     /// <inheritdoc />
-    public TDataType Get<TDataType>() where TDataType : notnull =>
+    public TDataType Get<TDataType>() where TDataType : class =>
       Logic.Get<TDataType>();
 
     /// <inheritdoc />
@@ -39,7 +39,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     public override int GetHashCode() => HashCode.Combine(Logic);
   }
 
-  internal class ContextAdapter : IContext {
+  internal class ContextAdapter : IContext, IContextAdapter {
     public IContext? Context { get; private set; }
 
     public void Adapt(IContext context) => Context = context;
@@ -69,7 +69,7 @@ public abstract partial class Logic<TState, THandler, TInputReturn, TUpdate> {
     }
 
     /// <inheritdoc />
-    public TDataType Get<TDataType>() where TDataType : notnull {
+    public TDataType Get<TDataType>() where TDataType : class {
       if (Context is not IContext context) {
         throw new InvalidOperationException(
           "Cannot get value from a logic block with an uninitialized context."

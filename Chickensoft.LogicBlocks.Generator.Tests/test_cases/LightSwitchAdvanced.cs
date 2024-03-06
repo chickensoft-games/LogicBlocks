@@ -1,6 +1,6 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 
-[StateMachine]
+[StateDiagram(typeof(State))]
 public class LightSwitchAdvanced : LogicBlock<LightSwitchAdvanced.State> {
   public override State GetInitialState() => new State.Off();
 
@@ -8,12 +8,12 @@ public class LightSwitchAdvanced : LogicBlock<LightSwitchAdvanced.State> {
     public readonly record struct Toggle;
   }
 
-  public abstract record State : StateLogic {
+  public abstract record State : StateLogic<State> {
     public record On : State, IGet<Input.Toggle> {
       public On() {
         // Announce that we are now on.
-        OnEnter<On>(
-          (context) => Context.Output(new Output.StatusChanged(IsOn: true))
+        this.OnEnter(
+          () => Context.Output(new Output.StatusChanged(IsOn: true))
         );
       }
 
@@ -24,8 +24,8 @@ public class LightSwitchAdvanced : LogicBlock<LightSwitchAdvanced.State> {
     public record Off : State, IGet<Input.Toggle> {
       public Off() {
         // Announce that we are now off.
-        OnEnter<On>(
-          (context) => Context.Output(new Output.StatusChanged(IsOn: false))
+        this.OnEnter(
+          () => Context.Output(new Output.StatusChanged(IsOn: false))
         );
       }
 

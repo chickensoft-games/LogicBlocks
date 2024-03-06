@@ -7,14 +7,14 @@ public enum SecondaryState {
   Bopped
 }
 
-[StateMachine]
+[StateDiagram(typeof(State))]
 public partial class TestMachine : LogicBlock<TestMachine.State> {
   public static class Input {
     public readonly record struct Activate(SecondaryState Secondary);
     public readonly record struct Deactivate();
   }
 
-  public abstract record State : StateLogic, IGet<Input.Activate> {
+  public abstract record State : StateLogic<State>, IGet<Input.Activate> {
     public State On(Input.Activate input) =>
       input.Secondary switch {
         SecondaryState.Blooped => new Activated.Blooped(),
@@ -24,47 +24,31 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
 
     public abstract record Activated : State, IGet<Input.Deactivate> {
       public Activated() {
-        OnEnter<Activated>(
-          (previous) => Context.Output(new Output.Activated())
-        );
-        OnExit<Activated>(
-          (next) => Context.Output(new Output.ActivatedCleanUp())
-        );
+        this.OnEnter(() => Context.Output(new Output.Activated()));
+        this.OnExit(() => Context.Output(new Output.ActivatedCleanUp()));
       }
 
       public State On(Input.Deactivate input) => new Deactivated();
 
       public record Blooped : Activated {
         public Blooped() {
-          OnEnter<Blooped>(
-            (previous) => Context.Output(new Output.Blooped())
-          );
-          OnExit<Blooped>(
-            (next) => Context.Output(new Output.BloopedCleanUp())
-          );
+          this.OnEnter(() => Context.Output(new Output.Blooped()));
+          this.OnExit(() => Context.Output(new Output.BloopedCleanUp()));
         }
       }
 
       public record Bopped : Activated {
         public Bopped() {
-          OnEnter<Bopped>(
-            (previous) => Context.Output(new Output.Bopped())
-          );
-          OnExit<Bopped>(
-            (next) => Context.Output(new Output.BoppedCleanUp())
-          );
+          this.OnEnter(() => Context.Output(new Output.Bopped()));
+          this.OnExit(() => Context.Output(new Output.BoppedCleanUp()));
         }
       }
     }
 
     public record Deactivated : State {
       public Deactivated() {
-        OnEnter<Deactivated>(
-          (previous) => Context.Output(new Output.Deactivated())
-        );
-        OnExit<Deactivated>(
-          (next) => Context.Output(new Output.DeactivatedCleanUp())
-        );
+        this.OnEnter(() => Context.Output(new Output.Deactivated()));
+        this.OnExit(() => Context.Output(new Output.DeactivatedCleanUp()));
       }
     }
   }

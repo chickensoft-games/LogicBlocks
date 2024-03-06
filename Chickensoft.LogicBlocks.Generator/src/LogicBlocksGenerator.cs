@@ -30,20 +30,26 @@ public class LogicBlocksGenerator :
     // the source generator process is started by running `dotnet build` in
     // the project consuming the source generator
     //
+    // --------------------------------------------------------------------- //
     // System.Diagnostics.Debugger.Launch();
+    // --------------------------------------------------------------------- //
+    //
+    // You can debug a source generator in Visual Studio on Windows by
+    // simply uncommenting the Debugger.Launch line above.
 
+    // Otherwise...
+    // To debug on macOS with VSCode, you can pull open the command palette
+    // and select "Debug: Attach to a .NET 5+ or .NET Core process"
+    // (csharp.attachToProcess) and then search "VBCS" and select the
+    // matching compiler process. Once it attaches, this will stop sleeping
+    // and you're on your merry way!
+
+    // --------------------------------------------------------------------- //
     // while (!System.Diagnostics.Debugger.IsAttached) {
-    //   // You can debug a source generator in Visual Studio on Windows by
-    //   // simply uncommenting the Debugger.Launch line above.
-
-    //   // To debug on macOS with VSCode, you can pull open the command palette
-    //   // and select "Debug: Attach to a .NET 5+ or .NET Core process"
-    //   // (csharp.attachToProcess) and then search "VBCS" and select the
-    //   // matching compiler process. Once it attaches, this will stop sleeping
-    //   // and you're on your merry way!
     //   Thread.Sleep(500);
     // }
     // System.Diagnostics.Debugger.Break();
+    // --------------------------------------------------------------------- //
 
     // Add post initialization sources
     // (source code that is always generated regardless)
@@ -129,7 +135,7 @@ public class LogicBlocksGenerator :
     node is ClassDeclarationSyntax classDeclaration &&
     classDeclaration.AttributeLists.SelectMany(list => list.Attributes)
       .Any(attribute => attribute.Name.ToString() ==
-        Constants.STATE_MACHINE_ATTRIBUTE_NAME
+        Constants.STATE_DIAGRAM_ATTRIBUTE_NAME
       );
 
   public LogicBlockImplementation? GetStateGraph(
@@ -172,46 +178,16 @@ public class LogicBlocksGenerator :
       return null;
     }
 
-    var matchingBases = CodeService.GetAllBaseTypes(symbol)
-      .Where(
-        baseType => CodeService.GetNameFullyQualifiedWithoutGenerics(
-          baseType, baseType.Name
-        ) == Constants.LOGIC_BLOCK_CLASS_ID
-      );
+    var concreteState = (INamedTypeSymbol)symbol
+      .GetAttributes()
+      .First()
+      .ConstructorArguments
+      .First()
+      .Value!;
 
-    if (!matchingBases.Any()) {
-      return null;
-    }
-
-    var logicBlockBase = matchingBases.First();
-    var logicBlockGenericArgs = logicBlockBase.TypeArguments;
-
-    if (logicBlockGenericArgs.Length < 1) {
-      return null;
-    }
-
-    var stateType = logicBlockGenericArgs[0];
-
-    if (stateType is not INamedTypeSymbol stateBaseType) {
-      return null;
-    }
-
-    // if stateBaseType is an interface, we want to find the first subtype that
-    // implements it and StateLogic. this is a shallow search in the
-    // logic block.
-    var primaryState = symbol.GetTypeMembers().FirstOrDefault(
-      type => type.AllInterfaces.Any(
-        (type) => SymbolEqualityComparer.Default.Equals(
-          type, stateBaseType
-        )
-      )
-    );
-
-    var concreteState = primaryState ?? stateBaseType;
-
-    // all state subtypes, found recursively
-    var stateSubtypes = CodeService.GetAllTypes(
-      concreteState,
+    // Search the logic block for all state subtypes, found recursively
+    var stateSubtypes = CodeService.GetAllNestedTypesRecursively(
+      symbol,
       (type) => CodeService.GetAllBaseTypes(type).Any(
           (baseType) => SymbolEqualityComparer.Default.Equals(
             baseType, concreteState
@@ -457,7 +433,7 @@ public class LogicBlocksGenerator :
     INamedTypeSymbol containerType, INamedTypeSymbol ancestorType
   ) {
     var subclasses = new Dictionary<string, LogicBlockSubclass>();
-    var typesToSearch = CodeService.GetSubtypesExtending(
+    var typesToSearch = CodeService.GetNestedSubtypesExtending(
         containerType, ancestorType
       ).ToImmutableArray();
     Log.Print(

@@ -150,7 +150,7 @@ public interface ICodeService {
   /// </param>
   /// <param name="ancestorType">The ancestor the nested types must subclass
   /// to be returned.</param>
-  IEnumerable<INamedTypeSymbol> GetSubtypesExtending(
+  IEnumerable<INamedTypeSymbol> GetNestedSubtypesExtending(
     INamedTypeSymbol containingType,
     INamedTypeSymbol ancestorType
   );
@@ -161,7 +161,7 @@ public interface ICodeService {
   /// <param name="symbol">Type to search.</param>
   /// <param name="predicate">Filter predicate.</param>
   /// <returns>Matching nested types.</returns>
-  IEnumerable<INamedTypeSymbol> GetAllTypes(
+  IEnumerable<INamedTypeSymbol> GetAllNestedTypesRecursively(
     INamedTypeSymbol symbol,
     Func<INamedTypeSymbol, bool> predicate
   );
@@ -324,10 +324,10 @@ public class CodeService : ICodeService {
   public ImmutableArray<ISymbol> GetMembers(INamedTypeSymbol? symbol)
     => symbol?.GetMembers() ?? ImmutableArray<ISymbol>.Empty;
 
-  public IEnumerable<INamedTypeSymbol> GetSubtypesExtending(
+  public IEnumerable<INamedTypeSymbol> GetNestedSubtypesExtending(
     INamedTypeSymbol containingType,
     INamedTypeSymbol ancestorType
-  ) => GetAllTypes(
+  ) => GetAllNestedTypesRecursively(
     containingType,
     (type) =>
       SymbolEqualityComparer.Default.Equals(type, ancestorType) ||
@@ -337,13 +337,17 @@ public class CodeService : ICodeService {
       )
   );
 
-  public IEnumerable<INamedTypeSymbol> GetAllTypes(
+  public IEnumerable<INamedTypeSymbol> GetAllNestedTypesRecursively(
     INamedTypeSymbol symbol,
-    Func<INamedTypeSymbol, bool> predicate
+    Func<INamedTypeSymbol, bool>? predicate = null
   ) {
-    foreach (var type in @symbol.GetTypeMembers().Where(predicate)) {
-      foreach (var nestedType in GetNestedTypes(type, predicate)) {
-        yield return nestedType;
+    predicate ??= (_) => true;
+    foreach (var type in @symbol.GetTypeMembers()) {
+      if (predicate(type)) { yield return type; }
+      foreach (var nestedType in GetAllNestedTypesRecursively(type, predicate)) {
+        if (predicate(nestedType)) {
+          yield return nestedType;
+        }
       }
     }
   }
@@ -353,17 +357,6 @@ public class CodeService : ICodeService {
     while (current.BaseType != null) {
       yield return current.BaseType;
       current = current.BaseType;
-    }
-  }
-
-  private IEnumerable<INamedTypeSymbol> GetNestedTypes(
-    INamedTypeSymbol type,
-    Func<INamedTypeSymbol, bool> predicate
-  ) {
-    yield return type;
-    foreach (var nestedType in type.GetTypeMembers().Where(predicate)
-        .SelectMany(nestedType => GetNestedTypes(nestedType, predicate))) {
-      yield return nestedType;
     }
   }
 }

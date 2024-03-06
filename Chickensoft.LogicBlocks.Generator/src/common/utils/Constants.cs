@@ -12,24 +12,12 @@ public class Constants {
   public const string LOGIC_BLOCK_CONTEXT_OUTPUT = "Output";
   public const string LOGIC_BLOCK_STATE_LOGIC_ON_ENTER = "OnEnter";
   public const string LOGIC_BLOCK_STATE_LOGIC_ON_EXIT = "OnExit";
-  public const string LOGIC_BLOCK_CLASS_ID = "global::Chickensoft.LogicBlocks.Logic";
+  public const string LOGIC_BLOCK_CLASS_ID = "global::Chickensoft.LogicBlocks.LogicBlock";
   public const string LOGIC_BLOCK_INPUT_INTERFACE_ID = "global::Chickensoft.LogicBlocks.LogicBlock.IGet";
-  public const string STATE_MACHINE_ATTRIBUTE_NAME = "StateMachine";
-  public const string STATE_MACHINE_ATTRIBUTE_SOURCE = """
-  namespace Chickensoft.LogicBlocks.Generator;
+  public const string STATE_DIAGRAM_ATTRIBUTE_NAME = "StateDiagram";
 
-  using System;
-
-  /// <summary>
-  /// State machine attribute. Placing this on a LogicBlock subclass will cause
-  /// the generator to create a high-level state diagram for the state machine.
-  /// </summary>
-  [AttributeUsage(AttributeTargets.Class)]
-  internal sealed class StateMachineAttribute : Attribute { }
-  """;
-
-  public const string STATE_MACHINE_ATTRIBUTE_NAME_SUFFIX =
-    "StateMachineAttribute";
+  public const string STATE_DIAGRAM_ATTRIBUTE_NAME_SUFFIX =
+    "StateDiagramAttribute";
 
   /// <summary>
   /// A dictionary of source code that must be injected into the compilation
@@ -37,7 +25,5 @@ public class Constants {
   /// other features of this source generator.
   /// </summary>
   public static readonly ImmutableDictionary<string, string>
-    PostInitializationSources = new Dictionary<string, string>() {
-      [STATE_MACHINE_ATTRIBUTE_NAME] = STATE_MACHINE_ATTRIBUTE_SOURCE
-    }.ToImmutableDictionary();
+    PostInitializationSources = new Dictionary<string, string>() { }.ToImmutableDictionary();
 }

@@ -43,7 +43,7 @@ public class ContextAdapterTest {
   public void GetThrowsWhenNoContextIsSet() {
     var context = new FakeLogicBlock.ContextAdapter();
 
-    Should.Throw<InvalidOperationException>(() => context.Get<int>());
+    Should.Throw<InvalidOperationException>(() => context.Get<string>());
   }
 
   [Fact]

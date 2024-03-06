@@ -30,7 +30,7 @@ Here is a minimal example of a light switch. More ✨ advanced ✨ examples are 
 using Chickensoft.LogicBlocks;
 using Chickensoft.LogicBlocks.Generator;
 
-[StateMachine]
+[StateDiagram(typeof(State))]
 public class LightSwitch : LogicBlock<LightSwitch.State> {
   public override State GetInitialState() => new State.SwitchedOff();
 
@@ -38,7 +38,7 @@ public class LightSwitch : LogicBlock<LightSwitch.State> {
     public readonly record struct Toggle;
   }
 
-  public abstract record State : StateLogic {
+  public abstract record State : StateLogic<State> {
     // "On" state
     public record SwitchedOn : State, IGet<Input.Toggle> {
       public State On(Input.Toggle input) => new SwitchedOff();
@@ -61,6 +61,9 @@ Here's the diagram that's produced by the light switch example above:
 - [**`LightSwitch.cs`**](Chickensoft.LogicBlocks.Generator.Tests/test_cases/LightSwitch.cs)
 
   ![LightSwitch state diagram](docs/light_switch.png)
+
+> [!NOTE]
+> To tell the LogicBlocks diagram generator to make a state diagram of your logic block, simply add a `[StateDiagram(typeof(YourLogicBlockState))]` attribute to it.
 
 ## 👷 How Do You Use a Logic Block?
 
@@ -236,7 +239,7 @@ We'll also create a constructor that accepts the dependencies our logic block st
 using Chickensoft.LogicBlocks;
 using Chickensoft.LogicBlocks.Generator;
 
-[StateMachine]
+[StateDiagram(typeof(State))]
 public class Heater : LogicBlock<Heater.State> {
     public static class Input { }
 
@@ -261,7 +264,10 @@ In general, Logic block state types should be records that extend the `StateLogi
 
 We've also created a couple of empty static classes, `Input`, and `Output`. These aren't required for LogicBlocks, it just helps organize our inputs and outputs so we can see them all in one place. It's nice to be able to scroll up or down in your file and see what all inputs and outputs a logic block can use.
 
-Finally, we added the `[StateMachine]` attribute to our logic block class to tell the LogicBlocks source generator about our machine. Putting the `[StateMachine]` attribute on a logic block allows the LogicBlocks generator to find the logic block and generate the UML diagram code needed to visualize it as a picture.
+Finally, we added the `[StateDiagram(typeof(State))]` attribute to our logic block class to tell the LogicBlocks source generator about our machine. Putting the `[StateDiagram(typeof(...))]` attribute on a logic block allows the LogicBlocks generator to find the logic block and generate the UML diagram code needed to visualize it as a picture.
+
+> [!NOTE]
+> The type you provide to `StateDiagram` should be the concrete type of your base state, not an interface.
 
 ### ⤵️ Defining Inputs and Outputs
 
@@ -297,7 +303,7 @@ We know our space heater will be in one of three states: `Off`, `Idle` (on but n
 Let's first define the information and behavior common to every state. We know that if you spin the temperature knob, the heater's target temperature should change *regardless* of what state it is in. So let's add a `TargetTemp` property and an input handler for changing the target temperature on the base state itself. This way, all the other states that inherit from it will get that functionality for free. This makes sense, too, since you can turn the temperature knob regardless of whether the heater is on or off.
 
 ```csharp
-[StateMachine]
+[StateDiagram(typeof(State))]
 public class Heater : LogicBlock<Heater.State> {
   ...
 
@@ -344,7 +350,7 @@ public abstract record Powered : State, IGet<Input.TurnOff> {
     // alert the user that the heater is on. Subsequent states that
     // inherit from Powered will not play a chime until a different
     // state has been entered before returning to a Powered state.
-    OnEnter<Powered>((previous) => Context.Output(new Output.Chime()));
+    this.OnEnter(() => Context.Output(new Output.Chime()));
 
     // Unlike OnEnter, OnAttach will run for every state instance that
     // inherits from this record. Use these to setup your state.
@@ -420,7 +426,7 @@ When the `AirTempSensorChanged` input is processed, it checks to see if the new 
 We're just about done with our logic block — all we need to do is define the initial state!
 
 ```csharp
-[StateMachine]
+[StateDiagram(typeof(State))]
 public class Heater :
   LogicBlock<Heater.Input, Heater.State> {
   ...
@@ -526,7 +532,7 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using Chickensoft.LogicBlocks.Generator;
 
-[StateMachine]
+[StateDiagram(typeof(State))]
 public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State> {
   public static class Input { ... }
   public abstract record State : StateLogic { ... }
@@ -626,7 +632,7 @@ public record MyState : State IGet<Input.SomeInput> {
 In situations where you want to have manual control over whether thrown exceptions stop the application (or not), you can override the `HandleError` method in your logic block.
 
 ```csharp
-[StateMachine]
+[StateDiagram(typeof(State))]
 public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State> {
 
   ...
@@ -644,7 +650,10 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State> {
 
 ### 💥 Initial State Side Effects
 
-By default, LogicBlocks doesn't invoke any `OnEnter` callbacks registered by the initial state, since the state property lazily creates the initial state the first time it is accessed. Lazily creating the state allows the LogicBlocks API to be more ergonomic. If the state wasn't initialized lazily, the base LogicBlock constructor would have to set the first state before you have a chance to add anything to the logic block's blackboard, which make it hard to create states that have blackboard dependencies.
+By default, LogicBlocks doesn't invoke any `OnEnter` callbacks registered by the initial state, since the state property lazily creates the initial state the first time it is accessed. Lazily creating the state allows the LogicBlocks API to be more ergonomic.
+
+> [!NOTE]
+> If the state wasn't initialized lazily, the base LogicBlock constructor would have to set the first state before you have a chance to add anything to the logic block's blackboard, making it difficult to create states that have blackboard dependencies.
 
 That being said, **there are plenty of times when you *do* want to run the entrance callbacks for the initial state because you *do* want the bindings to trigger**.
 
@@ -781,12 +790,8 @@ For reference, here is the definition of `SomeState`. When it's entered and exit
 // ...
 public record SomeState : State, IGet<Input.SomeInput> {
   public SomeState() {
-    OnEnter<SomeState>(
-      (previous) => Context.Output(new Output.SomeOutput())
-    );
-    OnExit<SomeState>(
-      (previous) => Context.Output(new Output.SomeOutput())
-    );
+    this.OnEnter(() => Context.Output(new Output.SomeOutput()));
+    this.OnExit(() => Context.Output(new Output.SomeOutput()));
   }
 
   public IState On(Input.SomeInput input) {
@@ -940,16 +945,14 @@ The LogicBlocks generator can generate UML code that can be used to visualize th
 
 See [installation](#-installation) for instructions on installing the LogicBlocks source generator.
 
-To instruct the LogicBlocks generator to create a UML state diagram for your code, add the `[StateMachine]` attribute to your LogicBlock's definition:
+To instruct the LogicBlocks generator to create a UML state diagram for your code, add the `[StateDiagram]` attribute to your LogicBlock's definition:
 
 ```csharp
-[StateMachine]
+[StateDiagram(typeof(State))]
 public class LightSwitch : LogicBlock<LightSwitch.Input, LightSwitch.State> {
 ```
 
-> The `[StateMachine]` attribute code is automatically injected by the source generator.
-
-State diagrams will be generated for each logic block with the `[StateMachine]` attribute in your project. The diagram code is placed next to your LogicBlock's source file with the extension `.g.puml`.
+State diagrams will be generated for each logic block with the `[StateDiagram]` attribute in your project. The diagram code is placed next to your LogicBlock's source file with the extension `.g.puml`.
 
 For example, here's the UML generated for the `VendingMachine` example mentioned above:
 
@@ -990,7 +993,7 @@ Vending --> Idle : VendingCompleted
 
 > 💡 The snippet above is simplified for the sake of example. The actual generator output is a bit more verbose, but it renders the same diagram. The extra verbosity is required to identify states correctly to avoid naming collisions between nested states.
 >
-> If you want a more advanced look, check out the various `*.puml` files throughout the various packages in the LogicBlocks repository. These files are generated by the LogicBlocks Generator from the included examples and test cases that are used to verify that LogicBlocks is working as intended. Next to each `*.puml` file is a LogicBlock source file with the `[StateMachine]` attribute that informs the generator to create the diagram code. Check out the source and compare it to the diagram code to see what the generator is doing under the hood.
+> If you want a more advanced look, check out the various `*.puml` files throughout the various packages in the LogicBlocks repository. These files are generated by the LogicBlocks Generator from the included examples and test cases that are used to verify that LogicBlocks is working as intended. Next to each `*.puml` file is a LogicBlock source file with the `[StateDiagram]` attribute that informs the generator to create the diagram code. Check out the source and compare it to the diagram code to see what the generator is doing under the hood.
 
 ### Viewing Diagrams with PlantUML
 
@@ -1023,9 +1026,7 @@ Wrong:
 ```c#
 public Active() {
   var value = Get<int>();
-  OnEnter<Active>(
-    (previous) => Context.Output(new Output.ValueChanged(value));
-  );
+  this.OnEnter(() => Context.Output(new Output.ValueChanged(value)));
 }
 ```
 
@@ -1033,8 +1034,8 @@ Correct:
 
 ```c#
 public Active() {
-  OnEnter<Active>(
-    (previous) => {
+  this.OnEnter(
+    () => {
       var value = Get<int>();
       Context.Output(new Output.ValueChanged(value));
     }

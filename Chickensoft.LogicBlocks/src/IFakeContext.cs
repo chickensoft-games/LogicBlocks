@@ -21,7 +21,7 @@ public interface IFakeContext : IContext {
   /// </summary>
   /// <param name="value">Value to set.</param>
   /// <typeparam name="TDataType">Type of value.</typeparam>
-  void Set<TDataType>(TDataType value) where TDataType : notnull;
+  void Set<TDataType>(TDataType value) where TDataType : class;
 
   /// <summary>
   /// Sets multiple fake values in the logic block's blackboard.

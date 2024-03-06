@@ -8,7 +8,7 @@ public class GreedyLogic : LogicBlock<GreedyLogic.State> {
     public readonly record struct GoToC;
   }
 
-  public abstract partial record State : StateLogic {
+  public abstract partial record State : StateLogic<State> {
     public record A : State, IGet<Input.GoToB>, IGet<Input.GoToC> {
       public A() {
         OnAttach(() => {
