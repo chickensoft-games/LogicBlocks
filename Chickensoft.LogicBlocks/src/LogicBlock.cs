@@ -164,7 +164,7 @@ where TState : class, IStateLogic<TState> {
   private TState? _restoredState;
 
   private readonly Queue<PendingInput> _inputs = new();
-  private readonly Dictionary<Type, dynamic> _blackboard = new();
+  private readonly Dictionary<Type, object> _blackboard = new();
 
   /// <inheritdoc />
   public virtual IBinding Bind() => new Binding(this);
