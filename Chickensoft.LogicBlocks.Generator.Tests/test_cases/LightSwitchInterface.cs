@@ -13,12 +13,12 @@ public class LightSwitchInterface : LogicBlock<LightSwitchInterface.IState> {
   public abstract record State : StateLogic<IState>, IState {
     // "On" state
     public record TurnedOn : State, IGet<Input.Toggle> {
-      public IState On(Input.Toggle input) => new TurnedOff();
+      public IState On(in Input.Toggle input) => new TurnedOff();
     }
 
     // "Off" state
     public record TurnedOff : State, IGet<Input.Toggle> {
-      public IState On(Input.Toggle input) => new TurnedOn();
+      public IState On(in Input.Toggle input) => new TurnedOn();
     }
   }
 }

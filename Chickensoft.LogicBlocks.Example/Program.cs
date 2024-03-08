@@ -53,22 +53,30 @@ public static class Program {
   private static readonly Queue<object> _lastFewOutputs =
     new(MAX_OUTPUTS);
 
+  // Outputs that need to be processed.
+  private static readonly Queue<object> _outputs = new();
+
+  public class VendingMachineListener :
+  LogicBlockListener<VendingMachine.State> {
+    public VendingMachineListener(VendingMachine machine) : base(machine) { }
+
+    protected override void ReceiveOutput<TOutputType>(in TOutputType output) {
+      AddOutputToBuffer(output);
+      _outputs.Enqueue(output);
+    }
+  }
+
   public static int Main(string[] args) {
     var machine = new VendingMachine(Stock);
+    var listener = new VendingMachineListener(machine);
     var shouldContinue = true;
     var lastState = machine.Value;
-    // Outputs that need to be processed.
-    var outputs = new Queue<object>();
 
     Console.CancelKeyPress += (_, _) => shouldContinue = false;
-    machine.OnOutput += (output) => {
-      AddOutputToBuffer(output);
-      outputs.Enqueue(output);
-    };
 
     void update() {
-      while (outputs.Count > 0) {
-        var output = outputs.Dequeue();
+      while (_outputs.Count > 0) {
+        var output = _outputs.Dequeue();
         ProcessOutput(output);
       }
       ShowOverview();
@@ -82,7 +90,7 @@ public static class Program {
     update();
 
     while (shouldContinue) {
-      if (machine.Value != lastState || outputs.Count > 0) {
+      if (machine.Value != lastState || _outputs.Count > 0) {
         update();
         lastState = machine.Value;
       }

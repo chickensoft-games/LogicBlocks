@@ -15,9 +15,9 @@ public class LogicBlockConsumer {
 
     // Bind to everything possible.
     Binding
-      .Watch<MyLogicBlock.Input.SomeInput>(input => SawInput = true)
-      .Handle<MyLogicBlock.Output.SomeOutput>(output => SawOutput = true)
-      .Catch<Exception>(e => SawError = true)
-      .When<MyLogicBlock.State.SomeOtherState>(state => SawState = true);
+      .Watch((in MyLogicBlock.Input.SomeInput input) => SawInput = true)
+      .When<MyLogicBlock.State.SomeOtherState>(state => SawState = true)
+      .Handle((in MyLogicBlock.Output.SomeOutput output) => SawOutput = true)
+      .Catch<Exception>(e => SawError = true);
   }
 }

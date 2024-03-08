@@ -5,6 +5,22 @@ using System.Collections.Generic;
 
 public abstract partial class LogicBlock<TState> {
   /// <summary>
+  /// Action that responds to a particular type of input.
+  /// </summary>
+  /// <typeparam name="TInputType">Input type.</typeparam>
+  /// <param name="input">Input object.</param>
+  public delegate void InputAction<TInputType>(in TInputType input)
+    where TInputType : struct;
+
+  /// <summary>
+  /// Action that responds to a particular type of output.
+  /// </summary>
+  /// <typeparam name="TOutputType">Output type.</typeparam>
+  /// <param name="output">Output object.</param>
+  public delegate void OutputAction<TOutputType>(in TOutputType output)
+    where TOutputType : struct;
+
+  /// <summary>
   /// <para>State bindings for a logic block.</para>
   /// <para>
   /// A binding allows you to select data from a logic block's state, invoke
@@ -22,7 +38,8 @@ public abstract partial class LogicBlock<TState> {
     /// <typeparam name="TInputType">Type of input to register a handler
     /// for.</typeparam>
     /// <returns>The current binding.</returns>
-    IBinding Watch<TInputType>(Action<TInputType> handler);
+    IBinding Watch<TInputType>(InputAction<TInputType> handler)
+      where TInputType : struct;
 
     /// Registers a binding for a specific type of state.
     /// <summary>
@@ -44,7 +61,8 @@ public abstract partial class LogicBlock<TState> {
     /// <typeparam name="TOutputType">Type of output to register a handler
     /// for.</typeparam>
     /// <returns>The current binding.</returns>
-    IBinding Handle<TOutputType>(Action<TOutputType> handler);
+    IBinding Handle<TOutputType>(OutputAction<TOutputType> handler)
+      where TOutputType : struct;
 
     /// <summary>
     /// Register a callback to be invoked whenever an error type of
@@ -57,13 +75,25 @@ public abstract partial class LogicBlock<TState> {
       where TException : Exception;
   }
 
-  internal class BindingBase : IBinding {
-    // List of functions that receive a TInput and return whether the binding
-    // with the same index in the _inputRunners should be run.
-    internal readonly List<Func<object, bool>> _inputCheckers;
-    // List of functions that receive an input and invoke the relevant binding
-    // when a particular type of input is encountered.
-    internal readonly List<Action<object>> _inputRunners;
+  /// <summary>
+  /// <para>Fluent bindings for a logic block.</para>
+  /// <para>
+  /// A binding allows you to select data from a logic block's state, invoke
+  /// methods when certain states occur, and handle outputs. Using bindings
+  /// enable you to write more declarative code and prevent unnecessary
+  /// updates when a state has changed but the relevant data within it has not.
+  /// </para>
+  /// <para>
+  /// Always dispose your binding when you're finished with it!
+  /// </para>
+  /// </summary>
+  internal abstract class BindingBase :
+  LogicBlockListenerBase<TState>, IBinding {
+    // Map of an input type to a list of functions that receive that input.
+    // We store the functions as "object" and cast to the specific function
+    // type later when we have a generic argument to avoid boxing inputs.
+    internal readonly Dictionary<Type, List<object>> _inputRunners;
+    internal readonly Dictionary<Type, List<object>> _outputRunners;
 
     // List of functions that receive a TState and return whether the binding
     // with the same index in the _whenBindingRunners should be run.
@@ -72,35 +102,31 @@ public abstract partial class LogicBlock<TState> {
     // when a particular type of state is encountered.
     internal readonly List<Action<TState>> _stateRunners;
 
-    // List of functions that receive a TState and return whether the binding
-    // with the same index in the _handledOutputRunners should be run.
-    internal readonly List<Func<object, bool>> _handledOutputCheckers;
-    // List of functions that receive an output and invoke the relevant binding
-    // when a particular type of output is encountered.
-    internal readonly List<Action<object>> _handledOutputRunners;
-
     // List of functions that receive an Exception and return whether the
     // binding with the same index in the _errorRunners should be run.
-    internal readonly List<Func<Exception, bool>> _errorCheckers;
+    internal readonly List<Func<Exception, bool>> _exceptionCheckers;
     // List of functions that receive an Exception and invoke the relevant
     // binding when a particular type of error is encountered.
-    internal readonly List<Action<Exception>> _errorRunners;
+    internal readonly List<Action<Exception>> _exceptionRunners;
 
-    internal BindingBase() {
-      _inputCheckers = new();
+    internal BindingBase() : base() {
       _inputRunners = new();
+      _outputRunners = new();
       _stateCheckers = new();
       _stateRunners = new();
-      _handledOutputCheckers = new();
-      _handledOutputRunners = new();
-      _errorCheckers = new();
-      _errorRunners = new();
+      _exceptionCheckers = new();
+      _exceptionRunners = new();
     }
 
     /// <inheritdoc />
-    public IBinding Watch<TInputType>(Action<TInputType> handler) {
-      _inputCheckers.Add((input) => input is TInputType);
-      _inputRunners.Add((input) => handler((TInputType)input));
+    public IBinding Watch<TInputType>(InputAction<TInputType> handler)
+    where TInputType : struct {
+      if (_inputRunners.TryGetValue(typeof(TInputType), out var runners)) {
+        runners.Add(handler);
+      }
+      else {
+        _inputRunners[typeof(TInputType)] = new List<object> { handler };
+      }
 
       return this;
     }
@@ -115,9 +141,14 @@ public abstract partial class LogicBlock<TState> {
     }
 
     /// <inheritdoc />
-    public IBinding Handle<TOutputType>(Action<TOutputType> handler) {
-      _handledOutputCheckers.Add((output) => output is TOutputType);
-      _handledOutputRunners.Add((output) => handler((TOutputType)output));
+    public IBinding Handle<TOutputType>(OutputAction<TOutputType> handler)
+    where TOutputType : struct {
+      if (_outputRunners.TryGetValue(typeof(TOutputType), out var runners)) {
+        runners.Add(handler);
+      }
+      else {
+        _outputRunners[typeof(TOutputType)] = new List<object> { handler };
+      }
 
       return this;
     }
@@ -126,25 +157,26 @@ public abstract partial class LogicBlock<TState> {
     public IBinding Catch<TException>(
       Action<TException> handler
     ) where TException : Exception {
-      _errorCheckers.Add((error) => error is TException);
-      _errorRunners.Add((error) => handler((TException)error));
+      _exceptionCheckers.Add((error) => error is TException);
+      _exceptionRunners.Add((error) => handler((TException)error));
 
       return this;
     }
 
-    internal void InternalOnInput(object input) {
+    protected override void ReceiveInput<TInputType>(in TInputType input)
+    where TInputType : struct {
+      if (!_inputRunners.TryGetValue(typeof(TInputType), out var runners)) {
+        return;
+      }
+
       // Run each input binding that should be run.
-      for (var i = 0; i < _inputCheckers.Count; i++) {
-        var checker = _inputCheckers[i];
-        var runner = _inputRunners[i];
-        if (checker(input)) {
-          // If the binding handles this type of input, run it!
-          runner(input);
-        }
+      foreach (var runner in runners) {
+        // If the binding handles this type of input, run it!
+        (runner as InputAction<TInputType>)!(in input);
       }
     }
 
-    internal void InternalOnState(TState state) {
+    protected override void ReceiveState(TState state) {
       // Run each when binding that should be run.
       for (var i = 0; i < _stateCheckers.Count; i++) {
         var checker = _stateCheckers[i];
@@ -156,86 +188,53 @@ public abstract partial class LogicBlock<TState> {
       }
     }
 
-    internal void InternalOnOutput(object output) {
-      // Run each handled output binding that should be run.
-      for (var i = 0; i < _handledOutputCheckers.Count; i++) {
-        var checker = _handledOutputCheckers[i];
-        var runner = _handledOutputRunners[i];
-        if (checker(output)) {
-          // If the binding handles this type of output, run it!
-          runner(output);
-        }
+    protected override void ReceiveOutput<TOutputType>(in TOutputType output)
+    where TOutputType : struct {
+      if (!_outputRunners.TryGetValue(typeof(TOutputType), out var runners)) {
+        return;
+      }
+
+      // Run each output binding that should be run.
+      foreach (var runner in runners) {
+        // If the binding handles this type of output, run it!
+        (runner as OutputAction<TOutputType>)!(in output);
       }
     }
 
-    internal void InternalOnError(Exception error) {
+    protected override void ReceiveException(Exception exception) {
       // Run each error binding that should be run.
-      for (var i = 0; i < _errorCheckers.Count; i++) {
-        var checker = _errorCheckers[i];
-        var runner = _errorRunners[i];
-        if (checker(error)) {
+      for (var i = 0; i < _exceptionCheckers.Count; i++) {
+        var checker = _exceptionCheckers[i];
+        var runner = _exceptionRunners[i];
+        if (checker(exception)) {
           // If the binding handles this type of error, run it!
-          runner(error);
+          runner(exception);
         }
       }
     }
 
-    /// <inheritdoc />
-    public void Dispose() => Dispose(true);
-
-    private void Dispose(bool disposing) {
-      if (disposing) {
-        Cleanup();
-      }
-    }
-
-    /// <summary>Glue finalizer.</summary>
-    ~BindingBase() {
-      Dispose(false);
-    }
-
-    internal virtual void Cleanup() {
+    protected override void Cleanup() {
+      _inputRunners.Clear();
+      _outputRunners.Clear();
       _stateCheckers.Clear();
       _stateRunners.Clear();
-      _handledOutputCheckers.Clear();
-      _handledOutputRunners.Clear();
-      _errorCheckers.Clear();
-      _errorRunners.Clear();
-      _inputCheckers.Clear();
-      _inputRunners.Clear();
+      _exceptionCheckers.Clear();
+      _exceptionRunners.Clear();
     }
   }
 
-  /// <summary>
-  /// <para>State bindings for a logic block.</para>
-  /// <para>
-  /// A binding allows you to select data from a logic block's state, invoke
-  /// methods when certain states occur, and handle outputs. Using bindings
-  /// enable you to write more declarative code and prevent unnecessary
-  /// updates when a state has changed but the relevant data within it has not.
-  /// </para>
-  /// </summary>
-  internal sealed class Binding : BindingBase {
-    /// <summary>Logic block that is being bound to.</summary>
+  internal class Binding : BindingBase {
+    /// <summary>Logic block being listened to.</summary>
     public LogicBlock<TState> LogicBlock { get; }
 
-    internal Binding(
-      LogicBlock<TState> logicBlock
-    ) {
+    internal Binding(LogicBlock<TState> logicBlock) : base() {
       LogicBlock = logicBlock;
-
-      LogicBlock.OnInput += InternalOnInput;
-      LogicBlock.OnState += InternalOnState;
-      LogicBlock.OnOutput += InternalOnOutput;
-      LogicBlock.OnError += InternalOnError;
+      logicBlock.AddBinding(this);
     }
 
-    internal override void Cleanup() {
+    protected override void Cleanup() {
+      LogicBlock.RemoveBinding(this);
       base.Cleanup();
-      LogicBlock.OnInput -= InternalOnInput;
-      LogicBlock.OnState -= InternalOnState;
-      LogicBlock.OnOutput -= InternalOnOutput;
-      LogicBlock.OnError -= InternalOnError;
     }
   }
 }

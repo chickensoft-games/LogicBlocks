@@ -11,12 +11,12 @@ public class LightSwitch : LogicBlock<LightSwitch.State> {
   public abstract record State : StateLogic<State> {
     // "On" state
     public record SwitchedOn : State, IGet<Input.Toggle> {
-      public State On(Input.Toggle input) => new SwitchedOff();
+      public State On(in Input.Toggle input) => new SwitchedOff();
     }
 
     // "Off" state
     public record SwitchedOff : State, IGet<Input.Toggle> {
-      public State On(Input.Toggle input) => new SwitchedOn();
+      public State On(in Input.Toggle input) => new SwitchedOn();
     }
   }
 }

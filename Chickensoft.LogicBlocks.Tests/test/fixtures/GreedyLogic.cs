@@ -17,8 +17,8 @@ public class GreedyLogic : LogicBlock<GreedyLogic.State> {
         });
       }
 
-      public State On(Input.GoToB input) => new B();
-      public State On(Input.GoToC input) => new C();
+      public State On(in Input.GoToB input) => new B();
+      public State On(in Input.GoToC input) => new C();
     }
 
     public record B : State { }

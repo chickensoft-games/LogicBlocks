@@ -13,6 +13,6 @@ public abstract partial class LogicBlock<TState> {
     /// </summary>
     /// <param name="input">Input value.</param>
     /// <returns>The next state of the logic block.</returns>
-    TState On(TInputType input);
+    TState On(in TInputType input);
   }
 }

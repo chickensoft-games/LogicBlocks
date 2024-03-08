@@ -10,8 +10,8 @@ public class MyObject : IDisposable {
     Logic = logic;
     Binding = logic.Bind();
 
-    Binding.Handle<MyLogicBlock.Output.SomeOutput>(
-      (output) => SawSomeOutput = true
+    Binding.Handle(
+      (in MyLogicBlock.Output.SomeOutput output) => SawSomeOutput = true
     );
   }
 

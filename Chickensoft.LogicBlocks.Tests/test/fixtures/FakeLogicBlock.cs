@@ -12,7 +12,7 @@ public partial class FakeLogicBlock {
     public readonly record struct InputUnknown;
     public readonly record struct GetString;
     public readonly record struct NoNewState;
-    public readonly record struct SelfInput(object Input);
+    public readonly record struct SelfInput(InputOne Input);
     public readonly record struct InputCallback(
       Action Callback,
       Func<IContext, State> Next
@@ -30,40 +30,40 @@ public partial class FakeLogicBlock {
     IGet<Input.GetString>,
     IGet<Input.SelfInput>,
     IGet<Input.Custom> {
-    public State On(Input.InputOne input) {
+    public State On(in Input.InputOne input) {
       Context.Output(new Output.OutputOne(1));
       return new StateA(input.Value1, input.Value2);
     }
 
-    public State On(Input.InputTwo input) {
+    public State On(in Input.InputTwo input) {
       Context.Output(new Output.OutputTwo("2"));
       return new StateB(input.Value1, input.Value2);
     }
 
-    public State On(Input.InputThree input) => new StateD(
+    public State On(in Input.InputThree input) => new StateD(
       input.Value1, input.Value2
     );
 
-    public State On(Input.InputError input)
+    public State On(in Input.InputError input)
       => throw new InvalidOperationException();
 
-    public State On(Input.NoNewState input) {
+    public State On(in Input.NoNewState input) {
       Context.Output(new Output.OutputOne(1));
       return this;
     }
 
-    public State On(Input.InputCallback input) {
+    public State On(in Input.InputCallback input) {
       input.Callback();
       return input.Next(Context);
     }
 
-    public State On(Input.Custom input) => input.Next(Context);
+    public State On(in Input.Custom input) => input.Next(Context);
 
-    public State On(Input.GetString input) => new StateC(
+    public State On(in Input.GetString input) => new StateC(
       Context.Get<string>()
     );
 
-    public State On(Input.SelfInput input) {
+    public State On(in Input.SelfInput input) {
       Context.Input(input.Input);
       return this;
     }

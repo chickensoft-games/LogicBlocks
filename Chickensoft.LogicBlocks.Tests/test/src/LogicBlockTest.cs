@@ -4,7 +4,33 @@ using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Shouldly;
 using Xunit;
 
+public class TestListener<TState> : LogicBlockListener<TState>
+where TState : class, IStateLogic<TState> {
+  public TestListener(LogicBlock<TState> logicBlock) : base(logicBlock) { }
+
+  public event Action<object>? OnInput;
+  public event Action<TState>? OnState;
+  public event Action<object>? OnOutput;
+  public event Action<Exception>? OnError;
+
+  protected override void ReceiveInput<TInputType>(in TInputType input) =>
+    OnInput?.Invoke(input);
+
+  protected override void ReceiveState(TState state) =>
+    OnState?.Invoke(state);
+
+  protected override void ReceiveOutput<TOutputType>(in TOutputType output) =>
+    OnOutput?.Invoke(output);
+
+  protected override void ReceiveException(Exception e) =>
+    OnError?.Invoke(e);
+}
+
 public class LogicBlockTest {
+  public static TestListener<TStateType> Listen<TStateType>(
+    LogicBlock<TStateType> logicBlock
+  ) where TStateType : class, IStateLogic<TStateType> => new(logicBlock);
+
   [Fact]
   public void Initializes() {
     var block = new FakeLogicBlock();
@@ -30,6 +56,7 @@ public class LogicBlockTest {
   [Fact]
   public void InvokesInputEvent() {
     var block = new FakeLogicBlock();
+    using var listener = Listen(block);
 
     var called = 0;
     var input = new FakeLogicBlock.Input.InputOne(2, 3);
@@ -39,12 +66,12 @@ public class LogicBlockTest {
       called++;
     }
 
-    block.OnInput += handler;
+    listener.OnInput += handler;
 
     block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
     called.ShouldBe(1);
 
-    block.OnInput -= handler;
+    listener.OnInput -= handler;
 
     block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
     called.ShouldBe(1);
@@ -53,6 +80,7 @@ public class LogicBlockTest {
   [Fact]
   public void InvokesOutputEvent() {
     var block = new FakeLogicBlock();
+    using var listener = Listen(block);
 
     var called = 0;
     var output = new FakeLogicBlock.Output.OutputOne(2);
@@ -62,12 +90,12 @@ public class LogicBlockTest {
       called++;
     }
 
-    block.OnOutput += handler;
+    listener.OnOutput += handler;
 
     block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
     called.ShouldBe(1);
 
-    block.OnOutput -= handler;
+    listener.OnOutput -= handler;
 
     block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
     called.ShouldBe(1);
@@ -76,6 +104,7 @@ public class LogicBlockTest {
   [Fact]
   public void InvokesStateEvent() {
     var block = new FakeLogicBlock();
+    using var listener = Listen(block);
 
     var called = 0;
     var state = new FakeLogicBlock.State.StateA(2, 3);
@@ -85,31 +114,32 @@ public class LogicBlockTest {
       called++;
     }
 
-    block.OnState += handler;
+    listener.OnState += handler;
 
     called.ShouldBe(0);
 
     block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
     called.ShouldBe(1);
 
-    block.OnState -= handler;
+    listener.OnState -= handler;
   }
 
   [Fact]
   public void InvokesErrorEvent() {
     var block = new FakeLogicBlock();
+    using var listener = Listen(block);
 
     var called = 0;
 
     void handler(Exception e) => called++;
 
-    block.OnError += handler;
+    listener.OnError += handler;
 
     block.Input(new FakeLogicBlock.Input.InputError());
 
     called.ShouldBe(1);
 
-    block.OnError -= handler;
+    listener.OnError -= handler;
   }
 
   [Fact]
@@ -148,13 +178,14 @@ public class LogicBlockTest {
   [Fact]
   public void CallsEnterAndExitOnStatesInProperOrder() {
     var logic = new TestMachine();
+    using var listener = Listen(logic);
     var context = new TestMachine.DefaultContext(logic);
 
     var outputs = new List<object>();
 
     void onOutput(object output) => outputs.Add(output);
 
-    logic.OnOutput += onOutput;
+    listener.OnOutput += onOutput;
 
     logic.Value.ShouldBeOfType<TestMachine.State.Deactivated>();
     logic.Input(
@@ -177,7 +208,10 @@ public class LogicBlockTest {
       new TestMachine.Input.Deactivate()
     );
 
+    listener.OnOutput -= onOutput;
+
     outputs.ShouldBe(new object[] {
+      new TestMachine.Output.Deactivated(),
       new TestMachine.Output.DeactivatedCleanUp(),
       new TestMachine.Output.Activated(),
       new TestMachine.Output.Blooped(),
@@ -198,13 +232,14 @@ public class LogicBlockTest {
   [Fact]
   public void CallsEnterAndExitOnStatesInProperOrderForReusedStates() {
     var logic = new TestMachineReusable();
+    using var listener = Listen(logic);
     var context = logic.Context;
 
     var outputs = new List<object>();
 
     void onOutput(object output) => outputs.Add(output);
 
-    logic.OnOutput += onOutput;
+    listener.OnOutput += onOutput;
 
     logic.Value.ShouldBeOfType<TestMachineReusable.State.Deactivated>();
     logic.Input(
@@ -227,7 +262,10 @@ public class LogicBlockTest {
       new TestMachineReusable.Input.Deactivate()
     );
 
+    listener.OnOutput -= onOutput;
+
     outputs.ShouldBe(new object[] {
+      new TestMachineReusable.Output.Deactivated(),
       new TestMachineReusable.Output.DeactivatedCleanUp(),
       new TestMachineReusable.Output.Activated(),
       new TestMachineReusable.Output.Blooped(),
@@ -265,12 +303,13 @@ public class LogicBlockTest {
   [Fact]
   public void InvokesErrorEventFromUpdateHandler() {
     var block = new FakeLogicBlock();
+    using var listener = Listen(block);
 
     var called = 0;
 
     void handler(Exception e) => called++;
 
-    block.OnError += handler;
+    listener.OnError += handler;
 
     block.Input(new FakeLogicBlock.Input.Custom(
       (context) => new FakeLogicBlock.State.OnEnterState(
@@ -283,7 +322,7 @@ public class LogicBlockTest {
 
     called.ShouldBe(1);
 
-    block.OnError -= handler;
+    listener.OnError -= handler;
   }
 
   [Fact]
@@ -369,7 +408,7 @@ public class LogicBlockTest {
 
   [Fact]
   public void CreatesFakeContext() {
-    var inputs = new List<object> { "a", 2, true };
+    var inputs = new List<int> { 1, 2, 3 };
     var outputs = new List<int> { 1, 2 };
     var errors = new List<Exception> {
       new InvalidOperationException(),
@@ -390,7 +429,7 @@ public class LogicBlockTest {
     outputs.ForEach((o) => context.Output(o));
     errors.ForEach((e) => context.AddError(e));
 
-    context.Inputs.ShouldBe(inputs);
+    context.Inputs.Cast<int>().ShouldBe(inputs);
     context.Outputs.ShouldBe(outputs.Select(static t => t as object));
     context.Errors.ShouldBe(errors);
 
@@ -437,5 +476,24 @@ public class LogicBlockTest {
     var state = new FakeLogicBlock.State.StateC("c");
     Should.Throw<InvalidOperationException>(() => block.Restore(state));
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
+  }
+
+  [Fact]
+  public void FirstInputStartsLogicBlockIfNeeded() {
+    var logic = new InputOnInitialState();
+    var inputs = new List<object>();
+
+    using var listener = Listen(logic);
+    void handler(object input) => inputs.Add(input);
+    listener.OnInput += handler;
+
+    logic.Input(new InputOnInitialState.Input.Start());
+
+    listener.OnInput -= handler;
+
+    inputs.ShouldBe(new object[] {
+      new InputOnInitialState.Input.Start(),
+      new InputOnInitialState.Input.Initialize()
+    });
   }
 }

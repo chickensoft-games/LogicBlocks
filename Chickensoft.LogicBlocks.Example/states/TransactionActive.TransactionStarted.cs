@@ -11,7 +11,7 @@ public partial class VendingMachine {
     }
 
     // While in this state, user can change selection as much as they want.
-    public State On(Input.SelectionEntered input) {
+    public State On(in Input.SelectionEntered input) {
       if (Get<VendingMachineStock>().HasItem(input.Type)) {
         return new TransactionStarted(
           input.Type, Prices[input.Type], AmountReceived

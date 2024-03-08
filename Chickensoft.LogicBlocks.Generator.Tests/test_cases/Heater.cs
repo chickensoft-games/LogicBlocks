@@ -40,7 +40,7 @@ public class Heater : LogicBlock<Heater.State> {
   public abstract record State : StateLogic<State>, IGet<Input.TargetTempChanged> {
     public double TargetTemp { get; init; }
 
-    public State On(Input.TargetTempChanged input) => this with {
+    public State On(in Input.TargetTempChanged input) => this with {
       TargetTemp = input.Temp
     };
 
@@ -65,7 +65,7 @@ public class Heater : LogicBlock<Heater.State> {
         );
       }
 
-      public State On(Input.TurnOff input) =>
+      public State On(in Input.TurnOff input) =>
         new Off() { TargetTemp = TargetTemp };
 
       // Whenever our temperature sensor gives us a reading, we will just
@@ -76,7 +76,7 @@ public class Heater : LogicBlock<Heater.State> {
     }
 
     public record Off : State, IGet<Input.TurnOn> {
-      public State On(Input.TurnOn input) {
+      public State On(in Input.TurnOn input) {
         // Get the temperature sensor from the blackboard.
         var tempSensor = Get<ITemperatureSensor>();
 
@@ -91,7 +91,7 @@ public class Heater : LogicBlock<Heater.State> {
     }
 
     public record Idle : Powered, IGet<Input.AirTempSensorChanged> {
-      public State On(Input.AirTempSensorChanged input) {
+      public State On(in Input.AirTempSensorChanged input) {
         if (input.AirTemp < TargetTemp - 3.0d) {
           // Temperature has fallen too far below target temp — start heating.
           return new Heating() { TargetTemp = TargetTemp };
@@ -102,7 +102,7 @@ public class Heater : LogicBlock<Heater.State> {
     }
 
     public record Heating : Powered, IGet<Input.AirTempSensorChanged> {
-      public State On(Input.AirTempSensorChanged input) {
+      public State On(in Input.AirTempSensorChanged input) {
         if (input.AirTemp >= TargetTemp) {
           // We're done heating!
           Context.Output(new Output.FinishedHeating());

@@ -13,14 +13,14 @@ public interface IContext {
   /// </summary>
   /// <param name="input">Input to process.</param>
   /// <typeparam name="TInputType">Type of the input.</typeparam>
-  /// <returns>Logic block input return value.</returns>
-  void Input<TInputType>(TInputType input) where TInputType : notnull;
+  void Input<TInputType>(in TInputType input) where TInputType : struct;
 
   /// <summary>
   /// Produces a logic block output value.
   /// </summary>
+  /// <typeparam name="TOutputType">Type of output to produce.</typeparam>
   /// <param name="output">Output value.</param>
-  void Output<T>(in T output) where T : struct;
+  void Output<TOutputType>(in TOutputType output) where TOutputType : struct;
 
   /// <summary>
   /// Gets a value from the logic block's blackboard.

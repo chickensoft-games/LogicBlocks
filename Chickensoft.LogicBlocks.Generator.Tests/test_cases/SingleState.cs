@@ -13,7 +13,7 @@ public class SingleState : LogicBlock<SingleState.State> {
       this.OnExit(() => Context.Output(new Output.MyOutput()));
     }
 
-    public State On(Input.MyInput input) {
+    public State On(in Input.MyInput input) {
       Context.Output(new Output.MyOutput());
       return this;
     }

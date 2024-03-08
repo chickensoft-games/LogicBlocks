@@ -22,7 +22,7 @@ public partial class VendingMachine {
      );
     }
 
-    public State On(Input.PaymentReceived input) {
+    public State On(in Input.PaymentReceived input) {
       var total = AmountReceived + input.Amount;
 
       if (total < Price) {
@@ -50,7 +50,7 @@ public partial class VendingMachine {
       return new Vending(Type, Price);
     }
 
-    public State On(Input.TransactionTimedOut input) {
+    public State On(in Input.TransactionTimedOut input) {
       if (AmountReceived > 0) {
         // Give any money received back before timing out.
         Context.Output(new Output.MakeChange(AmountReceived));

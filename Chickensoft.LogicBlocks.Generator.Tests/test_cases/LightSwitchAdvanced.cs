@@ -18,7 +18,7 @@ public class LightSwitchAdvanced : LogicBlock<LightSwitchAdvanced.State> {
       }
 
       // If we're toggled while we're on, we turn off.
-      State IGet<Input.Toggle>.On(Input.Toggle input) => new Off();
+      State IGet<Input.Toggle>.On(in Input.Toggle input) => new Off();
     }
 
     public record Off : State, IGet<Input.Toggle> {
@@ -30,7 +30,7 @@ public class LightSwitchAdvanced : LogicBlock<LightSwitchAdvanced.State> {
       }
 
       // If we're toggled while we're off, we turn on.
-      State IGet<Input.Toggle>.On(Input.Toggle input) => new On();
+      State IGet<Input.Toggle>.On(in Input.Toggle input) => new On();
     }
   }
 

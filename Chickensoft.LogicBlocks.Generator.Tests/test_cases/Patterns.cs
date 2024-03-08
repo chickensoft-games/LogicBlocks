@@ -11,7 +11,7 @@ public class Patterns : LogicBlock<Patterns.State> {
   }
 
   public abstract record State : StateLogic<State>, IGet<Input.SetMode> {
-    public State On(Input.SetMode input) => input.Mode switch {
+    public State On(in Input.SetMode input) => input.Mode switch {
       Mode.One => new One(),
       Mode.Two => new Two(),
       Mode.Three => true switch {

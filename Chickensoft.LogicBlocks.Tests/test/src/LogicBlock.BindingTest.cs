@@ -46,10 +46,16 @@ public class BindingTest {
     var callEffect1 = 0;
     var callEffect2 = 0;
 
-    binding.Handle<FakeLogicBlock.Output.OutputOne>(
-      (effect) => { callEffect1++; effect.Value.ShouldBe(1); }
-    ).Handle<FakeLogicBlock.Output.OutputTwo>(
-      (effect) => { callEffect2++; effect.Value.ShouldBe("2"); }
+    binding.Handle(
+      (in FakeLogicBlock.Output.OutputOne effect) => {
+        callEffect1++;
+        effect.Value.ShouldBe(1);
+      }
+    ).Handle(
+      (in FakeLogicBlock.Output.OutputTwo effect) => {
+        callEffect2++;
+        effect.Value.ShouldBe("2");
+      }
     );
 
     // Effects should get handled each time, regardless of if they are
@@ -123,8 +129,8 @@ public class BindingTest {
 
     binding.When<FakeLogicBlock.State.StateA>((value1) => callStateUpdate++);
 
-    binding.Handle<FakeLogicBlock.Output.OutputOne>(
-      (effect) => callSideEffectHandler++
+    binding.Handle(
+      (in FakeLogicBlock.Output.OutputOne effect) => callSideEffectHandler++
     );
 
     block.Input(new FakeLogicBlock.Input.InputOne(4, 5));
@@ -149,8 +155,8 @@ public class BindingTest {
     var inputTwo = 0;
 
     binding
-      .Watch<FakeLogicBlock.Input.InputOne>((input) => inputOne++)
-      .Watch<FakeLogicBlock.Input.InputTwo>((input) => inputTwo++);
+      .Watch((in FakeLogicBlock.Input.InputOne input) => inputOne++)
+      .Watch((in FakeLogicBlock.Input.InputTwo input) => inputTwo++);
 
     block.Input(new FakeLogicBlock.Input.InputOne(1, 2));
     block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));

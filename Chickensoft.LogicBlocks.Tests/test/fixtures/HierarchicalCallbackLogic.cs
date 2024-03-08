@@ -6,24 +6,32 @@ using Chickensoft.LogicBlocks.Generator;
 public class HierarchicalCallbackLogic :
   LogicBlock<HierarchicalCallbackLogic.State> {
   public Func<State> InitialState { get; init; } =
-    () => new State();
+    () => default!;
 
   public override State GetInitialState() => InitialState();
 
-  public HierarchicalCallbackLogic(List<string> log) {
-    Set(log);
+  public static class Output {
+    public readonly record struct Log(string Message);
   }
 
   public record State : StateLogic<State> {
     public State() {
-      this.OnEnter(() => Context.Get<List<string>>().Add("state"));
-      this.OnExit(() => Context.Get<List<string>>().Add("state"));
+      this.OnEnter(
+        () => Context.Output(new Output.Log("state"))
+      );
+      this.OnExit(
+        () => Context.Output(new Output.Log("state"))
+      );
     }
 
     public record Substate : State {
-      public Substate() {
-        this.OnEnter(() => Context.Get<List<string>>().Add("substate"));
-        this.OnExit(() => Context.Get<List<string>>().Add("substate"));
+      public Substate() : base() {
+        this.OnEnter(
+          () => Context.Output(new Output.Log("substate"))
+        );
+        this.OnExit(
+          () => Context.Output(new Output.Log("substate"))
+        );
       }
     }
   }

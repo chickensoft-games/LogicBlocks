@@ -17,12 +17,12 @@ public abstract partial class LogicBlock<TState> {
     /// Triggers bindings to run in response to a new input.
     /// </summary>
     /// <param name="input">Input.</param>
-    void Input(object input);
+    void Input<TInputType>(in TInputType input) where TInputType : struct;
     /// <summary>
     /// Triggers bindings to run in response to an output.
     /// </summary>
     /// <param name="output">Output.</param>
-    void Output(object output);
+    void Output<TOutputType>(in TOutputType output) where TOutputType : struct;
     /// <summary>
     /// Triggers bindings to run in response to an error.
     /// </summary>
@@ -33,9 +33,15 @@ public abstract partial class LogicBlock<TState> {
   internal sealed class FakeBinding : BindingBase, IFakeBinding {
     internal FakeBinding() { }
 
-    public void Input(object input) => InternalOnInput(input);
-    public void SetState(TState state) => InternalOnState(state);
-    public void Output(object output) => InternalOnOutput(output);
-    public void AddError(Exception error) => InternalOnError(error);
+    public void Input<TInputType>(in TInputType input)
+    where TInputType : struct =>
+      (this as ILogicBlockBinding<TState>).MonitorInput(input);
+    public void SetState(TState state) =>
+      (this as ILogicBlockBinding<TState>).MonitorState(state);
+    public void Output<TOutputType>(in TOutputType output)
+    where TOutputType : struct =>
+      (this as ILogicBlockBinding<TState>).MonitorOutput(output);
+    public void AddError(Exception error) =>
+      (this as ILogicBlockBinding<TState>).MonitorException(error);
   }
 }

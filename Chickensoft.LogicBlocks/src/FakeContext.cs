@@ -4,6 +4,40 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+
+/// <summary>
+/// Fake logic block context — provided for your testing convenience.
+/// </summary>
+public interface IFakeContext : IContext {
+  /// <summary>Inputs added to the logic block.</summary>
+  IEnumerable<object> Inputs { get; }
+
+  /// <summary>Outputs added to the logic block.</summary>
+  IEnumerable<object> Outputs { get; }
+
+  /// <summary>Errors added to the logic block.</summary>
+  IEnumerable<Exception> Errors { get; }
+
+  /// <summary>
+  /// Sets a fake value in the logic block's blackboard.
+  /// </summary>
+  /// <param name="value">Value to set.</param>
+  /// <typeparam name="TDataType">Type of value.</typeparam>
+  void Set<TDataType>(TDataType value) where TDataType : class;
+
+  /// <summary>
+  /// Sets multiple fake values in the logic block's blackboard.
+  /// </summary>
+  /// <param name="values">Values to set, keyed by type.</param>
+  void Set(Dictionary<Type, object> values);
+
+  /// <summary>
+  /// Clears the blackboard, the inputs, the outputs, and the errors.
+  /// </summary>
+  void Reset();
+}
+
+
 /// <summary>Fake logic block context used when testing LogicBlocks.</summary>
 internal readonly struct FakeContext : IFakeContext {
   public IEnumerable<object> Inputs => _inputs.AsEnumerable();
@@ -32,11 +66,11 @@ internal readonly struct FakeContext : IFakeContext {
     }
   }
 
-  public void Input<TInputType>(TInputType input)
-    where TInputType : notnull => _inputs.Add(input);
+  public void Input<TInputType>(in TInputType input)
+    where TInputType : struct => _inputs.Add(input);
 
-  public void Output<T>(in T output) where T : struct =>
-    _outputs.Add(output);
+  public void Output<TOutputType>(in TOutputType output)
+    where TOutputType : struct => _outputs.Add(output);
 
   public void AddError(Exception e) => _errors.Add(e);
 

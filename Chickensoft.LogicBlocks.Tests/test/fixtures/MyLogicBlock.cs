@@ -20,7 +20,7 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBloc
         this.OnExit(() => Context.Output(new Output.SomeOutput()));
       }
 
-      public State On(Input.SomeInput input) {
+      public State On(in Input.SomeInput input) {
         Context.Output(new Output.SomeOutput());
         return new SomeOtherState();
       }
@@ -28,7 +28,7 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBloc
 
     public record SomeOtherState : State,
       IGet<Input.SomeOtherInput> {
-      public State On(Input.SomeOtherInput input) {
+      public State On(in Input.SomeOtherInput input) {
         Context.Output(new Output.SomeOtherOutput());
         return new SomeState();
       }

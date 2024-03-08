@@ -18,12 +18,12 @@ public abstract partial class LogicBlock<TState> {
     }
 
     /// <inheritdoc />
-    public void Input<TInputType>(TInputType input)
-      where TInputType : notnull => Logic.Input(input);
+    public void Input<TInputType>(in TInputType input)
+      where TInputType : struct => Logic.Input(input);
 
     /// <inheritdoc />
-    public void Output<T>(in T output) where T : struct =>
-      Logic.OutputValue(output);
+    public void Output<TOutputType>(in TOutputType output)
+      where TOutputType : struct => Logic.OutputValue(output);
 
     /// <inheritdoc />
     public TDataType Get<TDataType>() where TDataType : class =>
@@ -46,8 +46,8 @@ public abstract partial class LogicBlock<TState> {
     public void Clear() => Context = null;
 
     /// <inheritdoc />
-    public void Input<TInputType>(TInputType input)
-      where TInputType : notnull {
+    public void Input<TInputType>(in TInputType input)
+      where TInputType : struct {
       if (Context is not IContext context) {
         throw new InvalidOperationException(
           "Cannot add input to a logic block with an uninitialized context."
@@ -58,7 +58,8 @@ public abstract partial class LogicBlock<TState> {
     }
 
     /// <inheritdoc />
-    public void Output<T>(in T output) where T : struct {
+    public void Output<TOutputType>(in TOutputType output)
+    where TOutputType : struct {
       if (Context is not { } context) {
         throw new InvalidOperationException(
           "Cannot add output to a logic block with an uninitialized context."

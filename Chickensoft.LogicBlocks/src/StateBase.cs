@@ -157,11 +157,4 @@ public abstract record StateBase : IStateBase {
   /// <param name="handler">Callback to be invoked when the state is exited.
   /// </param>
   internal abstract void OnExit<TDerivedState>(Action<object?> handler);
-
-  internal virtual void WithType(ITypeReceiver receiver) =>
-    receiver.Receive<object>();
-}
-
-internal interface ITypeReceiver {
-  void Receive<T>();
 }

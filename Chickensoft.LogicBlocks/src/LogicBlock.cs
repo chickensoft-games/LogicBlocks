@@ -29,18 +29,6 @@ public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
   /// Whether or not the logic block is currently processing inputs.
   /// </summary>
   bool IsProcessing { get; }
-  /// <summary>Event invoked whenever an input is processed.</summary>
-  event Action<object>? OnInput;
-  /// <summary>Event invoked whenever the state is updated.</summary>
-  event Action<TState>? OnState;
-  /// <summary>
-  /// Event invoked whenever an output is produced by an input handler.
-  /// </summary>
-  event Action<object>? OnOutput;
-  /// <summary>
-  /// Event invoked whenever an error occurs in a state's input handler.
-  /// </summary>
-  event Action<Exception>? OnError;
   /// <summary>
   /// Gets data from the blackboard.
   /// </summary>
@@ -60,7 +48,7 @@ public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
   /// <param name="input">Input to process.</param>
   /// <typeparam name="TInputType">Type of the input.</typeparam>
   /// <returns>Logic block input return value.</returns>
-  TState Input<TInputType>(TInputType input) where TInputType : notnull;
+  TState Input<TInputType>(in TInputType input) where TInputType : struct;
 
   /// <summary>
   /// Creates a binding to a logic block.
@@ -105,7 +93,7 @@ public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
 /// </para>
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
-public abstract partial class LogicBlock<TState>
+public abstract partial class LogicBlock<TState> : IInputHandler
 where TState : class, IStateLogic<TState> {
   /// <summary>
   /// Creates a fake logic binding that can be used to more easily test objects
@@ -114,46 +102,8 @@ where TState : class, IStateLogic<TState> {
   /// <returns>Fake binding.</returns>
   public static IFakeBinding CreateFakeBinding() => new FakeBinding();
 
-  /// <summary>
-  /// Represents a function which receives an input object and returns a
-  /// state.
-  /// </summary>
-  /// <param name="input">Input object.</param>
-  /// <returns>State.</returns>
-  internal delegate TState InputHandler(object input);
-
-  /// <summary>
-  /// Represents a single input that is waiting to be processed.
-  /// </summary>
-  internal readonly struct PendingInput {
-    /// <summary>Input object.</summary>
-    public object Input { get; }
-    /// <summary>
-    /// A function which returns a function that processes the input.
-    /// </summary>
-    public Func<InputHandler> GetHandler { get; }
-
-    /// <summary>Create a new pending input.</summary>
-    /// <param name="input">Input object.</param>
-    /// <param name="getHandler">Function which returns a function that
-    /// processes the input.</param>
-    public PendingInput(object input, Func<InputHandler> getHandler) {
-      Input = input;
-      GetHandler = getHandler;
-    }
-  }
-
   /// <inheritdoc />
   public abstract TState GetInitialState();
-
-  /// <inheritdoc />
-  public event Action<object>? OnInput;
-  /// <inheritdoc />
-  public event Action<TState>? OnState;
-  /// <inheritdoc />
-  public event Action<object>? OnOutput;
-  /// <inheritdoc />
-  public event Action<Exception>? OnError;
 
   /// <summary>
   /// The context provided to the states of the logic block.
@@ -163,8 +113,24 @@ where TState : class, IStateLogic<TState> {
   private TState? _value;
   private TState? _restoredState;
 
-  private readonly Queue<PendingInput> _inputs = new();
+  private readonly InputQueue _inputs;
   private readonly Dictionary<Type, object> _blackboard = new();
+
+  private readonly HashSet<ILogicBlockBinding<TState>> _bindings = new();
+
+  /// <summary>
+  /// <para>Creates a new LogicBlock.</para>
+  /// <para>
+  /// A logic block is a machine that receives input, maintains a
+  /// single state, and produces outputs. It can be used as a simple
+  /// input-to-state reducer, or built upon to create a hierarchical state
+  /// machine.
+  /// </para>
+  /// </summary>
+  protected LogicBlock() {
+    _inputs = new(this);
+    Context = new DefaultContext(this);
+  }
 
   /// <inheritdoc />
   public virtual IBinding Bind() => new Binding(this);
@@ -190,14 +156,9 @@ where TState : class, IStateLogic<TState> {
   }
 
   /// <inheritdoc />
-  public virtual TState Input<TInputType>(TInputType input)
-  where TInputType : notnull {
-    _inputs.Enqueue(
-      new PendingInput(input, GetInputHandler<TInputType>)
-    );
-
-    return Process();
-  }
+  public virtual TState Input<TInputType>(
+    in TInputType input
+  ) where TInputType : struct => ProcessInputs<TInputType>(input);
 
   /// <summary>
   /// <para>
@@ -228,12 +189,11 @@ where TState : class, IStateLogic<TState> {
   /// Adds an error to the logic block. Call this from your states to
   /// register errors that occur. Logic blocks are designed to be resilient
   /// to errors, so registering errors instead of stopping execution is
-  /// preferred in most cases. You can subscribe to the <see cref="OnError"/>
-  /// event and re-throw the error if you want to stop execution.
+  /// preferred in most cases.
   /// </summary>
   /// <param name="e">Exception to add.</param>
   internal virtual void AddError(Exception e) {
-    OnError?.Invoke(e);
+    AnnounceException(e);
     HandleError(e);
   }
 
@@ -251,29 +211,11 @@ where TState : class, IStateLogic<TState> {
   /// equivalent to the idea of actions in statecharts.
   /// </summary>
   /// <param name="output">Output value.</param>
-  internal virtual void OutputValue(in object output) =>
-    OnOutput?.Invoke(output);
-
-  internal bool GetNextInput(out PendingInput input) {
-    if (_inputs.TryDequeue(out var pending)) {
-      input = pending;
-      return true;
-    }
-    input = default;
-    return false;
-  }
+  internal virtual void OutputValue<TOutput>(in TOutput output)
+    where TOutput : struct => AnnounceOutput(output);
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   private void SetState(TState state) => _value = state;
-
-  // Announce state change.
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private void FinalizeStateChange(TState state) =>
-    OnState?.Invoke(state);
-
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private void AnnounceInput(object input) =>
-    OnInput?.Invoke(input);
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   private TState GetStartState() {
@@ -330,89 +272,121 @@ where TState : class, IStateLogic<TState> {
   /// </summary>
   public bool IsProcessing { get; private set; }
 
-  /// <summary>
-  /// <para>Creates a new LogicBlock.</para>
-  /// <para>
-  /// A logic block is a machine that receives input, maintains a
-  /// single state, and produces outputs. It can be used as a simple
-  /// input-to-state reducer, or built upon to create a hierarchical state
-  /// machine.
-  /// </para>
-  /// </summary>
-  protected LogicBlock() {
-    Context = new DefaultContext(this);
-  }
-
   /// <inheritdoc />
-  public TState Value => _value ?? AttachState();
+  public TState Value => _value ?? ProcessInputs<int>();
 
   private TState AttachState() {
-    IsProcessing = true;
     _value = GetStartState();
     _value.Attach(Context);
-    IsProcessing = false;
-    return Process();
+    return _value;
   }
 
-  /// <summary>
-  /// Called whenever an input needs to be processed. This method should remove
-  /// the input from the input queue and invoke the appropriate input handler.
-  /// It may use <see cref="AnnounceInput(object)" /> to announce when it
-  /// processes an individual input. This method should call
-  /// <see cref="SetState(TState)" /> whenever the state should be changed, and
-  /// <see cref="FinalizeStateChange(TState)" /> after all state changes have
-  /// been made.
-  /// </summary>
-  /// <returns>Returns a value that is returned to the caller by the input
-  /// handler.</returns>
-  internal TState Process() {
+  internal TState ProcessInputs<TInputType>(
+    in TInputType? input = null
+  ) where TInputType : struct {
     if (_value is null) {
-      // No state yet.
-      return AttachState(); // Calls Process() again.
+      // No state yet. Let's get the first state going!
+      IsProcessing = true;
+      AttachState();
+      Start();
+      IsProcessing = false;
     }
 
     if (IsProcessing) {
+      if (input.HasValue) {
+        _inputs.Enqueue(input.Value);
+      }
+
       return Value;
     }
 
     IsProcessing = true;
 
-    while (GetNextInput(out var pendingInput)) {
-      var handler = pendingInput.GetHandler();
-      var input = pendingInput.Input;
+    // We can process the first input immediately.
+    if (input.HasValue) {
+      (this as IInputHandler).HandleInput(input.Value);
+    }
 
-      // Get next state.
-      var state = handler(input);
-
-      AnnounceInput(input);
-
-      if (!CanChangeState(state)) {
-        // The only time we can't change states is if the new state is
-        // equivalent to the old state (determined by the default equality
-        // comparer)
-        continue;
-      }
-
-      var previous = Value;
-
-      // Exit the previous state.
-      previous.Exit(state, AddError);
-
-      previous.Detach();
-
-      SetState(state);
-
-      state.Attach(Context);
-
-      // Enter the next state.
-      state.Enter(previous, AddError);
-
-      FinalizeStateChange(state);
+    while (_inputs.HasInputs()) {
+      _inputs.HandleInput();
     }
 
     IsProcessing = false;
 
     return Value;
+  }
+
+  void IInputHandler.HandleInput<TInputType>(in TInputType input)
+  where TInputType : struct {
+    if (_value is not IGet<TInputType> stateWithInputHandler) {
+      return;
+    }
+
+    // Run the input handler on the state to get the next state.
+    var state = RunInputHandler(stateWithInputHandler, in input, _value);
+
+    AnnounceInput(in input);
+
+    if (!CanChangeState(state)) {
+      // The only time we can't change states is if the new state is
+      // equivalent to the old state (determined by the default equality
+      // comparer)
+      return;
+    }
+
+    var previous = _value;
+
+    // Exit the previous state.
+    previous.Exit(state, AddError);
+
+    previous.Detach();
+
+    SetState(state);
+
+    state.Attach(Context);
+
+    // Enter the next state.
+    state.Enter(previous, AddError);
+
+    AnnounceState(state);
+  }
+
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  internal void AddBinding(ILogicBlockBinding<TState> binding) =>
+    _bindings.Add(binding);
+
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  internal void RemoveBinding(ILogicBlockBinding<TState> binding) =>
+    _bindings.Remove(binding);
+
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  private void AnnounceInput<TInputType>(in TInputType input)
+  where TInputType : struct {
+    foreach (var binding in _bindings) {
+      binding.MonitorInput(in input);
+    }
+  }
+
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  private void AnnounceState(TState state) {
+    foreach (var binding in _bindings) {
+      binding.MonitorState(state);
+    }
+  }
+
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  private void AnnounceOutput<TOutputType>(TOutputType output)
+  where TOutputType : struct {
+    foreach (var binding in _bindings) {
+      binding.MonitorOutput(in output);
+    }
+  }
+
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  private void AnnounceException(Exception exception) {
+    foreach (var binding in _bindings) {
+      binding.MonitorException(exception);
+    }
   }
 
   /// <inheritdoc />
@@ -426,30 +400,12 @@ where TState : class, IStateLogic<TState> {
     SetState(null!);
   }
 
-  /// <summary>
-  /// <para>
-  /// Gets the input handler for a given input type. This can be overridden by
-  /// subclasses that want to customize how input handlers are retrieved.
-  /// </para>
-  /// <para>
-  /// Customizing how input handlers are resolved can be useful in scenarios
-  /// where you want to redirect input to the state itself or some other
-  /// mechanism.
-  /// </para>
-  /// </summary>
-  /// <typeparam name="TInputType">Input type.</typeparam>
-  /// <exception cref="InvalidOperationException" />
-  private InputHandler GetInputHandler<TInputType>()
-    => (input) => {
-      if (Value is IGet<TInputType> stateWithHandler) {
-        return RunSafe(() => stateWithHandler.On((TInputType)input), Value);
-      }
-
-      return Value;
-    };
-
-  private TState RunSafe(Func<TState> handler, TState fallback) {
-    try { return handler(); }
+  private TState RunInputHandler<TInputType>(
+    IGet<TInputType> inputHandler,
+    in TInputType input,
+    TState fallback
+  ) {
+    try { return inputHandler.On(input); }
     catch (Exception e) { AddError(e); }
     return fallback;
   }

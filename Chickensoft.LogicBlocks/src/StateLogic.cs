@@ -67,9 +67,6 @@ public abstract record StateLogic<TState> : StateBase, IStateLogic<TState>
   protected TData Get<TData>() where TData : class =>
     Context.Get<TData>();
 
-  internal override void WithType(ITypeReceiver receiver) =>
-    receiver.Receive<TState>();
-
   private void CallOnEnterCallbacks(
     TState? previous, TState? next, Action<Exception>? onError
   ) {

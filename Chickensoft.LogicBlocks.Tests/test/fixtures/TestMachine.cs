@@ -15,7 +15,7 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
   }
 
   public abstract record State : StateLogic<State>, IGet<Input.Activate> {
-    public State On(Input.Activate input) =>
+    public State On(in Input.Activate input) =>
       input.Secondary switch {
         SecondaryState.Blooped => new Activated.Blooped(),
         SecondaryState.Bopped => new Activated.Bopped(),
@@ -28,7 +28,7 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
         this.OnExit(() => Context.Output(new Output.ActivatedCleanUp()));
       }
 
-      public State On(Input.Deactivate input) => new Deactivated();
+      public State On(in Input.Deactivate input) => new Deactivated();
 
       public record Blooped : Activated {
         public Blooped() {

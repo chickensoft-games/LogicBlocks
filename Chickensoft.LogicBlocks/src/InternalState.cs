@@ -59,6 +59,8 @@ internal readonly struct InternalState {
   /// <inheritdoc />
   public override int GetHashCode() => HashCode.Combine(
     EnterCallbacks,
-    ExitCallbacks
+    ExitCallbacks,
+    AttachCallbacks,
+    DetachCallbacks
   );
 }

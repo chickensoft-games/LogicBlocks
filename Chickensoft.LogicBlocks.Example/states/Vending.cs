@@ -12,6 +12,6 @@ public partial class VendingMachine {
       this.OnEnter(() => Context.Output(new Output.BeginVending()));
     }
 
-    public State On(Input.VendingCompleted input) => new Idle();
+    public State On(in Input.VendingCompleted input) => new Idle();
   }
 }

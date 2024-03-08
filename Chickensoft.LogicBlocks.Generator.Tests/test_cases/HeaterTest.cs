@@ -14,7 +14,7 @@ public class HeaterTest {
     var finishedHeating = false;
     using var binding = heater.Bind();
 
-    binding.Handle<Heater.Output.FinishedHeating>((output) =>
+    binding.Handle((in Heater.Output.FinishedHeating output) =>
       finishedHeating = true
     );
 
@@ -44,8 +44,9 @@ public class HeaterTest {
     var messages = new List<string>();
 
     // Handle an output produced by the heater.
-    binding.Handle<Heater.Output.FinishedHeating>(
-      (output) => messages.Add("Finished heating :)")
+    binding.Handle(
+      (in Heater.Output.FinishedHeating output) =>
+        messages.Add("Finished heating :)")
     );
 
     binding.When<Heater.State.Off>(

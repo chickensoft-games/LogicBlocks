@@ -9,7 +9,7 @@ public partial class VendingMachine {
       ));
     }
 
-    public State On(Input.SelectionEntered input) {
+    public State On(in Input.SelectionEntered input) {
       if (Get<VendingMachineStock>().HasItem(input.Type)) {
         return new TransactionStarted(
           input.Type, Prices[input.Type], 0
@@ -18,7 +18,7 @@ public partial class VendingMachine {
       return this;
     }
 
-    public State On(Input.PaymentReceived input) {
+    public State On(in Input.PaymentReceived input) {
       // Money was deposited with no selection — eject it right back.
       //
       // We could be evil and keep it, but we'd ruin our reputation as a

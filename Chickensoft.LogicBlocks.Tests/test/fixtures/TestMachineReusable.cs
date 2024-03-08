@@ -11,7 +11,7 @@ LogicBlock<TestMachineReusable.State> {
   }
 
   public abstract record State : StateLogic<State>, IGet<Input.Activate> {
-    public State On(Input.Activate input) =>
+    public State On(in Input.Activate input) =>
       input.Secondary switch {
         SecondaryState.Blooped => Context.Get<Activated.Blooped>(),
         SecondaryState.Bopped => Context.Get<Activated.Bopped>(),
@@ -24,7 +24,7 @@ LogicBlock<TestMachineReusable.State> {
         this.OnExit(() => Context.Output(new Output.ActivatedCleanUp()));
       }
 
-      public State On(Input.Deactivate input) => Context.Get<Deactivated>();
+      public State On(in Input.Deactivate input) => Context.Get<Deactivated>();
 
       public record Blooped : Activated {
         public Blooped() {

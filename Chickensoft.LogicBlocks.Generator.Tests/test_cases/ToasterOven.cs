@@ -18,7 +18,7 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         this.OnExit(() => Context.Output(new Output.TurnHeaterOff()));
       }
 
-      public State On(Input.OpenDoor input) => new DoorOpen();
+      public State On(in Input.OpenDoor input) => new DoorOpen();
     }
 
     public record Toasting : Heating, IGet<Input.StartBaking> {
@@ -31,7 +31,7 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         this.OnExit(() => Context.Output(new Output.ResetTimer()));
       }
 
-      public State On(Input.StartBaking input) => new Baking(input.Temperature);
+      public State On(in Input.StartBaking input) => new Baking(input.Temperature);
     }
 
     public record Baking : Heating, IGet<Input.StartToasting> {
@@ -48,7 +48,7 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         );
       }
 
-      public State On(Input.StartToasting input) => new Toasting(
+      public State On(in Input.StartToasting input) => new Toasting(
         input.ToastColor
       );
     }
@@ -59,7 +59,7 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         this.OnExit(() => Context.Output(new Output.TurnLampOff()));
       }
 
-      public State On(Input.CloseDoor input) => new Toasting(
+      public State On(in Input.CloseDoor input) => new Toasting(
         input.ToastColor
       );
     }
