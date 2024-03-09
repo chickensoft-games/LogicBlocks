@@ -2,6 +2,8 @@ namespace Chickensoft.LogicBlocks;
 
 using System;
 
+/// <summary>Represents a logic block binding.</summary>
+/// <typeparam name="TState">Logic block state type.</typeparam>
 public interface ILogicBlockBinding<TState>
 where TState : class, IStateLogic<TState> {
   internal void MonitorInput<TInputType>(in TInputType input)
