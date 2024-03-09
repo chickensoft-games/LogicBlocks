@@ -30,6 +30,7 @@ internal class InputQueue {
 
   private abstract class TypedInputQueue {
     public abstract void HandleInput(IInputHandler inputProcessor);
+    public abstract void Clear();
   }
 
   private class TypedMessageQueue<T> : TypedInputQueue where T : struct {
@@ -39,14 +40,16 @@ internal class InputQueue {
 
     public override void HandleInput(IInputHandler inputProcessor) =>
       inputProcessor.HandleInput(_queue.Dequeue());
+
+    public override void Clear() => _queue.Clear();
   }
 
-  private readonly IInputHandler _handler;
+  public IInputHandler Handler { get; }
   private readonly Queue<Type> _queueSelectorQueue = new();
   private readonly Dictionary<Type, TypedInputQueue> _queues = new();
 
   public InputQueue(IInputHandler handler) {
-    _handler = handler;
+    Handler = handler;
   }
 
   public void Enqueue<T>(T message) where T : struct {
@@ -64,10 +67,18 @@ internal class InputQueue {
     _queueSelectorQueue.Enqueue(typeof(T));
   }
 
-  public bool HasInputs() => _queueSelectorQueue.Count > 0;
+  public bool HasInputs => _queueSelectorQueue.Count > 0;
 
   public void HandleInput() {
     var type = _queueSelectorQueue.Dequeue();
-    _queues[type].HandleInput(_handler);
+    _queues[type].HandleInput(Handler);
+  }
+
+  public void Clear() {
+    _queueSelectorQueue.Clear();
+
+    foreach (var queue in _queues.Values) {
+      queue.Clear();
+    }
   }
 }

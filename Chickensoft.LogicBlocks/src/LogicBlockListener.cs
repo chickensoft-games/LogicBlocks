@@ -101,11 +101,11 @@ where TState : class, IStateLogic<TState> {
 public class LogicBlockListener<TState> : LogicBlockListenerBase<TState>
 where TState : class, IStateLogic<TState> {
   /// <summary>Logic block being listened to.</summary>
-  public LogicBlock<TState> LogicBlock { get; }
+  public ILogicBlock<TState> LogicBlock { get; }
 
   /// <inheritdoc cref="LogicBlockListenerBase{TState}" />
   /// <param name="logicBlock">Logic block to listen to.</param>
-  public LogicBlockListener(LogicBlock<TState> logicBlock) {
+  public LogicBlockListener(ILogicBlock<TState> logicBlock) {
     LogicBlock = logicBlock;
     LogicBlock.AddBinding(this);
   }

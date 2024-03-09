@@ -76,19 +76,19 @@ public partial class FakeLogicBlock {
     public record NothingState : State;
 
     public record Custom : State {
-      public Custom(IContext context, Action<IContext> setupCallback) {
-        setupCallback(context);
+      public Custom(Action setupCallback) {
+        setupCallback();
       }
     }
 
     public record OnEnterState : State {
-      public OnEnterState(IContext context, Action<State?> onEnter) {
+      public OnEnterState(Action<State?> onEnter) {
         this.OnEnter(onEnter);
       }
     }
 
     public record OnExitState : State {
-      public OnExitState(IContext context, Action<State?> onExit) {
+      public OnExitState(Action<State?> onExit) {
         this.OnExit(onExit);
       }
     }
@@ -101,7 +101,7 @@ public partial class FakeLogicBlock {
 }
 
 public partial class FakeLogicBlock : LogicBlock<FakeLogicBlock.State> {
-  public Func<State>? InitialState { get; init; }
+  public Func<State>? InitialState { get; set; }
 
   public List<Exception> Exceptions { get; } = new();
 

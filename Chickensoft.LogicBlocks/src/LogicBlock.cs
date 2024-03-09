@@ -30,6 +30,11 @@ public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
   /// </summary>
   bool IsProcessing { get; }
   /// <summary>
+  /// Whether or not the logic block has been started. A logic block is started
+  /// if its underlying state has been initialized.
+  /// </summary>
+  bool IsStarted { get; }
+  /// <summary>
   /// Gets data from the blackboard.
   /// </summary>
   /// <typeparam name="TData">The type of data to retrieve.</typeparam>
@@ -57,29 +62,57 @@ public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
   LogicBlock<TState>.IBinding Bind();
 
   /// <summary>
-  /// Restores the logic block from a state. This method can only be called
-  /// before the logic block has been started. The state provided to this method
-  /// takes precedence over <see cref="GetInitialState"/>, ensuring that the
-  /// logic block's first state will be the one provided here.
-  /// </summary>
-  /// <param name="state">State to use as the logic block's initial state.
-  /// </param>
-  void Restore(TState state);
-
-  /// <summary>
   /// Starts the logic block by entering the current state. If the logic block
-  /// hasn't initialized yet, this will create the initial state before entering
-  /// it.
+  /// is already started, nothing happens. If the logic block
+  /// has not initialized its underlying state, it will initialize it by calling
+  /// <see cref="GetInitialState" /> and attaching it to the logic block first.
   /// </summary>
   void Start();
 
   /// <summary>
-  /// Stops the logic block by exiting the current state. For best results,
-  /// don't continue to give inputs to the logic block after stopping it.
-  /// Otherwise, you might end up firing the exit handler of a state more than
-  /// once.
+  /// Stops the logic block. This calls any OnExit callbacks the current state
+  /// registered before detaching it. If any inputs are created while the
+  /// state is exiting and detaching, they are cleared instead of being
+  /// processed.
   /// </summary>
   void Stop();
+
+  /// <summary>
+  /// <para>
+  /// Forcibly resets the logic block to the specified state, even if the
+  /// LogicBlock is on another state that would never transition to the
+  /// given state. This can be leveraged by systems outside the logic block's
+  /// own states to force the logic block to a specific state, such as when
+  /// deserializing a logic block state.
+  /// </para>
+  /// <para>
+  /// If the logic block has no underlying state (because it hasn't been started
+  /// or was stopped), this will make the specified state the initial state.
+  /// </para>
+  /// <para>
+  /// When resetting, the logic block will exit and detach any current state,
+  /// if it has one, before attaching and entering the given state.
+  /// </para>
+  /// </summary>
+  /// <param name="state">State to forcibly reset to.</param>
+  TState ForceReset(TState state);
+
+  /// <summary>
+  /// Adds a binding to the logic block. This is used internally by the standard
+  /// bindings implementation. Prefer using <see cref="Bind" /> to create an
+  /// instance of the standard bindings which allow you to easily observe a
+  /// logic block's inputs, states, outputs, and exceptions.
+  /// </summary>
+  /// <param name="binding">Logic block binding.</param>
+  void AddBinding(ILogicBlockBinding<TState> binding);
+  /// <summary>
+  /// Removes a binding from the logic block. This is used internally by the
+  /// standard bindings implementation. Prefer using <see cref="Bind" /> to
+  /// create an instance of the standard bindings which allow you to easily
+  /// observe a logic block's inputs, states, outputs, and exceptions.
+  /// </summary>
+  /// <param name="binding">Logic block binding.</param>
+  void RemoveBinding(ILogicBlockBinding<TState> binding);
 }
 
 /// <summary>
@@ -93,8 +126,8 @@ public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
 /// </para>
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
-public abstract partial class LogicBlock<TState> : IInputHandler
-where TState : class, IStateLogic<TState> {
+public abstract partial class LogicBlock<TState> : ILogicBlock<TState>,
+IInputHandler where TState : class, IStateLogic<TState> {
   /// <summary>
   /// Creates a fake logic binding that can be used to more easily test objects
   /// that bind to logic blocks.
@@ -103,19 +136,21 @@ where TState : class, IStateLogic<TState> {
   public static IFakeBinding CreateFakeBinding() => new FakeBinding();
 
   /// <inheritdoc />
-  public abstract TState GetInitialState();
-
-  /// <summary>
-  /// The context provided to the states of the logic block.
-  /// </summary>
   public IContext Context { get; }
 
-  private TState? _value;
-  private TState? _restoredState;
+  /// <inheritdoc />
+  public bool IsProcessing => _isProcessing > 0;
 
+  /// <inheritdoc />
+  public bool IsStarted => _value is not null;
+
+  /// <inheritdoc />
+  public TState Value => _value ?? Flush();
+
+  private TState? _value;
+  private int _isProcessing;
   private readonly InputQueue _inputs;
   private readonly Dictionary<Type, object> _blackboard = new();
-
   private readonly HashSet<ILogicBlockBinding<TState>> _bindings = new();
 
   /// <summary>
@@ -133,32 +168,75 @@ where TState : class, IStateLogic<TState> {
   }
 
   /// <inheritdoc />
-  public virtual IBinding Bind() => new Binding(this);
+  public abstract TState GetInitialState();
 
   /// <inheritdoc />
-  public void Restore(TState state) {
-    if (_restoredState is not null) {
-      throw new InvalidOperationException(
-        $"Logic block was already restored. Note that a logic block cannot " +
-        "be restored more than once."
-      );
-    }
-
-    if (_value is not null) {
-      throw new InvalidOperationException(
-        $"Attempted to restore a logic block that was already started. Note " +
-        "that a logic block cannot be restored after its first state is " +
-        "created."
-      );
-    }
-
-    _restoredState = state;
-  }
+  public virtual IBinding Bind() => new Binding(this);
 
   /// <inheritdoc />
   public virtual TState Input<TInputType>(
     in TInputType input
-  ) where TInputType : struct => ProcessInputs<TInputType>(input);
+  ) where TInputType : struct {
+    if (IsProcessing) {
+      _inputs.Enqueue(input);
+      return Value;
+    }
+    return ProcessInputs<TInputType>(input);
+  }
+
+  /// <inheritdoc />
+  public void Start() {
+    if (IsProcessing || _value is not null) { return; }
+
+    Flush();
+  }
+
+  /// <inheritdoc />
+  public void Stop() {
+    if (IsProcessing || _value is null) { return; }
+
+    // Repeatedly exit and detach the current state until there is none.
+    ChangeState(null);
+
+    _inputs.Clear();
+
+    // A state finally exited and detached without queuing additional inputs.
+    _value = null;
+  }
+
+  /// <inheritdoc />
+  public TState ForceReset(TState state) {
+    if (IsProcessing) {
+      throw new LogicBlockException(
+        "Cannot force reset a logic block while it is processing inputs. " +
+        "Do not call ForceReset() from inside a logic block's own state."
+      );
+    }
+
+    ChangeState(state);
+
+    return Flush();
+  }
+
+  /// <inheritdoc />
+  public TData Get<TData>() where TData : class {
+    var type = typeof(TData);
+    return !_blackboard.TryGetValue(type, out var data)
+      ? throw new LogicBlockException(
+        $"Data of type {type} not found in the blackboard."
+      )
+      : (data as TData)!;
+  }
+
+  /// <inheritdoc />
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  public void AddBinding(ILogicBlockBinding<TState> binding) =>
+    _bindings.Add(binding);
+
+  /// <inheritdoc />
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  public void RemoveBinding(ILogicBlockBinding<TState> binding) =>
+    _bindings.Remove(binding);
 
   /// <summary>
   /// <para>
@@ -198,14 +276,6 @@ where TState : class, IStateLogic<TState> {
   }
 
   /// <summary>
-  /// Called when the logic block encounters an error. Overriding this method
-  /// allows you to customize how errors are handled. If you throw the error
-  /// again from this method, you can make errors stop execution.
-  /// </summary>
-  /// <param name="e">Exception that occurred.</param>
-  protected virtual void HandleError(Exception e) { }
-
-  /// <summary>
   /// Produces an output. Outputs are one-shot side effects that allow you
   /// to communicate with the world outside the logic block. Outputs are
   /// equivalent to the idea of actions in statecharts.
@@ -214,31 +284,13 @@ where TState : class, IStateLogic<TState> {
   internal virtual void OutputValue<TOutput>(in TOutput output)
     where TOutput : struct => AnnounceOutput(output);
 
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private void SetState(TState state) => _value = state;
-
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private TState GetStartState() {
-    if (_restoredState is not { } state) {
-      // No state to restore from, so let the developer's override of
-      // GetInitialState determine the start state.
-      return GetInitialState();
-    }
-
-    // Clear restored state and return it as the first state.
-    _restoredState = default;
-    return state;
-  }
-
-  /// <inheritdoc />
-  public TData Get<TData>() where TData : class {
-    var type = typeof(TData);
-    return !_blackboard.TryGetValue(type, out var data)
-      ? throw new KeyNotFoundException(
-        $"Data of type {type} not found in the blackboard."
-      )
-      : (data as TData)!;
-  }
+  /// <summary>
+  /// Called when the logic block encounters an error. Overriding this method
+  /// allows you to customize how errors are handled. If you throw the error
+  /// again from this method, you can make errors stop execution.
+  /// </summary>
+  /// <param name="e">Exception that occurred.</param>
+  protected virtual void HandleError(Exception e) { }
 
   /// <summary>
   /// Adds data to the blackboard. Data is retrieved by its type, so do not add
@@ -251,7 +303,7 @@ where TState : class, IStateLogic<TState> {
   protected void Set<TData>(TData data) where TData : class {
     var type = typeof(TData);
     if (!_blackboard.TryAdd(type, data)) {
-      throw new ArgumentException(
+      throw new LogicBlockException(
         $"Data of type {type} already exists in the blackboard."
       );
     }
@@ -267,53 +319,31 @@ where TState : class, IStateLogic<TState> {
   protected void Overwrite<TData>(TData data) where TData : class =>
     _blackboard[typeof(TData)] = data;
 
-  /// <summary>
-  /// Whether or not the logic block is processing inputs.
-  /// </summary>
-  public bool IsProcessing { get; private set; }
-
-  /// <inheritdoc />
-  public TState Value => _value ?? ProcessInputs<int>();
-
-  private TState AttachState() {
-    _value = GetStartState();
-    _value.Attach(Context);
-    return _value;
-  }
-
   internal TState ProcessInputs<TInputType>(
     in TInputType? input = null
   ) where TInputType : struct {
+    _isProcessing++;
+
     if (_value is null) {
       // No state yet. Let's get the first state going!
-      IsProcessing = true;
-      AttachState();
-      Start();
-      IsProcessing = false;
+      _value = GetInitialState();
+      _value.Attach(Context);
+      _value.Enter(null);
     }
 
-    if (IsProcessing) {
-      if (input.HasValue) {
-        _inputs.Enqueue(input.Value);
-      }
-
-      return Value;
-    }
-
-    IsProcessing = true;
-
-    // We can process the first input immediately.
+    // We can always process the first input directly.
+    // This keeps single inputs off the heap.
     if (input.HasValue) {
       (this as IInputHandler).HandleInput(input.Value);
     }
 
-    while (_inputs.HasInputs()) {
+    while (_inputs.HasInputs) {
       _inputs.HandleInput();
     }
 
-    IsProcessing = false;
+    _isProcessing--;
 
-    return Value;
+    return _value;
   }
 
   void IInputHandler.HandleInput<TInputType>(in TInputType input)
@@ -334,30 +364,26 @@ where TState : class, IStateLogic<TState> {
       return;
     }
 
-    var previous = _value;
-
-    // Exit the previous state.
-    previous.Exit(state, AddError);
-
-    previous.Detach();
-
-    SetState(state);
-
-    state.Attach(Context);
-
-    // Enter the next state.
-    state.Enter(previous, AddError);
-
-    AnnounceState(state);
+    ChangeState(state);
   }
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  internal void AddBinding(ILogicBlockBinding<TState> binding) =>
-    _bindings.Add(binding);
+  private void ChangeState(TState? state) {
+    _isProcessing++;
+    var previous = _value;
 
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  internal void RemoveBinding(ILogicBlockBinding<TState> binding) =>
-    _bindings.Remove(binding);
+    previous?.Exit(state);
+    previous?.Detach();
+
+    _value = state;
+
+    if (state is not null) {
+      state.Attach(Context);
+      state.Enter(previous);
+      AnnounceState(state);
+    }
+    _isProcessing--;
+  }
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   private void AnnounceInput<TInputType>(in TInputType input)
@@ -389,17 +415,7 @@ where TState : class, IStateLogic<TState> {
     }
   }
 
-  /// <inheritdoc />
-  public void Start() =>
-    Value.Enter(previous: null, onError: AddError);
-
-  /// <inheritdoc />
-  public void Stop() {
-    Value.Exit(next: null, onError: AddError);
-    Value.Detach();
-    SetState(null!);
-  }
-
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
   private TState RunInputHandler<TInputType>(
     IGet<TInputType> inputHandler,
     in TInputType input,
@@ -409,4 +425,11 @@ where TState : class, IStateLogic<TState> {
     catch (Exception e) { AddError(e); }
     return fallback;
   }
+
+  /// <summary>
+  /// Processes inputs and changes state until there are no more inputs.
+  /// </summary>
+  /// <returns>The resting state.</returns>
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  private TState Flush() => ProcessInputs<int>();
 }

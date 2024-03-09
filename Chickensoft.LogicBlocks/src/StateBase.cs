@@ -45,14 +45,12 @@ public interface IStateBase {
   /// Runs all of the registered attach callbacks for the state.
   /// </summary>
   /// <param name="context">Logic block context.</param>
-  /// <param name="onError">Error callback, if any.</param>
-  void Attach(IContext context, Action<Exception>? onError = null);
+  void Attach(IContext context);
 
   /// <summary>
   /// Runs all of the registered detach callbacks for the state.
   /// </summary>
-  /// <param name="onError">Error callback, if any.</param>
-  void Detach(Action<Exception>? onError = null);
+  void Detach();
 }
 
 /// <summary>
@@ -90,38 +88,41 @@ public abstract record StateBase : IStateBase {
 
 
   /// <inheritdoc />
-  public void Attach(IContext context, Action<Exception>? onError = null) {
+  public void Attach(IContext context) {
     InternalState.ContextAdapter.Adapt(context);
-    CallAttachCallbacks(onError);
+    CallAttachCallbacks();
   }
 
   /// <inheritdoc />
-  public void Detach(Action<Exception>? onError = null) {
+  public void Detach() {
     if (InternalState.ContextAdapter.Context is null) {
       return;
     }
 
-    CallDetachCallbacks(onError);
+    CallDetachCallbacks();
     InternalState.ContextAdapter.Clear();
   }
 
-  private void CallAttachCallbacks(Action<Exception>? onError = null) {
+  private void CallAttachCallbacks() {
     foreach (var onAttach in InternalState.AttachCallbacks) {
-      RunSafe(onAttach, onError);
+      RunSafe(onAttach);
     }
   }
 
-  private void CallDetachCallbacks(Action<Exception>? onError = null) {
+  private void CallDetachCallbacks() {
     foreach (var onDetach in InternalState.DetachCallbacks) {
-      RunSafe(onDetach, onError);
+      RunSafe(onDetach);
     }
   }
 
-  internal void RunSafe(Action callback, Action<Exception>? onError) {
+  private void RunSafe(Action callback) {
     try { callback(); }
     catch (Exception e) {
-      if (onError is Action<Exception> onErrorHandler) {
-        onErrorHandler.Invoke(e);
+      if (InternalState.ContextAdapter.OnError is { } onError) {
+        onError(e);
+        if (e is LogicBlockException) {
+          throw;
+        }
         return;
       }
       throw;

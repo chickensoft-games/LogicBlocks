@@ -39,21 +39,26 @@ public class BindingTest {
   }
 
   [Fact]
-  public void HandlesEffects() {
+  public void HandlesOutputs() {
     var block = new FakeLogicBlock();
     using var binding = block.Bind();
 
-    var callEffect1 = 0;
-    var callEffect2 = 0;
+    var output1 = 0;
+    var output2 = 0;
 
     binding.Handle(
       (in FakeLogicBlock.Output.OutputOne effect) => {
-        callEffect1++;
+        output1++;
+        effect.Value.ShouldBe(1);
+      }
+    ).Handle(
+      (in FakeLogicBlock.Output.OutputOne effect) => {
+        output1++;
         effect.Value.ShouldBe(1);
       }
     ).Handle(
       (in FakeLogicBlock.Output.OutputTwo effect) => {
-        callEffect2++;
+        output2++;
         effect.Value.ShouldBe("2");
       }
     );
@@ -67,8 +72,8 @@ public class BindingTest {
     block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
     block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
 
-    callEffect1.ShouldBe(2);
-    callEffect2.ShouldBe(2);
+    output1.ShouldBe(4);
+    output2.ShouldBe(2);
   }
 
   [Fact]
@@ -156,13 +161,14 @@ public class BindingTest {
 
     binding
       .Watch((in FakeLogicBlock.Input.InputOne input) => inputOne++)
+      .Watch((in FakeLogicBlock.Input.InputOne input) => inputOne++)
       .Watch((in FakeLogicBlock.Input.InputTwo input) => inputTwo++);
 
     block.Input(new FakeLogicBlock.Input.InputOne(1, 2));
     block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
     block.Input(new FakeLogicBlock.Input.InputOne(3, 4));
 
-    inputOne.ShouldBe(2);
+    inputOne.ShouldBe(4);
     inputTwo.ShouldBe(1);
   }
 

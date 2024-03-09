@@ -44,6 +44,9 @@ public abstract partial class LogicBlock<TState> {
 
     public void Adapt(IContext context) => Context = context;
     public void Clear() => Context = null;
+    public Action<Exception>? OnError =>
+      Context is DefaultContext defaultContext
+        ? defaultContext.Logic.AddError : null;
 
     /// <inheritdoc />
     public void Input<TInputType>(in TInputType input)

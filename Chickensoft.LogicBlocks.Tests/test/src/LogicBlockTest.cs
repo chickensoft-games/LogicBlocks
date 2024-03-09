@@ -47,8 +47,8 @@ public class LogicBlockTest {
     block.Get<string>().ShouldBe("string");
 
     // Can't change values once set.
-    Should.Throw<ArgumentException>(() => block.PublicSet("other"));
-    Should.Throw<KeyNotFoundException>(() => block.Get<string[]>());
+    Should.Throw<LogicBlockException>(() => block.PublicSet("other"));
+    Should.Throw<LogicBlockException>(() => block.Get<string[]>());
     block.Input(new FakeLogicBlock.Input.GetString());
     block.Value.ShouldBe(new FakeLogicBlock.State.StateC("string"));
   }
@@ -68,7 +68,9 @@ public class LogicBlockTest {
 
     listener.OnInput += handler;
 
+    block.IsStarted.ShouldBeFalse();
     block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
+    block.IsStarted.ShouldBeTrue();
     called.ShouldBe(1);
 
     listener.OnInput -= handler;
@@ -313,7 +315,6 @@ public class LogicBlockTest {
 
     block.Input(new FakeLogicBlock.Input.Custom(
       (context) => new FakeLogicBlock.State.OnEnterState(
-          context,
           (previous) =>
             throw new InvalidOperationException("Error from OnEnter")
         )
@@ -327,18 +328,11 @@ public class LogicBlockTest {
 
   [Fact]
   public void InvokesErrorEventFromUpdateHandlerManually() {
-    var context = new FakeContext();
-    var block = new FakeLogicBlock() {
-      InitialState = () => new FakeLogicBlock.State.OnEnterState(
-        context,
-        (previous) =>
-          throw new InvalidOperationException("Error from OnEnter")
-      )
-    };
-
-    Should.Throw<InvalidOperationException>(
-      () => block.Value.Enter()
+    var state = new FakeLogicBlock.State.OnEnterState(
+      (previous) => throw new InvalidOperationException("Error from OnEnter")
     );
+
+    Should.Throw<InvalidOperationException>(() => state.Enter());
   }
 
   [Fact]
@@ -358,7 +352,7 @@ public class LogicBlockTest {
     var block = new FakeLogicBlock() {
       InitialState = () =>
         new FakeLogicBlock.State.OnEnterState(
-          context, (previous) => enterCalled = true
+          (previous) => enterCalled = true
         )
     };
 
@@ -377,15 +371,28 @@ public class LogicBlockTest {
     var block = new FakeLogicBlock() {
       InitialState = () =>
         new FakeLogicBlock.State.OnEnterState(
-          context, (previous) => enterCalled = true
+          (previous) => enterCalled = true
         )
     };
 
     enterCalled.ShouldBeFalse();
 
     block.Start();
+    block.Start(); // Should do nothing.
 
     enterCalled.ShouldBeTrue();
+  }
+
+  [Fact]
+  public void StartDoesNothingIfProcessing() {
+    var context = new FakeContext();
+    var logic = new FakeLogicBlock();
+    logic.InitialState = () => new FakeLogicBlock.State.OnEnterState(
+      (previous) => logic.Start()
+    );
+
+    logic.Input(new FakeLogicBlock.Input.InputOne(2, 3));
+    logic.Value.ShouldBeOfType<FakeLogicBlock.State.StateA>();
   }
 
   [Fact]
@@ -395,15 +402,29 @@ public class LogicBlockTest {
     var block = new FakeLogicBlock() {
       InitialState = () =>
         new FakeLogicBlock.State.OnExitState(
-          context, (previous) => exitCalled = true
+          (previous) => exitCalled = true
         )
     };
 
     exitCalled.ShouldBeFalse();
 
+    block.Start();
     block.Stop();
+    block.Stop(); // Should do nothing.
 
     exitCalled.ShouldBeTrue();
+  }
+
+  [Fact]
+  public void StopDoesNothingIfProcessing() {
+    var context = new FakeContext();
+    var logic = new FakeLogicBlock();
+    logic.InitialState = () => new FakeLogicBlock.State.OnExitState(
+      (previous) => logic.Stop()
+    );
+
+    logic.Input(new FakeLogicBlock.Input.InputOne(2, 3));
+    logic.IsStarted.ShouldBeTrue();
   }
 
   [Fact]
@@ -450,35 +471,6 @@ public class LogicBlockTest {
   }
 
   [Fact]
-  public void Restores() {
-    var block = new FakeLogicBlock();
-
-    var state = new FakeLogicBlock.State.StateB("a", "b");
-    block.Restore(state);
-
-    block.Value.ShouldBe(state);
-  }
-
-  [Fact]
-  public void RestoreThrowsIfAlreadyStarted() {
-    var block = new FakeLogicBlock();
-    block.Start();
-
-    var state = new FakeLogicBlock.State.StateB("a", "b");
-    Should.Throw<InvalidOperationException>(() => block.Restore(state));
-  }
-
-  [Fact]
-  public void RestoreThrowsIfAlreadyRestored() {
-    var block = new FakeLogicBlock();
-    block.Restore(new FakeLogicBlock.State.StateB("a", "b"));
-
-    var state = new FakeLogicBlock.State.StateC("c");
-    Should.Throw<InvalidOperationException>(() => block.Restore(state));
-    block.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
-  }
-
-  [Fact]
   public void FirstInputStartsLogicBlockIfNeeded() {
     var logic = new InputOnInitialState();
     var inputs = new List<object>();
@@ -495,5 +487,28 @@ public class LogicBlockTest {
       new InputOnInitialState.Input.Start(),
       new InputOnInitialState.Input.Initialize()
     });
+  }
+
+  [Fact]
+  public void ForceResetThrowsIfProcessing() {
+    var logic = new FakeLogicBlock();
+    logic.InitialState = () => new FakeLogicBlock.State.OnEnterState(
+      (_) => logic.ForceReset(new FakeLogicBlock.State.StateC("value"))
+    );
+
+    Should.Throw<LogicBlockException>(() => logic.Start());
+  }
+
+  [Fact]
+  public void ForceResetChangesStateAndProcessesInputs() {
+    var logic = new FakeLogicBlock();
+
+    var state = logic.ForceReset(
+      new FakeLogicBlock.State.OnEnterState(
+        (_) => logic.Input(new FakeLogicBlock.Input.InputTwo("b", "c"))
+      )
+    );
+
+    state.ShouldBeOfType<FakeLogicBlock.State.StateB>();
   }
 }

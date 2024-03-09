@@ -43,4 +43,5 @@ internal interface IContextAdapter : IContext {
 
   void Adapt(IContext context);
   void Clear();
+  Action<Exception>? OnError { get; }
 }

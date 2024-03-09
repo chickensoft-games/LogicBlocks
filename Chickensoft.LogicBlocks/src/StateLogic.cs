@@ -13,15 +13,13 @@ public interface IStateLogic<TState> : IStateBase
   /// Runs all of the registered entrance callbacks for the state.
   /// </summary>
   /// <param name="previous">Previous state, if any.</param>
-  /// <param name="onError">Error callback, if any.</param>
-  void Enter(TState? previous = default, Action<Exception>? onError = null);
+  void Enter(TState? previous = default);
 
   /// <summary>
   /// Runs all of the registered exit callbacks for the state.
   /// </summary>
   /// <param name="next">Next state, if any.</param>
-  /// <param name="onError">Error callback, if any.</param>
-  void Exit(TState? next = default, Action<Exception>? onError = null);
+  void Exit(TState? next = default);
 }
 
 /// <summary>
@@ -50,14 +48,16 @@ public abstract record StateLogic<TState> : StateBase, IStateLogic<TState>
     );
 
   /// <inheritdoc />
-  public void Enter(
-    TState? previous = default, Action<Exception>? onError = null
-  ) => CallOnEnterCallbacks(previous, this as TState, onError);
+  public void Enter(TState? previous = default) =>
+    CallOnEnterCallbacks(
+      previous, this as TState, InternalState.ContextAdapter.OnError
+    );
 
   /// <inheritdoc />
-  public void Exit(
-    TState? next = default, Action<Exception>? onError = null
-  ) => CallOnExitCallbacks(this as TState, next, onError);
+  public void Exit(TState? next = default) =>
+    CallOnExitCallbacks(
+      this as TState, next, InternalState.ContextAdapter.OnError
+    );
 
   /// <summary>
   /// Gets data from the blackboard.
@@ -76,7 +76,7 @@ public abstract record StateLogic<TState> : StateBase, IStateLogic<TState>
           // Already entered this state type.
           continue;
         }
-        RunSafe(() => onEnter.Callback(previous), onError);
+        RunSafe(onEnter.Callback, previous);
       }
     }
   }
@@ -90,8 +90,24 @@ public abstract record StateLogic<TState> : StateBase, IStateLogic<TState>
           // Not actually leaving this state type.
           continue;
         }
-        RunSafe(() => onExit.Callback(next), onError);
+        RunSafe(onExit.Callback, next);
       }
+    }
+  }
+
+  private void RunSafe(
+    Action<TState?> callback, TState? stateArg
+  ) {
+    try { callback(stateArg); }
+    catch (Exception e) {
+      if (InternalState.ContextAdapter.OnError is { } onError) {
+        onError(e);
+        if (e is LogicBlockException) {
+          throw;
+        }
+        return;
+      }
+      throw;
     }
   }
 }

@@ -2,7 +2,7 @@ namespace Chickensoft.LogicBlocks;
 
 using System;
 
-internal interface ILogicBlockBinding<TState>
+public interface ILogicBlockBinding<TState>
 where TState : class, IStateLogic<TState> {
   internal void MonitorInput<TInputType>(in TInputType input)
     where TInputType : struct;

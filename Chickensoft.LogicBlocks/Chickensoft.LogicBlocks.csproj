@@ -12,6 +12,9 @@
     <OutputPath>./nupkg</OutputPath>
     <DebugType>portable</DebugType>
 
+    <!-- Gets us pretty  -->
+    <IlcDisableReflection>true</IlcDisableReflection>
+
     <Title>LogicBlocks</Title>
     <Version>4.2.2</Version>
     <Description>Human-friendly, hierarchical state machines for games and apps in C#.</Description>
