@@ -50,20 +50,4 @@ public class StateBaseTest {
 
     called.ShouldBeTrue();
   }
-
-  [Fact]
-  public void AttachmentCallbackLogicBlockErrorsArePropagatedAlways() {
-    var called = false;
-    var logic = new TestLogic() {
-      InitialState = new TestLogic.State(
-        () => throw new LogicBlockException("message")
-      ),
-      ErrorHandler = e => called = true
-    };
-
-    // LogicBlockExceptions always get re-thrown, even if we have a handler.
-    // Should throw AND call our error handler.
-    Should.Throw<LogicBlockException>(() => logic.Start());
-    called.ShouldBeTrue();
-  }
 }

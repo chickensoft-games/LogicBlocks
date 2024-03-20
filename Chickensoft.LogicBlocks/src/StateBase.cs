@@ -117,9 +117,6 @@ public abstract record StateBase : IStateBase {
     catch (Exception e) {
       if (InternalState.ContextAdapter.OnError is { } onError) {
         onError(e);
-        if (e is LogicBlockException) {
-          throw;
-        }
         return;
       }
       throw;

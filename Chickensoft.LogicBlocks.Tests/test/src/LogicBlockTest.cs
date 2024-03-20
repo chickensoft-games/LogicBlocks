@@ -496,7 +496,7 @@ public class LogicBlockTest {
       (_) => logic.ForceReset(new FakeLogicBlock.State.StateC("value"))
     );
 
-    Should.Throw<LogicBlockException>(() => logic.Start());
+    Should.NotThrow(() => logic.Start());
   }
 
   [Fact]
@@ -510,5 +510,16 @@ public class LogicBlockTest {
     );
 
     state.ShouldBeOfType<FakeLogicBlock.State.StateB>();
+  }
+
+  [Fact]
+  public void AddsErrorToItself() {
+    var e = new InvalidOperationException();
+    var state = new FakeLogicBlock.State.AddErrorOnEnterState(e);
+
+    var context = state.CreateFakeContext();
+    state.Enter();
+
+    context.Errors.ShouldBe([e]);
   }
 }

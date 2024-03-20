@@ -126,9 +126,6 @@ public abstract record StateLogic<TState> : StateBase, IStateLogic<TState>
     catch (Exception e) {
       if (InternalState.ContextAdapter.OnError is { } onError) {
         onError(e);
-        if (e is LogicBlockException) {
-          throw;
-        }
         return;
       }
       throw;

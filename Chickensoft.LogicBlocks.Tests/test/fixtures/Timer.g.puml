@@ -1,0 +1,19 @@
+@startuml Timer
+state "Timer State" as Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State {
+  state "PoweredOff" as Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOff
+  state "PoweredOn" as Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn {
+    state "Idle" as Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn_Idle
+    state "Running" as Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn_Running
+    state "Beeping" as Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn_Beeping {
+      Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn_Beeping : OnEnter → PlayBeepingSound
+      Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn_Beeping : OnExit → StopBeepingSound
+    }
+  }
+}
+
+Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn --> Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOff : PowerButtonPressed
+Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn_Idle --> Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn_Running : StartStopButtonPressed
+Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn_Running --> Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn_Beeping : TimeElapsed
+Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn_Running --> Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn_Idle : StartStopButtonPressed
+Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn_Running --> Chickensoft_LogicBlocks_Tests_Fixtures_Timer_State_PoweredOn_Running : TimeElapsed
+@enduml

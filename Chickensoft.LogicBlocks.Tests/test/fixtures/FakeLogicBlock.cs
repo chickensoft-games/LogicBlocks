@@ -92,6 +92,12 @@ public partial class FakeLogicBlock {
         this.OnExit(onExit);
       }
     }
+
+    public record AddErrorOnEnterState : State {
+      public AddErrorOnEnterState(Exception e) {
+        this.OnEnter(() => AddError(e));
+      }
+    }
   }
 
   public static class Output {

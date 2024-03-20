@@ -2,29 +2,29 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 
 [StateDiagram(typeof(State))]
 public class LightSwitch : LogicBlock<LightSwitch.State> {
-  public override State GetInitialState() => new State.Off();
+  public override State GetInitialState() => new State.Powered();
 
   public static class Input {
     public readonly record struct Toggle;
   }
 
   public abstract record State : StateLogic<State> {
-    public record On : State, IGet<Input.Toggle> {
-      public On() {
+    public record PoweredOn : State, IGet<Input.Toggle> {
+      public PoweredOn() {
         // Announce that we are now on.
         this.OnEnter(() => Output(new Output.StatusChanged(IsOn: true)));
       }
 
-      State IGet<Input.Toggle>.On(in Input.Toggle input) => new Off();
+      public State On(in Input.Toggle input) => new Powered();
     }
 
-    public record Off : State, IGet<Input.Toggle> {
-      public Off() {
+    public record Powered : State, IGet<Input.Toggle> {
+      public Powered() {
         // Announce that we are now off.
         this.OnEnter(() => Output(new Output.StatusChanged(IsOn: false)));
       }
 
-      State IGet<Input.Toggle>.On(in Input.Toggle input) => new On();
+      public State On(in Input.Toggle input) => new PoweredOn();
     }
   }
 
