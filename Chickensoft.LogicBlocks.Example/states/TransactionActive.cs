@@ -15,11 +15,7 @@ public partial class VendingMachine {
       Price = price;
       AmountReceived = amountReceived;
 
-      this.OnEnter(
-       () => Context.Output(
-         new Output.RestartTransactionTimeOutTimer()
-       )
-     );
+      this.OnEnter(() => Output(new Output.RestartTransactionTimeOutTimer()));
     }
 
     public State On(in Input.PaymentReceived input) {
@@ -33,10 +29,10 @@ public partial class VendingMachine {
       if (total > Price) {
         // If we end up receiving more money than the item costs, we make
         // change and dispense it back to the user.
-        Context.Output(new Output.MakeChange(total - Price));
+        Output(new Output.MakeChange(total - Price));
       }
 
-      Context.Output(
+      Output(
         new Output.TransactionCompleted(
           Type: Type,
           Price: Price,
@@ -53,7 +49,7 @@ public partial class VendingMachine {
     public State On(in Input.TransactionTimedOut input) {
       if (AmountReceived > 0) {
         // Give any money received back before timing out.
-        Context.Output(new Output.MakeChange(AmountReceived));
+        Output(new Output.MakeChange(AmountReceived));
       }
 
       return new Idle();

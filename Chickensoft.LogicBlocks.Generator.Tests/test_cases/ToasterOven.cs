@@ -14,8 +14,8 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
   public abstract record State : StateLogic<State> {
     public record Heating : State, IGet<Input.OpenDoor> {
       public Heating() {
-        this.OnEnter(() => Context.Output(new Output.TurnHeaterOn()));
-        this.OnExit(() => Context.Output(new Output.TurnHeaterOff()));
+        this.OnEnter(() => Output(new Output.TurnHeaterOn()));
+        this.OnExit(() => Output(new Output.TurnHeaterOff()));
       }
 
       public State On(in Input.OpenDoor input) => new DoorOpen();
@@ -27,8 +27,8 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
       public Toasting(int toastColor) {
         ToastColor = toastColor;
 
-        this.OnEnter(() => Context.Output(new Output.SetTimer(ToastColor)));
-        this.OnExit(() => Context.Output(new Output.ResetTimer()));
+        this.OnEnter(() => Output(new Output.SetTimer(ToastColor)));
+        this.OnExit(() => Output(new Output.ResetTimer()));
       }
 
       public State On(in Input.StartBaking input) => new Baking(input.Temperature);
@@ -41,10 +41,10 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         Temperature = temperature;
 
         this.OnEnter(
-          () => Context.Output(new Output.SetTemperature(Temperature))
+          () => Output(new Output.SetTemperature(Temperature))
         );
         this.OnExit(
-          () => Context.Output(new Output.SetTemperature(0))
+          () => Output(new Output.SetTemperature(0))
         );
       }
 
@@ -55,8 +55,8 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
 
     public record DoorOpen : State, IGet<Input.CloseDoor> {
       public DoorOpen() {
-        this.OnEnter(() => Context.Output(new Output.TurnLampOn()));
-        this.OnExit(() => Context.Output(new Output.TurnLampOff()));
+        this.OnEnter(() => Output(new Output.TurnLampOn()));
+        this.OnExit(() => Output(new Output.TurnLampOff()));
       }
 
       public State On(in Input.CloseDoor input) => new Toasting(

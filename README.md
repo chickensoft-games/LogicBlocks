@@ -12,15 +12,50 @@ Human-friendly, hierarchical state machines for games and apps in C#.
 
 ---
 
-Logic blocks borrow from [statecharts], [state machines][state-machines], and [blocs][bloc-pattern] to provide a flexible and easy-to-use API.
+LogicBlocks is an easy-to-use, hierarchical state machine package for C#. LogicBlocks draws inspiration from [statecharts], hierarchical [state machines][state-machines], and [blocs][bloc-pattern].
 
-Instead of requiring developers to write elaborate transition tables, LogicBlocks allow developers to define self-contained states that read like ordinary code using the [state pattern][state-pattern]. Logic blocks are intended to be refactor-friendly and grow with your project from simple state machines to nested, hierarchical statecharts.
+Instead of describing elaborate transition tables, developers simply define self-contained states that read like ordinary code using the [state pattern][state-pattern]. Logic blocks are intended to be performant, extensible, and refactor-friendly.
 
-> 🖼 Ever wondered what your code looks like? LogicBlocks includes an experimental generator that allows you to visualize your logic blocks as a state diagram — now your diagrams will always be up-to-date!
+Logic blocks grow with your code: you can start with a simple state machine and easily scale it into a nested, hierarchical statechart that represents a more complex system — even if you're still defining the system.
+
+> [!TIP]
+> 🖼 LogicBlocks includes a source generator that generates UML state diagrams from your code, allowing you to *see* your logic like never before. Your state diagrams will always be up-to-date!
+>
+> [**`LightSwitch.cs`**](Chickensoft.LogicBlocks.Generator.Tests/test_cases/LightSwitch.cs)
+>
+> ![LightSwitch state diagram](docs/light_switch.png)
 
 ## 🙋 What is a Logic Block?
 
-**A logic block is a class that can receive inputs, maintain a state, and produce outputs.** How you design your states is up to you. Outputs allow logic block listeners to be informed about one-shot events that aren't persisted the way state is, allowing the logic block to influence the world around it without tight coupling. Additionally, logic block states can retrieve values shared across the entire logic block from the logic block's *blackboard*.
+*A logic block is a class that **receives inputs**, **maintains a single state instance**, and **produces outputs**.*
+
+How you design your states is up to you. Outputs allow logic block listeners to be informed about one-shot events that aren't persisted the way state is, allowing the logic block to influence the world around it without tight coupling. Additionally, logic block states can retrieve values shared across the entire logic block from the logic block's *blackboard*.
+
+> [!IMPORTANT]
+>
+> - 📥 **Inputs** are temporary, disposable objects that contain relevant information about the input.
+>
+>   For example, a logic block for a dimmable light switch might have an input that contains the dimmer percentage.
+>
+>   ```csharp
+>   public readonly record struct Update(double DimmerPercent);
+>   ```
+>
+>   Using a `struct` for your input generally keeps it on the stack. A logic block will queue inputs on the heap if one is added while processing another, but this is less common. Usually, the input queue cache will prevent any memory allocations from happening at all.
+
+> [!IMPORTANT]
+>
+> - 💡 A **State** is the object maintained by a logic block. It is a reference type that ultimately inherits from `StateLogic`, a record type provided by LogicBlocks.
+>
+>   There is only ever one instance of a state object active at once. The active state is always the current `Value` of a logic block.
+>
+>   Each state type can extend other state types using traditional C# inheritance, representing [compound states].
+>
+>   When a state is becoming active, it is first `attached` to the logic block it belongs to, and then `entered`.
+>
+>   Likewise, when leaving a state, it is first `exited` and then `detached` from the logic block it belongs to.
+>
+>   To prevent memory allocations when switching states, you can [preallocate states](#preallocating-states) when creating a logic block.
 
 > 🧑‍🏫 You may have noticed we borrowed the term *blackboard* from behavior trees — it's a great way to keep dependencies from being strongly coupled between the states and the logic block. Rather than being based on strings, however, the LogicBlocks blackboard allows you to request objects by type.
 
@@ -258,6 +293,7 @@ public class Heater : LogicBlock<Heater.State> {
 
 In general, Logic block state types should be records that extend the `StateLogic` record. The `StateLogic` record is provided by LogicBlocks and allows states to keep track of entrance/exit callbacks.
 
+> [!TIP]
 > [C# records][records] are just reference types that are identical to classes, with the added improvement of providing shallow equality comparison for free.
 >
 > LogicBlocks is optimized to avoid transitioning to identical subsequent states, so using records allows us to take advantage of that without any effort on our part.
@@ -521,9 +557,9 @@ Bindings will not re-run callbacks if the state or selected data from the state 
 
 ## 🔮 Additional Tips
 
-### ♻️ Reusing Inputs, States and Outputs
+### Preallocating States
 
-If you need to write performant code that avoids heap allocations in memory, you can reuse inputs and states. If you're using `readonly record struct` for outputs, they should already be avoiding the heap.
+If you need to write performant code that avoids heap allocations in memory, you can preallocate states when creating them. If you're using `readonly record struct` for outputs, they will already be avoiding the heap.
 
 For ease of use, consider passing any dependencies your states will need into the constructor of your logic block. Then, in the constructor, create the states that your logic block will use. Finally, in your `GetInitialState` method, return the initial state by looking it up in the blackboard.
 
@@ -1089,3 +1125,4 @@ Conceptually, logic blocks draw from a number of inspirations:
 [primary constructor]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/record
 [nested-types]: https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/nested-types
 [PlantText]: https://www.planttext.com/
+[compound states]: https://statecharts.dev/glossary/compound-state.html

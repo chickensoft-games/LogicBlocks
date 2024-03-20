@@ -7,7 +7,7 @@ public partial class VendingMachine {
     public TransactionStarted(
       ItemType type, int price, int amountReceived
     ) : base(type, price, amountReceived) {
-      this.OnEnter(() => Context.Output(new Output.TransactionStarted()));
+      this.OnEnter(() => Output(new Output.TransactionStarted()));
     }
 
     // While in this state, user can change selection as much as they want.

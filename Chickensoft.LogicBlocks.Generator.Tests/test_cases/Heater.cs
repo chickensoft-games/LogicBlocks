@@ -50,7 +50,7 @@ public class Heater : LogicBlock<Heater.State> {
         // alert the user that the heater is on. Subsequent states that
         // inherit from Powered will not play a chime until a different
         // state has been entered before returning to a Powered state.
-        this.OnEnter(() => Context.Output(new Output.Chime()));
+        this.OnEnter(() => Output(new Output.Chime()));
 
         // Unlike OnEnter, OnAttach will run for every state instance that
         // inherits from this record. Use these to setup your state.
@@ -72,7 +72,7 @@ public class Heater : LogicBlock<Heater.State> {
       // provide an input to ourselves. This lets us have a chance to change
       // the logic block's state.
       private void OnTemperatureChanged(double airTemp) =>
-        Context.Input(new Input.AirTempSensorChanged(airTemp));
+        Input(new Input.AirTempSensorChanged(airTemp));
     }
 
     public record Off : State, IGet<Input.TurnOn> {
@@ -105,7 +105,7 @@ public class Heater : LogicBlock<Heater.State> {
       public State On(in Input.AirTempSensorChanged input) {
         if (input.AirTemp >= TargetTemp) {
           // We're done heating!
-          Context.Output(new Output.FinishedHeating());
+          Output(new Output.FinishedHeating());
           return new Idle() { TargetTemp = TargetTemp };
         }
         // Room isn't hot enough — keep heating.

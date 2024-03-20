@@ -12,7 +12,7 @@ public class InputOnInitialState : LogicBlock<InputOnInitialState.State> {
     IGet<Input.Start>,
     IGet<Input.Initialize> {
     public State() {
-      this.OnEnter(() => Context.Input(new Input.Initialize()));
+      this.OnEnter(() => Input(new Input.Initialize()));
     }
 
     public State On(in Input.Start input) => this;

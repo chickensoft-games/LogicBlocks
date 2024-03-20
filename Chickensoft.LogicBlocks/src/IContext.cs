@@ -7,9 +7,6 @@ public interface IContext {
   /// <summary>
   /// Adds an input value to the logic block's internal input queue and
   /// returns the current state.
-  /// <br />
-  /// Instead, represent loading as a state or a property of a state while you
-  /// add un-awaited inputs from a state.
   /// </summary>
   /// <param name="input">Input to process.</param>
   /// <typeparam name="TInputType">Type of the input.</typeparam>

@@ -9,7 +9,7 @@ public partial class VendingMachine {
       Type = type;
       Price = price;
 
-      this.OnEnter(() => Context.Output(new Output.BeginVending()));
+      this.OnEnter(() => Output(new Output.BeginVending()));
     }
 
     public State On(in Input.VendingCompleted input) => new Idle();

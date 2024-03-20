@@ -60,12 +60,36 @@ public abstract record StateLogic<TState> : StateBase, IStateLogic<TState>
     );
 
   /// <summary>
+  /// Adds an input value to the logic block's internal input queue and
+  /// returns the current state.
+  /// </summary>
+  /// <param name="input">Input to process.</param>
+  /// <typeparam name="TInputType">Type of the input.</typeparam>
+  protected void Input<TInputType>(in TInputType input)
+    where TInputType : struct => Context.Input(input);
+
+  /// <summary>
+  /// Produces a logic block output value.
+  /// </summary>
+  /// <typeparam name="TOutputType">Type of output to produce.</typeparam>
+  /// <param name="output">Output value.</param>
+  protected void Output<TOutputType>(in TOutputType output)
+    where TOutputType : struct => Context.Output(output);
+
+  /// <summary>
   /// Gets data from the blackboard.
   /// </summary>
   /// <typeparam name="TData">The type of data to retrieve.</typeparam>
   /// <exception cref="System.Collections.Generic.KeyNotFoundException" />
-  protected TData Get<TData>() where TData : class =>
-    Context.Get<TData>();
+  protected TData Get<TData>() where TData : class => Context.Get<TData>();
+
+  /// <summary>
+  /// Adds an error to a logic block. Errors are immediately processed by the
+  /// logic block's <see cref="LogicBlock{TState}.HandleError(Exception)"/>
+  /// callback.
+  /// </summary>
+  /// <param name="e">Exception to add.</param>
+  protected void AddError(Exception e) => Context.AddError(e);
 
   private void CallOnEnterCallbacks(
     TState? previous, TState? next, Action<Exception>? onError

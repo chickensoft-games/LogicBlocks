@@ -24,31 +24,31 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
 
     public abstract record Activated : State, IGet<Input.Deactivate> {
       public Activated() {
-        this.OnEnter(() => Context.Output(new Output.Activated()));
-        this.OnExit(() => Context.Output(new Output.ActivatedCleanUp()));
+        this.OnEnter(() => Output(new Output.Activated()));
+        this.OnExit(() => Output(new Output.ActivatedCleanUp()));
       }
 
       public State On(in Input.Deactivate input) => new Deactivated();
 
       public record Blooped : Activated {
         public Blooped() {
-          this.OnEnter(() => Context.Output(new Output.Blooped()));
-          this.OnExit(() => Context.Output(new Output.BloopedCleanUp()));
+          this.OnEnter(() => Output(new Output.Blooped()));
+          this.OnExit(() => Output(new Output.BloopedCleanUp()));
         }
       }
 
       public record Bopped : Activated {
         public Bopped() {
-          this.OnEnter(() => Context.Output(new Output.Bopped()));
-          this.OnExit(() => Context.Output(new Output.BoppedCleanUp()));
+          this.OnEnter(() => Output(new Output.Bopped()));
+          this.OnExit(() => Output(new Output.BoppedCleanUp()));
         }
       }
     }
 
     public record Deactivated : State {
       public Deactivated() {
-        this.OnEnter(() => Context.Output(new Output.Deactivated()));
-        this.OnExit(() => Context.Output(new Output.DeactivatedCleanUp()));
+        this.OnEnter(() => Output(new Output.Deactivated()));
+        this.OnExit(() => Output(new Output.DeactivatedCleanUp()));
       }
     }
   }

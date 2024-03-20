@@ -54,7 +54,42 @@ public class OutputVisitor : CSharpSyntaxWalker {
 
 
     if (node.Expression is not MemberAccessExpressionSyntax memberAccess) {
-      base.VisitInvocationExpression(node);
+      var methodName = "";
+
+      var id = node.Expression;
+      if (id is not IdentifierNameSyntax identifierName) {
+        base.VisitInvocationExpression(node);
+        return;
+      }
+
+      methodName = identifierName.Identifier.ValueText;
+
+      if (methodName != Constants.LOGIC_BLOCK_STATE_OUTPUT) {
+        base.VisitInvocationExpression(node);
+        return;
+      }
+
+      var args = node.ArgumentList.Arguments;
+
+      if (args.Count != 1) {
+        base.VisitInvocationExpression(node);
+        return;
+      }
+
+      var rhs = node.ArgumentList.Arguments[0].Expression;
+      var rhsType = GetModel(rhs).GetTypeInfo(rhs, Token).Type;
+
+      if (rhsType is null) {
+        base.VisitInvocationExpression(node);
+        return;
+      }
+
+      var rhsTypeId = CodeService.GetNameFullyQualifiedWithoutGenerics(
+        rhsType, rhsType.Name
+      );
+
+      AddOutput(rhsTypeId, rhsType.Name);
+
       return;
     }
 
@@ -75,55 +110,6 @@ public class OutputVisitor : CSharpSyntaxWalker {
         return;
       }
     }
-
-    var methodName = "";
-
-    var id = memberAccess.Expression;
-    if (id is not IdentifierNameSyntax identifierName) {
-      base.VisitInvocationExpression(node);
-      return;
-    }
-
-    var lhsType =
-      GetModel(identifierName).GetTypeInfo(identifierName, Token).Type;
-    if (lhsType is null) {
-      base.VisitInvocationExpression(node);
-      return;
-    }
-
-    var lhsTypeId = CodeService.GetNameFullyQualifiedWithoutGenerics(
-      lhsType, lhsType.Name
-    );
-    methodName = memberAccess.Name.Identifier.ValueText;
-
-    if (
-      lhsTypeId != Constants.LOGIC_BLOCK_CONTEXT_ID ||
-      methodName != Constants.LOGIC_BLOCK_CONTEXT_OUTPUT
-    ) {
-      base.VisitInvocationExpression(node);
-      return;
-    }
-
-    var args = node.ArgumentList.Arguments;
-
-    if (args.Count != 1) {
-      base.VisitInvocationExpression(node);
-      return;
-    }
-
-    var rhs = node.ArgumentList.Arguments[0].Expression;
-    var rhsType = GetModel(rhs).GetTypeInfo(rhs, Token).Type;
-
-    if (rhsType is null) {
-      base.VisitInvocationExpression(node);
-      return;
-    }
-
-    var rhsTypeId = CodeService.GetNameFullyQualifiedWithoutGenerics(
-      rhsType, rhsType.Name
-    );
-
-    AddOutput(rhsTypeId, rhsType.Name);
   }
 
   // Don't visit nested types.

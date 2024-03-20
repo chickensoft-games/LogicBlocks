@@ -9,12 +9,12 @@ public class SingleState : LogicBlock<SingleState.State> {
   }
   public record State : StateLogic<State>, IGet<Input.MyInput> {
     public State() {
-      this.OnEnter(() => Context.Output(new Output.MyOutput()));
-      this.OnExit(() => Context.Output(new Output.MyOutput()));
+      this.OnEnter(() => Output(new Output.MyOutput()));
+      this.OnExit(() => Output(new Output.MyOutput()));
     }
 
     public State On(in Input.MyInput input) {
-      Context.Output(new Output.MyOutput());
+      Output(new Output.MyOutput());
       return this;
     }
   }

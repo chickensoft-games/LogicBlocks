@@ -31,12 +31,12 @@ public partial class FakeLogicBlock {
     IGet<Input.SelfInput>,
     IGet<Input.Custom> {
     public State On(in Input.InputOne input) {
-      Context.Output(new Output.OutputOne(1));
+      Output(new Output.OutputOne(1));
       return new StateA(input.Value1, input.Value2);
     }
 
     public State On(in Input.InputTwo input) {
-      Context.Output(new Output.OutputTwo("2"));
+      Output(new Output.OutputTwo("2"));
       return new StateB(input.Value1, input.Value2);
     }
 
@@ -48,7 +48,7 @@ public partial class FakeLogicBlock {
       => throw new InvalidOperationException();
 
     public State On(in Input.NoNewState input) {
-      Context.Output(new Output.OutputOne(1));
+      Output(new Output.OutputOne(1));
       return this;
     }
 
@@ -60,11 +60,11 @@ public partial class FakeLogicBlock {
     public State On(in Input.Custom input) => input.Next(Context);
 
     public State On(in Input.GetString input) => new StateC(
-      Context.Get<string>()
+      Get<string>()
     );
 
     public State On(in Input.SelfInput input) {
-      Context.Input(input.Input);
+      Input(input.Input);
       return this;
     }
 

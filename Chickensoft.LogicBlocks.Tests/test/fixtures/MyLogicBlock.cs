@@ -16,12 +16,12 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBloc
   public abstract record State : StateLogic<State> {
     public record SomeState : State, IGet<Input.SomeInput> {
       public SomeState() {
-        this.OnEnter(() => Context.Output(new Output.SomeOutput()));
-        this.OnExit(() => Context.Output(new Output.SomeOutput()));
+        this.OnEnter(() => Output(new Output.SomeOutput()));
+        this.OnExit(() => Output(new Output.SomeOutput()));
       }
 
       public State On(in Input.SomeInput input) {
-        Context.Output(new Output.SomeOutput());
+        Output(new Output.SomeOutput());
         return new SomeOtherState();
       }
     }
@@ -29,7 +29,7 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBloc
     public record SomeOtherState : State,
       IGet<Input.SomeOtherInput> {
       public State On(in Input.SomeOtherInput input) {
-        Context.Output(new Output.SomeOtherOutput());
+        Output(new Output.SomeOtherOutput());
         return new SomeState();
       }
     }

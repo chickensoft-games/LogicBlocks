@@ -16,22 +16,14 @@ public class HierarchicalCallbackLogic :
 
   public record State : StateLogic<State> {
     public State() {
-      this.OnEnter(
-        () => Context.Output(new Output.Log("state"))
-      );
-      this.OnExit(
-        () => Context.Output(new Output.Log("state"))
-      );
+      this.OnEnter(() => Output(new Output.Log("state")));
+      this.OnExit(() => Output(new Output.Log("state")));
     }
 
     public record Substate : State {
       public Substate() : base() {
-        this.OnEnter(
-          () => Context.Output(new Output.Log("substate"))
-        );
-        this.OnExit(
-          () => Context.Output(new Output.Log("substate"))
-        );
+        this.OnEnter(() => Output(new Output.Log("substate")));
+        this.OnExit(() => Output(new Output.Log("substate")));
       }
     }
   }

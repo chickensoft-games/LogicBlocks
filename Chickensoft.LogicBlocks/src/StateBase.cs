@@ -7,9 +7,6 @@ using System;
 /// Prefer <see cref="IStateLogic{TState}"/> over this for user-defined states.
 /// </summary>
 public interface IStateBase {
-  /// <summary>Logic block context.</summary>
-  IContext Context { get; }
-
   /// <summary>
   /// Creates a fake context and assigns it internally to be the state's
   /// underlying context object. Fake contexts facilitate testing of logic
@@ -59,7 +56,7 @@ public interface IStateBase {
 /// </summary>
 public abstract record StateBase : IStateBase {
   /// <inheritdoc />
-  public IContext Context => InternalState.ContextAdapter;
+  internal IContext Context => InternalState.ContextAdapter;
 
   internal InternalState InternalState { get; }
 

@@ -12,8 +12,8 @@ public class GreedyLogic : LogicBlock<GreedyLogic.State> {
     public record A : State, IGet<Input.GoToB>, IGet<Input.GoToC> {
       public A() {
         OnAttach(() => {
-          Context.Input(new Input.GoToB());
-          Context.Input(new Input.GoToC());
+          Input(new Input.GoToB());
+          Input(new Input.GoToC());
         });
       }
 
