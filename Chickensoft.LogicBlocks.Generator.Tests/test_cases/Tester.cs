@@ -55,7 +55,7 @@ public static class Tester {
       )
     );
 
-    var generator = new LogicBlocksGenerator();
+    var generator = new LogicBlocksDiagramGenerator();
 
     CSharpGeneratorDriver.Create(generator)
       .RunGeneratorsAndUpdateCompilation(

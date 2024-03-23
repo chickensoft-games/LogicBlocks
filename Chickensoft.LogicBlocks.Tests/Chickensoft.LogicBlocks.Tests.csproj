@@ -8,6 +8,10 @@
     <IsPackable>false</IsPackable>
     <LangVersion>preview</LangVersion>
     <DebugType>portable</DebugType>
+
+    <!-- To show generated files -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>.generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

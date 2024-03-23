@@ -15,7 +15,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 [Generator]
-public class LogicBlocksGenerator :
+public class LogicBlocksDiagramGenerator :
   ChickensoftGenerator, IIncrementalGenerator {
   public static Log Log { get; } = new Log();
   public ICodeService CodeService { get; } = new CodeService();
