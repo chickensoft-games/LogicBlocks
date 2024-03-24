@@ -172,17 +172,34 @@ public class LogicBlocksTypeGenerator
   // We don't need symbol data to do this, so it should be very fast.
   public static bool IsTypeCandidate(SyntaxNode node, CancellationToken _) =>
       node is TypeDeclarationSyntax typeDecl &&
-      !typeDecl.Modifiers.Any(m => m.IsKind(SyntaxKind.StaticKeyword)) &&
-      typeDecl.TypeParameterList is null or { Parameters.Count: 0 };
+      IsVisibleAndNonStatic(typeDecl) && IsNonGeneric(typeDecl);
 
   public static bool IsAbstractTypeCandidate(
     SyntaxNode node, CancellationToken ct
-  ) => IsTypeCandidate(node, ct) &&
-      ((TypeDeclarationSyntax)node).Modifiers.Any(SyntaxKind.AbstractKeyword);
+  ) =>
+    node is TypeDeclarationSyntax typeDecl &&
+    IsVisibleAndNonStatic(typeDecl) &&
+    IsNonGeneric(typeDecl) &&
+    IsAbstract(typeDecl);
 
   public static bool IsInterfaceTypeCandidate(
     SyntaxNode node, CancellationToken _
-  ) => node is InterfaceDeclarationSyntax;
+  ) =>
+    node is InterfaceDeclarationSyntax interfaceDecl &&
+    IsVisibleAndNonStatic(interfaceDecl);
+
+  private static bool IsVisibleAndNonStatic(TypeDeclarationSyntax typeDecl) =>
+    !typeDecl.Modifiers.Any(m =>
+      m.IsKind(SyntaxKind.StaticKeyword) ||
+      m.IsKind(SyntaxKind.PrivateKeyword) ||
+      m.IsKind(SyntaxKind.ProtectedKeyword)
+    );
+
+  private static bool IsAbstract(TypeDeclarationSyntax typeDecl) =>
+    typeDecl.Modifiers.Any(SyntaxKind.AbstractKeyword);
+
+  private static bool IsNonGeneric(TypeDeclarationSyntax typeDecl) =>
+    typeDecl.TypeParameterList is null or { Parameters.Count: 0 };
 
   // Use syntax information to construct a cheap version of the fully qualified
   // name.
