@@ -1,26 +1,24 @@
 @startuml TestMachine
 state "TestMachine State" as Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State {
   state "Activated" as Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated {
-    state "Blooped" as Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Blooped {
-      Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Blooped : OnEnter → Blooped
-      Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Blooped : OnExit → BloopedCleanUp
-    }
-    state "Bopped" as Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Bopped {
-      Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Bopped : OnEnter → Bopped
-      Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Bopped : OnExit → BoppedCleanUp
-    }
-    Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated : OnEnter → Activated
-    Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated : OnExit → ActivatedCleanUp
+    state "Blooped" as Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Blooped
+    state "Bopped" as Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Bopped
   }
-  state "Deactivated" as Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Deactivated {
-    Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Deactivated : OnEnter → Deactivated
-    Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Deactivated : OnExit → DeactivatedCleanUp
-  }
+  state "Deactivated" as Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Deactivated
 }
 
 Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State --> Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Blooped : Activate
 Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State --> Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Bopped : Activate
 Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated --> Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Deactivated : Deactivate
+
+Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated : OnEnter → Activated
+Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated : OnExit → ActivatedCleanUp
+Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Blooped : OnEnter → Blooped
+Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Blooped : OnExit → BloopedCleanUp
+Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Bopped : OnEnter → Bopped
+Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Activated_Bopped : OnExit → BoppedCleanUp
+Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Deactivated : OnEnter → Deactivated
+Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Deactivated : OnExit → DeactivatedCleanUp
 
 [*] --> Chickensoft_LogicBlocks_Tests_Fixtures_TestMachine_State_Deactivated
 @enduml

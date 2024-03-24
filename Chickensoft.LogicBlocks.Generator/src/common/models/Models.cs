@@ -108,6 +108,10 @@ public record LogicBlockGraphData(
 );
 
 public interface IOutputContext {
+  /// <summary>
+  /// Display name of the context in which the output is being produced. This
+  /// is usually OnEnter, OnExit, or an input handler name.
+  /// </summary>
   string DisplayName { get; }
 }
 public static class OutputContexts {

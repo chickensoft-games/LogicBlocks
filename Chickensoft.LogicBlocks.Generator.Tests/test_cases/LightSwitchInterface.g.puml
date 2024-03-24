@@ -6,6 +6,5 @@ state "LightSwitchInterface State" as Chickensoft_LogicBlocks_Generator_Tests_Li
 
 Chickensoft_LogicBlocks_Generator_Tests_LightSwitchInterface_State_TurnedOff --> Chickensoft_LogicBlocks_Generator_Tests_LightSwitchInterface_State_TurnedOn : Toggle
 Chickensoft_LogicBlocks_Generator_Tests_LightSwitchInterface_State_TurnedOn --> Chickensoft_LogicBlocks_Generator_Tests_LightSwitchInterface_State_TurnedOff : Toggle
-
 [*] --> Chickensoft_LogicBlocks_Generator_Tests_LightSwitchInterface_State_TurnedOff
 @enduml

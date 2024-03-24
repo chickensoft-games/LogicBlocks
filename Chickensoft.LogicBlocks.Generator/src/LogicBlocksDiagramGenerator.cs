@@ -351,6 +351,13 @@ public class LogicBlocksDiagramGenerator :
     transitions.Sort();
 
     var initialStates = new List<string>();
+    // State descriptions are added at the end of the document outside
+    // of the state declaration. Mermaid doesn't support state descriptions
+    // when they are nested inside the state, so we just flatten it out.
+    //
+    // In our case, we use state descriptions to show what outputs are produced
+    // by the state, and when.
+    var stateDescriptions = new List<string>();
 
     foreach (
       var initialStateId in implementation.InitialStateIds.OrderBy(id => id)
@@ -360,11 +367,18 @@ public class LogicBlocksDiagramGenerator :
       );
     }
 
+    var states =
+      WriteGraph(implementation.Graph, implementation, stateDescriptions, 0);
+
+    stateDescriptions.Sort();
+
     var text = Format($"""
     @startuml {implementation.Name}
-    {WriteGraph(implementation.Graph, implementation, 0)}
+    {states}
 
     {transitions}
+
+    {stateDescriptions}
 
     {initialStates}
     @enduml
@@ -380,12 +394,12 @@ public class LogicBlocksDiagramGenerator :
   private IEnumerable<string> WriteGraph(
     LogicBlockGraph graph,
     LogicBlockImplementation impl,
+    List<string> stateDescriptions,
     int t
   ) {
     var lines = new List<string>();
 
-    var isMultilineState = graph.Children.Count > 0 ||
-      graph.Data.Outputs.Count > 0;
+    var isMultilineState = graph.Children.Count > 0;
 
     var isRoot = graph == impl.Graph;
 
@@ -408,7 +422,7 @@ public class LogicBlocksDiagramGenerator :
 
     foreach (var child in graph.Children) {
       lines.AddRange(
-        WriteGraph(child, impl, t + 1)
+        WriteGraph(child, impl, stateDescriptions, t + 1)
       );
     }
 
@@ -419,9 +433,10 @@ public class LogicBlocksDiagramGenerator :
       var outputs = graph.Data.Outputs[outputContext]
         .Select(output => output.Name)
         .OrderBy(output => output);
+      // TODO: Instead of adding these inside the state, add them to the
       var line = string.Join(", ", outputs);
-      lines.Add(
-        $"{Tab(t + 1)}{graph.UmlId} : {outputContext.DisplayName} → {line}"
+      stateDescriptions.Add(
+        $"{graph.UmlId} : {outputContext.DisplayName} → {line}"
       );
     }
 

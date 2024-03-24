@@ -1,21 +1,11 @@
 @startuml VendingMachine
 state "VendingMachine State" as Chickensoft_LogicBlocks_Example_VendingMachine_State {
-  state "Idle" as Chickensoft_LogicBlocks_Example_VendingMachine_Idle {
-    Chickensoft_LogicBlocks_Example_VendingMachine_Idle : OnEnter → ClearTransactionTimeOutTimer
-    Chickensoft_LogicBlocks_Example_VendingMachine_Idle : OnPaymentReceived → MakeChange
-  }
+  state "Idle" as Chickensoft_LogicBlocks_Example_VendingMachine_Idle
   state "TransactionActive" as Chickensoft_LogicBlocks_Example_VendingMachine_TransactionActive {
     state "PaymentPending" as Chickensoft_LogicBlocks_Example_VendingMachine_PaymentPending
-    state "TransactionStarted" as Chickensoft_LogicBlocks_Example_VendingMachine_TransactionStarted {
-      Chickensoft_LogicBlocks_Example_VendingMachine_TransactionStarted : OnEnter → TransactionStarted
-    }
-    Chickensoft_LogicBlocks_Example_VendingMachine_TransactionActive : OnEnter → RestartTransactionTimeOutTimer
-    Chickensoft_LogicBlocks_Example_VendingMachine_TransactionActive : OnPaymentReceived → MakeChange, TransactionCompleted
-    Chickensoft_LogicBlocks_Example_VendingMachine_TransactionActive : OnTransactionTimedOut → MakeChange
+    state "TransactionStarted" as Chickensoft_LogicBlocks_Example_VendingMachine_TransactionStarted
   }
-  state "Vending" as Chickensoft_LogicBlocks_Example_VendingMachine_Vending {
-    Chickensoft_LogicBlocks_Example_VendingMachine_Vending : OnEnter → BeginVending
-  }
+  state "Vending" as Chickensoft_LogicBlocks_Example_VendingMachine_Vending
 }
 
 Chickensoft_LogicBlocks_Example_VendingMachine_Idle --> Chickensoft_LogicBlocks_Example_VendingMachine_Idle : PaymentReceived
@@ -27,6 +17,14 @@ Chickensoft_LogicBlocks_Example_VendingMachine_TransactionActive --> Chickensoft
 Chickensoft_LogicBlocks_Example_VendingMachine_TransactionStarted --> Chickensoft_LogicBlocks_Example_VendingMachine_Idle : SelectionEntered
 Chickensoft_LogicBlocks_Example_VendingMachine_TransactionStarted --> Chickensoft_LogicBlocks_Example_VendingMachine_TransactionStarted : SelectionEntered
 Chickensoft_LogicBlocks_Example_VendingMachine_Vending --> Chickensoft_LogicBlocks_Example_VendingMachine_Idle : VendingCompleted
+
+Chickensoft_LogicBlocks_Example_VendingMachine_Idle : OnEnter → ClearTransactionTimeOutTimer
+Chickensoft_LogicBlocks_Example_VendingMachine_Idle : OnPaymentReceived → MakeChange
+Chickensoft_LogicBlocks_Example_VendingMachine_TransactionActive : OnEnter → RestartTransactionTimeOutTimer
+Chickensoft_LogicBlocks_Example_VendingMachine_TransactionActive : OnPaymentReceived → MakeChange, TransactionCompleted
+Chickensoft_LogicBlocks_Example_VendingMachine_TransactionActive : OnTransactionTimedOut → MakeChange
+Chickensoft_LogicBlocks_Example_VendingMachine_TransactionStarted : OnEnter → TransactionStarted
+Chickensoft_LogicBlocks_Example_VendingMachine_Vending : OnEnter → BeginVending
 
 [*] --> Chickensoft_LogicBlocks_Example_VendingMachine_Idle
 @enduml

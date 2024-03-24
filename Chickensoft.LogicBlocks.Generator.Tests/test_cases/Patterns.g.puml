@@ -8,6 +8,5 @@ state "Patterns State" as Chickensoft_LogicBlocks_Generator_Tests_Patterns_State
 Chickensoft_LogicBlocks_Generator_Tests_Patterns_State --> Chickensoft_LogicBlocks_Generator_Tests_Patterns_State_One : SetMode
 Chickensoft_LogicBlocks_Generator_Tests_Patterns_State --> Chickensoft_LogicBlocks_Generator_Tests_Patterns_State_Three : SetMode
 Chickensoft_LogicBlocks_Generator_Tests_Patterns_State --> Chickensoft_LogicBlocks_Generator_Tests_Patterns_State_Two : SetMode
-
 [*] --> Chickensoft_LogicBlocks_Generator_Tests_Patterns_State_One
 @enduml

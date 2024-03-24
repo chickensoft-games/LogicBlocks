@@ -2,10 +2,7 @@
 state "Heater State" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State {
   state "Powered" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Powered {
     state "Idle" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Idle
-    state "Heating" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating {
-      Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating : OnAirTempSensorChanged → FinishedHeating
-    }
-    Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Powered : OnEnter → Chime
+    state "Heating" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating
   }
   state "Off" as Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Off
 }
@@ -18,6 +15,9 @@ Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Idle --> Chickensoft_LogicB
 Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Off --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating : TurnOn
 Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Off --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Idle : TurnOn
 Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Powered --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Off : TurnOff
+
+Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Heating : OnAirTempSensorChanged → FinishedHeating
+Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Powered : OnEnter → Chime
 
 [*] --> Chickensoft_LogicBlocks_Generator_Tests_Heater_State_Off
 @enduml
