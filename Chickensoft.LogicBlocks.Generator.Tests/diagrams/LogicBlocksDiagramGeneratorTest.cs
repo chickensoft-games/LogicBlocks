@@ -3,7 +3,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 using Shouldly;
 using Xunit;
 
-public class GeneratorTest {
+public class LogicBlocksDiagramGeneratorTest {
   [Fact]
   public void GeneratesUml() {
     var contents = Tester.LoadFixture("ToasterOven.cs");
