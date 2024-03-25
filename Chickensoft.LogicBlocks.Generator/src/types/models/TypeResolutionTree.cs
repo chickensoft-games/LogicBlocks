@@ -100,12 +100,14 @@ public record TypeResolutionTree {
       $"{(namePrefix is not null and not "global::" ? namePrefix + "." : "")}{node.Name}";
 
     if (node is TypeNode typeNode) {
+      name += typeNode.OpenGenerics;
+
       if (!typeNode.IsVisible) {
         yield break;
       }
 
       if (predicate(typeNode)) {
-        yield return name + typeNode.OpenGenerics;
+        yield return name;
       }
 
       foreach (var child in typeNode.TypeChildren.Values) {
