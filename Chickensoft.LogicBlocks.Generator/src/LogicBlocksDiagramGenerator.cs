@@ -12,7 +12,6 @@ using Chickensoft.LogicBlocks.Generator.Common.Services;
 using Chickensoft.SourceGeneratorUtils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
 
 [Generator]
 public class LogicBlocksDiagramGenerator :
@@ -20,9 +19,9 @@ public class LogicBlocksDiagramGenerator :
   public static Log Log { get; } = new Log();
   public ICodeService CodeService { get; } = new CodeService();
 
-  // #pragma warning disable IDE0052, CS0414
-  private static bool _logsFlushed;
-  // #pragma warning restore CS0414, IDE0052
+  // #pragma warning disable
+  // private static bool _logsFlushed;
+  // #pragma warning restore
 
   public void Initialize(IncrementalGeneratorInitializationContext context) {
     // If you need to debug the source generator, uncomment the following line
@@ -113,22 +112,22 @@ public class LogicBlocksDiagramGenerator :
 
     // When debugging source generators, it can be nice to output a log file.
     // This is a total hack to print out a single file.
-#if DEBUG
-    var syntax = context.SyntaxProvider.CreateSyntaxProvider(
-      predicate: (syntaxNode, _) => syntaxNode is CompilationUnitSyntax,
-      transform: (syntaxContext, _) => syntaxContext.Node
-    );
-    context.RegisterImplementationSourceOutput(
-      syntax,
-      (ctx, _) => {
-        if (_logsFlushed) { return; }
-        ctx.AddSource(
-          "LOG", SourceText.From(Log.Contents, Encoding.UTF8)
-        );
-        _logsFlushed = true;
-      }
-    );
-#endif
+    // --------------------------------------------------------------------- //
+    // var syntax = context.SyntaxProvider.CreateSyntaxProvider(
+    //   predicate: (syntaxNode, _) => syntaxNode is CompilationUnitSyntax,
+    //   transform: (syntaxContext, _) => syntaxContext.Node
+    // );
+    // context.RegisterImplementationSourceOutput(
+    //   syntax,
+    //   (ctx, _) => {
+    //     if (_logsFlushed) { return; }
+    //     ctx.AddSource(
+    //       "LOG", SourceText.From(Log.Contents, Encoding.UTF8)
+    //     );
+    //     _logsFlushed = true;
+    //   }
+    // );
+    // --------------------------------------------------------------------- //
   }
 
   public static bool IsLogicBlockCandidate(SyntaxNode node) =>
