@@ -23,7 +23,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 /// For background on AOT/iOS Environments and STJ:
 /// https://github.com/dotnet/runtime/issues/31326
 /// </summary>
-[Generator]
+// [Generator]
 public class LogicBlocksTypeGenerator
   : ChickensoftGenerator, IIncrementalGenerator {
 
@@ -151,7 +151,7 @@ public class LogicBlocksTypeGenerator
     " { get; } = new Type[] {\n" +
     AddTypeEntries(typeNames) +
     """
-      }.ToImmutableArray();
+    }.ToImmutableArray();
 
 
     """;
