@@ -14,7 +14,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 /// <summary>
 /// This generator exists to list types in the developer's codebase for use
-/// with polymorphic serialization and deserialization.
+/// with polymorphic serialization and deserialization or automatic state
+/// creation and registration.
 /// <br />
 /// https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/polymorphism?pivots=dotnet-8-0#configure-polymorphism-with-the-contract-model
 /// <br />
