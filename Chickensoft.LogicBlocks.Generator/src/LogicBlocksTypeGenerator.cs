@@ -99,77 +99,15 @@ public class LogicBlocksTypeGenerator
         GenerationData data
       ) => {
         var source = """
-        namespace Chickensoft.LogicBlocks.Generated;
-
-        using System.Collections.Immutable;
-        using System.Linq;
-
-        public static class TypeRegistry {
-          /// <summary>
-          /// Map of base types to their immediate subtypes.
-          /// </summary>
-          public static ImmutableDictionary<Type, ImmutableHashSet<Type>> TypesByBaseType { get; }
-
-          static TypeRegistry() {
-            var builder = ImmutableDictionary.CreateBuilder<Type, ImmutableHashSet<Type>.Builder>();
-
-            foreach (var type in Types) {
-              if (type.BaseType is not Type baseType) { continue; }
-
-              if (builder.TryGetValue(baseType, out var existingSet)) {
-                existingSet.Add(type);
-              }
-              else {
-                var set = ImmutableHashSet.CreateBuilder<Type>();
-                set.Add(type);
-                builder.Add(baseType, set);
-              }
-            }
-
-            TypesByBaseType = builder.ToImmutableDictionary(
-              keySelector: kvp => kvp.Key,
-              elementSelector: kvp => kvp.Value.ToImmutable()
-            );
-          }
-
-
-
-          /// <summary>
-          /// Get all the known subtypes of a given type.
-          /// </summary>
-          /// <param name="type">Ancestor type whose descendants should be returned.
-          /// </param>
-          /// <returns>All descendant types of <paramref name="type"/>.</returns>
-          public static ImmutableHashSet<Type> GetDescendants(Type type) {
-            var descendants = ImmutableHashSet.CreateBuilder<Type>();
-            var queue = new Queue<Type>();
-            queue.Enqueue(type);
-
-            while (queue.Count > 0) {
-              var current = queue.Dequeue();
-              descendants.Add(current);
-
-              if (TypesByBaseType.TryGetValue(current, out var children)) {
-                foreach (var child in children) {
-                  queue.Enqueue(child);
-                }
-              }
-            }
-
-            descendants.Remove(type);
-
-            return descendants.ToImmutable();
-          }
+        public class TypeRegistry : Chickensoft.LogicBlocks.Types.ITypeRegistry {
 
         """;
-
-        source += CreateTypeSetProperty("Types", data.VisibleTypes);
-        source += CreateTypeSetProperty("InstantiableTypes", data.VisibleInstantiableTypes);
-
+        source += CreateTypeSetProperty("VisibleTypes", data.VisibleTypes);
+        source += CreateTypeSetProperty("VisibleInstantiableTypes", data.VisibleInstantiableTypes);
         source += "}";
 
         context.AddSource(
-          hintName: $"LogicBlocks.Generated.TypesRegistry.g.cs",
+          hintName: $"TypeRegistry.g.cs",
           source: source
         );
       }
@@ -193,11 +131,11 @@ public class LogicBlocksTypeGenerator
 
   private static string CreateTypeSetProperty(
     string propertyName, ImmutableHashSet<string> typeNames
-  ) => $"public static ImmutableArray<Type> {propertyName}" +
-    " { get; } = new Type[] {\n" +
+  ) => $"  public System.Collections.Generic.ISet<System.Type> {propertyName}" +
+    " { get; } = new System.Collections.Generic.HashSet<System.Type>() {\n" +
     AddTypeEntries(typeNames) +
     """
-    }.ToImmutableArray();
+      };
 
 
     """;
