@@ -25,7 +25,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 /// https://github.com/dotnet/runtime/issues/31326
 /// </summary>
 [Generator]
-public class LogicBlocksTypeGenerator2
+public class LogicBlocksTypeGenerator
   : ChickensoftGenerator, IIncrementalGenerator {
 
   public void Initialize(IncrementalGeneratorInitializationContext context) {
