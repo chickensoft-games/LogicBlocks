@@ -53,6 +53,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="LogicBlocks.props" Pack="true" PackagePath="build" />
+    <!-- Include the stuff inside ./buildTransitive so our props get picked up by consuming packages -->
+    <None Include="./buildTransitive/**/*" Pack="true" PackagePath="buildTransitive" />
   </ItemGroup>
 </Project>
