@@ -3,7 +3,7 @@ namespace Chickensoft.LogicBlocks.Generator;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
-using Chickensoft.LogicBlocks.Generator.Common.Models;
+using Chickensoft.LogicBlocks.Generator.Diagram.Models;
 using Chickensoft.LogicBlocks.Generator.Common.Services;
 using Chickensoft.SourceGeneratorUtils;
 using Microsoft.CodeAnalysis;

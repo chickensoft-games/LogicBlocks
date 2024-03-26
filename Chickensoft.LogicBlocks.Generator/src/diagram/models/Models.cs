@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Generator.Common.Models;
+namespace Chickensoft.LogicBlocks.Generator.Diagram.Models;
 
 using System;
 using System.Collections.Generic;

@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using Chickensoft.LogicBlocks.Generator.Common.Models;
 using Chickensoft.LogicBlocks.Generator.Common.Services;
+using Chickensoft.LogicBlocks.Generator.Diagram.Models;
 using Chickensoft.SourceGeneratorUtils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -24,6 +25,17 @@ public class LogicBlocksDiagramGenerator :
   // #pragma warning restore
 
   public void Initialize(IncrementalGeneratorInitializationContext context) {
+    var options = context.AnalyzerConfigOptionsProvider
+      .Select((options, _) => {
+        var disabled = options.GlobalOptions.TryGetValue(
+          "build_property.LogicBlocksDiagramGeneratorDisabled", out var value
+        ) && value.ToLower() is "true";
+
+        return new GenerationOptions(
+          LogicBlocksDiagramGeneratorDisabled: disabled
+        );
+      });
+
     // If you need to debug the source generator, uncomment the following line
     // and use Visual Studio 2022 on Windows to attach to debugging next time
     // the source generator process is started by running `dotnet build` in
@@ -68,17 +80,25 @@ public class LogicBlocksDiagramGenerator :
         GetStateGraph(
           (ClassDeclarationSyntax)context.Node, context.SemanticModel, token
         )
-    ).Where(logicBlockImplementation => logicBlockImplementation is not null)
+    )
+    .Where(logicBlockImplementation => logicBlockImplementation is not null)
     .Select((logicBlockImplementation, token) => ConvertStateGraphToUml(
       logicBlockImplementation!, token
-    ));
+    ))
+    .Combine(options)
+    .Select((result, _) => new GenerationData(result.Left, result.Right));
 
     context.RegisterSourceOutput(
       source: logicBlockCandidates,
       action: (
         SourceProductionContext context,
-        ILogicBlockResult possibleResult
+        GenerationData data
       ) => {
+        var disabled = data.Options.LogicBlocksDiagramGeneratorDisabled;
+        if (disabled) { return; }
+
+        var possibleResult = data.Result;
+
         if (possibleResult is not LogicBlockOutputResult result) { return; }
 
         // Since we need to output non-C# files, we have to write files to
