@@ -33,9 +33,6 @@ public static class Tester {
       .GetSemanticModel(tree);
   }
 
-  public static GeneratorOutput Generate(string sourceCode)
-    => Generate(new string[] { sourceCode });
-
   public static GeneratorOutput Generate(params string[] sources) {
     var syntaxTrees = sources.Select(
       source => CSharpSyntaxTree.ParseText(source)
