@@ -86,15 +86,20 @@ public record TypeResolutionTree {
   /// <summary>Get the full names of all visible types.</summary>
   /// <param name="predicate">Optional predicate to filter types further.
   /// </param>
+  /// <param name="searchGenericTypes">Whether to search for types within
+  /// generic types.</param>
   /// <returns>Fully qualified names of visible types.</returns>
   public IEnumerable<string> GetVisibleTypes(
-    Func<TypeNode, bool>? predicate = null
-  ) => GetVisibleTypes(Root, predicate ?? (_ => true)).OrderBy(t => t);
+    Func<TypeNode, bool>? predicate = null, bool searchGenericTypes = true
+  ) => GetVisibleTypes(
+    Root, predicate ?? (_ => true), searchGenericTypes, null
+  ).OrderBy(t => t);
 
   private IEnumerable<string> GetVisibleTypes(
     TypeResolutionNode node,
     Func<TypeNode, bool> predicate,
-    string? namePrefix = null
+    bool searchGenericTypes,
+    string? namePrefix
   ) {
     var name =
       $"{(namePrefix is not null and not "global::" ? namePrefix + "." : "")}{node.Name}";
@@ -110,21 +115,37 @@ public record TypeResolutionTree {
         yield return name;
       }
 
+      if (typeNode.OpenGenerics != "" && !searchGenericTypes) {
+        yield break;
+      }
+
       foreach (var child in typeNode.TypeChildren.Values) {
-        foreach (var fullName in GetVisibleTypes(child, predicate, name)) {
+        foreach (
+          var fullName in GetVisibleTypes(
+            child, predicate, searchGenericTypes, name
+          )
+        ) {
           yield return fullName;
         }
       }
     }
     else if (node is NamespaceNode nsNode) {
       foreach (var typeChild in nsNode.TypeChildren.Values) {
-        foreach (var fullName in GetVisibleTypes(typeChild, predicate, name)) {
+        foreach (
+          var fullName in GetVisibleTypes(
+            typeChild, predicate, searchGenericTypes, name
+          )
+        ) {
           yield return fullName;
         }
       }
 
       foreach (var child in nsNode.Children.Values) {
-        foreach (var fullName in GetVisibleTypes(child, predicate, name)) {
+        foreach (
+          var fullName in GetVisibleTypes(
+            child, predicate, searchGenericTypes, name
+          )
+        ) {
           yield return fullName;
         }
       }

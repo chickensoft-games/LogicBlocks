@@ -79,7 +79,9 @@ public class TypeGenerator : IIncrementalGenerator {
 
       var visibleTypes = tree.GetVisibleTypes();
       var visibleInstantiableTypes = tree.GetVisibleTypes(
-        static (type) => type.IsInstantiable
+        predicate:
+          static (type) => type.IsInstantiable && type.OpenGenerics == "",
+        searchGenericTypes: false
       );
 
       var generationData = new GenerationData(
@@ -100,8 +102,14 @@ public class TypeGenerator : IIncrementalGenerator {
         public class TypeRegistry : Chickensoft.LogicBlocks.Types.ITypeRegistry {
 
         """;
-        source += CreateTypeSetProperty("VisibleTypes", data.VisibleTypes);
-        source += CreateTypeSetProperty("VisibleInstantiableTypes", data.VisibleInstantiableTypes);
+
+        // Sort types for deterministic output.
+        var orderedTypes = data.VisibleTypes.OrderBy(t => t).ToList();
+        var instantiableTypes =
+          data.VisibleInstantiableTypes.OrderBy(t => t).ToList();
+
+        source += CreateVisibleTypesProperty(orderedTypes);
+        source += CreateVisibleInstantiableTypesProperty(instantiableTypes);
         source += "}";
 
         context.AddSource(
@@ -127,9 +135,10 @@ public class TypeGenerator : IIncrementalGenerator {
     );
   }
 
-  private static string CreateTypeSetProperty(
-    string propertyName, ImmutableHashSet<string> typeNames
-  ) => $"  public System.Collections.Generic.ISet<System.Type> {propertyName}" +
+  private static string CreateVisibleTypesProperty(
+    IList<string> typeNames
+  ) =>
+    "  public System.Collections.Generic.ISet<System.Type> VisibleTypes" +
     " { get; } = new System.Collections.Generic.HashSet<System.Type>() {\n" +
     AddTypeEntries(typeNames) +
     """
@@ -138,12 +147,41 @@ public class TypeGenerator : IIncrementalGenerator {
 
     """;
 
-  private static string AddTypeEntries(ImmutableHashSet<string> typeNames) {
+  private static string CreateVisibleInstantiableTypesProperty(
+    IList<string> typeNames
+  ) =>
+    "  public System.Collections.Generic.IDictionary" +
+    "<System.Type, Func<object>> VisibleInstantiableTypes" +
+    " { get; } = new System.Collections.Generic.Dictionary" +
+    "<System.Type, Func<object>>() {\n" +
+    AddInstantiableTypeEntries(typeNames) +
+    """
+      };
+
+
+    """;
+
+  private static string AddTypeEntries(IList<string> typeNames) {
     var i = 0;
     var sb = new StringBuilder();
     foreach (var typeName in typeNames.OrderBy(t => t)) {
       var isLast = i == typeNames.Count - 1;
       sb.Append($"    typeof({typeName}){(isLast ? "" : ",")}\n");
+      i++;
+    }
+    return sb.ToString();
+  }
+
+  private static string AddInstantiableTypeEntries(IList<string> typeNames) {
+    var i = 0;
+    var sb = new StringBuilder();
+    foreach (var typeName in typeNames.OrderBy(t => t)) {
+      var isLast = i == typeNames.Count - 1;
+      sb.Append(
+        $"    [typeof({typeName})] = () => " +
+        $"System.Activator.CreateInstance<{typeName}>()" +
+        $"{(isLast ? "" : ",")}\n"
+      );
       i++;
     }
     return sb.ToString();

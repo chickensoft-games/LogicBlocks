@@ -35,11 +35,17 @@ public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
   /// </summary>
   bool IsStarted { get; }
   /// <summary>
-  /// Gets data from the blackboard.
+  /// Gets data from the blackboard by its compile-time type.
   /// </summary>
   /// <typeparam name="TData">The type of data to retrieve.</typeparam>
   /// <exception cref="KeyNotFoundException" />
   TData Get<TData>() where TData : class;
+  /// <summary>
+  /// Gets data from the blackboard by its runtime type.
+  /// </summary>
+  /// <param name="type">Type of the data to retrieve.</param>
+  /// <exception cref="KeyNotFoundException" />
+  object GetObject(Type type);
   /// <summary>
   /// Returns the initial state of the logic block. Implementations must
   /// override this to provide a valid initial state.
@@ -221,12 +227,18 @@ IInputHandler where TState : class, IStateLogic<TState> {
   /// <inheritdoc />
   public TData Get<TData>() where TData : class {
     var type = typeof(TData);
-    return !_blackboard.TryGetValue(type, out var data)
-      ? throw new LogicBlockException(
-        $"Data of type {type} not found in the blackboard."
-      )
-      : (data as TData)!;
+    return (TData)GetData(type);
   }
+
+  /// <inheritdoc />
+  public object GetObject(Type type) => GetData(type);
+
+  private object GetData(Type type) =>
+    _blackboard.TryGetValue(type, out var data)
+      ? data
+      : throw new LogicBlockException(
+        $"Data of type {type} not found in the blackboard."
+      );
 
   /// <inheritdoc />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -293,8 +305,11 @@ IInputHandler where TState : class, IStateLogic<TState> {
   protected virtual void HandleError(Exception e) { }
 
   /// <summary>
-  /// Adds data to the blackboard. Data is retrieved by its type, so do not add
-  /// more than one piece of data with the same type.
+  /// Adds data to the blackboard so that it can be looked up by its
+  /// compile-time type.
+  /// <br />
+  /// Data is retrieved by its type, so do not add more than one piece of data
+  /// with the same type.
   /// </summary>
   /// <param name="data">Data to write to the blackboard.</param>
   /// <typeparam name="TData">Type of the data to add.</typeparam>
@@ -302,6 +317,25 @@ IInputHandler where TState : class, IStateLogic<TState> {
   /// has already been added.</exception>
   protected void Set<TData>(TData data) where TData : class {
     var type = typeof(TData);
+    SetBlackboardData(type, data);
+  }
+
+  /// <summary>
+  /// Adds data to the blackboard so that it can be looked up by its runtime
+  /// type.
+  /// <br />
+  /// Data is retrieved by its type, so do not add more than one piece of data
+  /// with the same type.
+  /// </summary>
+  /// <param name="data">Data to write to the blackboard.</param>
+  /// <exception cref="ArgumentException">Thrown if data of the provided type
+  /// has already been added.</exception>
+  protected void SetObject(object data) {
+    var type = data.GetType();
+    SetBlackboardData(type, data);
+  }
+
+  private void SetBlackboardData(Type type, object data) {
     if (!_blackboard.TryAdd(type, data)) {
       throw new LogicBlockException(
         $"Data of type {type} already exists in the blackboard."
@@ -310,14 +344,27 @@ IInputHandler where TState : class, IStateLogic<TState> {
   }
 
   /// <summary>
-  /// Adds new data or overwrites existing data in the blackboard. Data is
-  /// retrieved by its type, so this will overwrite any existing data of the
-  /// given type, unlike <see cref="Set{TData}(TData)" />.
+  /// Adds new data or overwrites existing data in the blackboard, based on
+  /// its compile-time type.
+  /// <br />
+  /// Data is retrieved by its type, so this will overwrite any existing data
+  /// of the given type, unlike <see cref="Set{TData}(TData)" />.
   /// </summary>
   /// <param name="data">Data to write to the blackboard.</param>
   /// <typeparam name="TData">Type of the data to add or overwrite.</typeparam>
   protected void Overwrite<TData>(TData data) where TData : class =>
     _blackboard[typeof(TData)] = data;
+
+  /// <summary>
+  /// Adds new data or overwrites existing data in the blackboard, based on
+  /// its runtime type.
+  /// <br />
+  /// Data is retrieved by its type, so this will overwrite any existing data
+  /// of the given type, unlike <see cref="Set{TData}(TData)" />.
+  /// </summary>
+  /// <param name="data">Data to write to the blackboard.</param>
+  protected void OverwriteObject(object data) =>
+    _blackboard[data.GetType()] = data;
 
   internal TState ProcessInputs<TInputType>(
     in TInputType? input = null

@@ -1,7 +1,9 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests.Types.TestCases {
   namespace TraditionalNamespace {
     public class A {
-      public sealed class AA;
+      public sealed class AA {
+        public sealed class AAA;
+      }
       internal sealed class AB;
       protected internal sealed class AC;
       private sealed class AD;

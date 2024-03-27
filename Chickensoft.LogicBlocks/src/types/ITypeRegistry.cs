@@ -13,9 +13,10 @@ public interface ITypeRegistry {
   /// </summary>
   ISet<Type> VisibleTypes { get; }
   /// <summary>
-  /// Map of visible types that are also instantiable to a function which
-  /// can be invoked to create a new instance of an object of that type. The
-  /// function will throw if the type does not have a parameterless constructor.
+  /// Map of visible types that are instantiable and non-generic to a function
+  /// which can be invoked to create a new instance of an object of that type.
+  /// The function will throw if the type does not have a parameterless
+  /// constructor.
   /// </summary>
-  Dictionary<Type, Func<object>> VisibleInstantiableTypes { get; }
+  IDictionary<Type, Func<object>> VisibleInstantiableTypes { get; }
 }
