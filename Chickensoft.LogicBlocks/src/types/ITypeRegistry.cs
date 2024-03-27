@@ -12,6 +12,10 @@ public interface ITypeRegistry {
   /// Visible types, including any visible abstract types and interfaces.
   /// </summary>
   ISet<Type> VisibleTypes { get; }
-  /// <summary>Only visible types that are also instantiable.</summary>
-  ISet<Type> VisibleInstantiableTypes { get; }
+  /// <summary>
+  /// Map of visible types that are also instantiable to a function which
+  /// can be invoked to create a new instance of an object of that type. The
+  /// function will throw if the type does not have a parameterless constructor.
+  /// </summary>
+  Dictionary<Type, Func<object>> VisibleInstantiableTypes { get; }
 }
