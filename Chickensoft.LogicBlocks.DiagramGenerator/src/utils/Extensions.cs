@@ -41,10 +41,7 @@ public static class Extensions {
     }
 
     var escaped = Regex.Escape(newLine);
-#pragma warning disable RCS1262
     var regex = new Regex($$"""({{escaped}}){3,}""");
-#pragma warning restore RCS1262
-
     return regex.Replace(string.Join(newLine, lines), newLine);
   }
 }

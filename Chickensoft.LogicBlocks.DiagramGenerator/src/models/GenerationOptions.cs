@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Generator.Common.Models;
+namespace Chickensoft.LogicBlocks.DiagramGenerator.Models;
 
 public record GenerationOptions(
   bool LogicBlocksDiagramGeneratorDisabled

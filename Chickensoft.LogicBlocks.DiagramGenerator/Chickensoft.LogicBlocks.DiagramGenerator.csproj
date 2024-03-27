@@ -6,20 +6,20 @@
     <Nullable>enable</Nullable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <LangVersion>preview</LangVersion>
-    <RootNamespace>Chickensoft.LogicBlocks.Generator</RootNamespace>
+    <RootNamespace>Chickensoft.LogicBlocks.DiagramGenerator</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoWarn>NU5128</NoWarn>
     <OutputPath>./nupkg</OutputPath>
 
     <Title>LogicBlocks Generator</Title>
     <Version>4.2.2</Version>
-    <Description>Lookup types at runtime without reflection.</Description>
+    <Description>See what your hierarchical state machine code looks like as a diagram!</Description>
     <Copyright>© 2024 Chickensoft Games</Copyright>
     <Authors>Chickensoft</Authors>
     <Company>Chickensoft</Company>
 
-    <PackageId>Chickensoft.LogicBlocks.Generator</PackageId>
-    <PackageReleaseNotes>LogicBlocks Generator release.</PackageReleaseNotes>
+    <PackageId>Chickensoft.LogicBlocks.DiagramGenerator</PackageId>
+    <PackageReleaseNotes>LogicBlocks Diagram Generator release.</PackageReleaseNotes>
     <PackageIcon>icon.png</PackageIcon>
     <PackageTags>State management;state machine;Godot;CSharp;C#;Chickensoft;Gamedev;Utility;Utilities;Source Generator;Generator;Godot 4;</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>

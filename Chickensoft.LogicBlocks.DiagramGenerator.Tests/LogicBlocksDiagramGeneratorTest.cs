@@ -1,13 +1,14 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 
+using Chickensoft.GeneratorTester;
 using Shouldly;
 using Xunit;
 
 public class LogicBlocksDiagramGeneratorTest {
   [Fact]
   public void GeneratesUml() {
-    var contents = Tester.LoadFixture("ToasterOven.cs");
-    var result = Tester.Generate(contents);
+    var contents = Tester.LoadFixture("test_cases/ToasterOven.cs");
+    var result = new DiagramGenerator().Generate(contents);
 
     result.Outputs["ToasterOven.puml.g.cs"].ShouldBe("""
     @startuml ToasterOven

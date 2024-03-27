@@ -7,16 +7,14 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Chickensoft.LogicBlocks.Generator.Common.Models;
-using Chickensoft.LogicBlocks.Generator.Common.Services;
-using Chickensoft.LogicBlocks.Generator.Diagram.Models;
+using Chickensoft.LogicBlocks.DiagramGenerator.Models;
+using Chickensoft.LogicBlocks.DiagramGenerator.Services;
 using Chickensoft.SourceGeneratorUtils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 [Generator]
-public class LogicBlocksDiagramGenerator :
-  ChickensoftGenerator, IIncrementalGenerator {
+public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator {
   public static Log Log { get; } = new Log();
   public ICodeService CodeService { get; } = new CodeService();
 
@@ -88,7 +86,7 @@ public class LogicBlocksDiagramGenerator :
     .Combine(options)
     .Select((result, _) => new GenerationData(result.Left, result.Right));
 
-    context.RegisterSourceOutput(
+    context.RegisterImplementationSourceOutput(
       source: logicBlockCandidates,
       action: (
         SourceProductionContext context,

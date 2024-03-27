@@ -4,6 +4,7 @@ Chickensoft.LogicBlocks.Generator/nupkg/
 Chickensoft.LogicBlocks.Tests/coverage/*
 !Chickensoft.LogicBlocks.Tests/coverage/.gdignore
 
+nupkg/
 .godot/
 bin/
 obj/

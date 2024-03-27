@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Chickensoft.LogicBlocks.Generator.Types.Models;
-using Chickensoft.SourceGeneratorUtils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -26,8 +25,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 /// https://github.com/dotnet/runtime/issues/31326
 /// </summary>
 [Generator]
-public class LogicBlocksTypeGenerator
-  : ChickensoftGenerator, IIncrementalGenerator {
+public class LogicBlocksTypeGenerator : IIncrementalGenerator {
 
   public void Initialize(IncrementalGeneratorInitializationContext context) {
     // If you need to debug the source generator, uncomment the following line

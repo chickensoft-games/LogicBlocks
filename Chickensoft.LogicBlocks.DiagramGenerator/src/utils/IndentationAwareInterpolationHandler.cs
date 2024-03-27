@@ -22,13 +22,11 @@ public readonly ref struct IndentationAwareInterpolationHandler {
   private readonly StringBuilder _sb;
   private readonly State _state = new();
 
-#pragma warning disable IDE0290
   public IndentationAwareInterpolationHandler(
     int literalLength, int formattedCount
   ) {
     _sb = new StringBuilder(literalLength);
   }
-#pragma warning restore IDE0290
 
   public void AppendLiteral(string s) => AddString(s);
 

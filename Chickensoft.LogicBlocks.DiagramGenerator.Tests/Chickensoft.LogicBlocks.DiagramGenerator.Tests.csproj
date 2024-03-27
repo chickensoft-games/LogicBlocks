@@ -4,17 +4,20 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <LangVersion>preview</LangVersion>
 
     <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
+    <LangVersion>preview</LangVersion>
+    <DebugType>portable</DebugType>
 
-      <!-- To show generated files -->
+    <!-- To show generated files -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>.generated</CompilerGeneratedFilesOutputPath>
 
     <!-- Tracks generator performance when dotnet build /binaryLogger -->
     <ReportAnalyzer>true</ReportAnalyzer>
+
+    <!-- This can be used to disable the diagram generator, if desired. -->
+    <!-- <LogicBlocksDiagramGeneratorDisabled>true</LogicBlocksDiagramGeneratorDisabled> -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,9 +41,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Chickensoft.LogicBlocks.Generator/Chickensoft.LogicBlocks.Generator.csproj" />
-    <ProjectReference Include="../Chickensoft.LogicBlocks.Generator/Chickensoft.LogicBlocks.Generator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
+    <ProjectReference Include="../Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj" />
+    <ProjectReference Include="../Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
     <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
+    <ProjectReference Include="../Chickensoft.GeneratorTester/Chickensoft.GeneratorTester.csproj" />
   </ItemGroup>
 
 </Project>

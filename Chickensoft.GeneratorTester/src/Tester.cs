@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Generator.Tests;
+namespace Chickensoft.GeneratorTester;
 
 using System;
 using System.Collections.Generic;
@@ -6,7 +6,6 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Chickensoft.SourceGeneratorUtils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -33,7 +32,9 @@ public static class Tester {
       .GetSemanticModel(tree);
   }
 
-  public static GeneratorOutput Generate(params string[] sources) {
+  public static GeneratorOutput Generate(
+    this IIncrementalGenerator generator, params string[] sources
+  ) {
     var syntaxTrees = sources.Select(
       source => CSharpSyntaxTree.ParseText(source)
     );
@@ -51,8 +52,6 @@ public static class Tester {
         OutputKind.DynamicallyLinkedLibrary
       )
     );
-
-    var generator = new LogicBlocksDiagramGenerator();
 
     CSharpGeneratorDriver.Create(generator)
       .RunGeneratorsAndUpdateCompilation(
@@ -138,14 +137,26 @@ public static class Tester {
     .GetDeclaredSymbol(node)!;
   }
 
-  private static string CallerFilePath(
+  public static string LoadFixture(
+    string relativePathInProject,
     [CallerFilePath] string? callerFilePath = null
-  ) => callerFilePath ??
-  throw new ArgumentNullException(nameof(callerFilePath));
+  ) => File.ReadAllText(
+    Path.Join(
+      Path.GetDirectoryName(callerFilePath),
+      relativePathInProject
+    )
+  );
+}
 
-  public static string LoadFixture(string relativePathInProject) =>
-    File.ReadAllText(Path.Join(ProjectDirectory(), relativePathInProject));
-
-  private static string ProjectDirectory() =>
-    Path.GetDirectoryName(CallerFilePath())!;
+public static class StringExtensions {
+  public static string NormalizeLineEndings(
+    this string text,
+    string? newLine = null
+  ) {
+    newLine ??= Environment.NewLine;
+    return text
+      .Replace("\r\n", "\n")
+      .Replace("\r", "\n")
+      .Replace("\n", newLine);
+  }
 }

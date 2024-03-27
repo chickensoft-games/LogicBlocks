@@ -39,7 +39,7 @@ public abstract class ChickensoftGenerator {
   /// <returns>Enumerable lines of code.</returns>
   public static IEnumerable<string> If(
     bool condition, IEnumerable<string> lines
-  ) => condition ? lines : Enumerable.Empty<string>();
+  ) => condition ? lines : [];
 
   /// <summary>
   /// Returns the given <paramref name="lines" /> of code if
