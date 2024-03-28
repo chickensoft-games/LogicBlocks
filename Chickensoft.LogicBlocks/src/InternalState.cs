@@ -54,7 +54,7 @@ internal readonly struct InternalState {
   // deemed equivalent because their callbacks are different.
 
   /// <inheritdoc />
-  public override bool Equals(object obj) => true;
+  public override bool Equals(object? obj) => true;
 
   /// <inheritdoc />
   public override int GetHashCode() => HashCode.Combine(

@@ -111,11 +111,6 @@ public partial class FakeLogicBlock : LogicBlock<FakeLogicBlock.State> {
 
   public List<Exception> Exceptions { get; } = new();
 
-  public void PublicSet<T>(T value) where T : class => Set(value);
-
-  public void PublicOverwrite<T>(T value) where T : class =>
-    Overwrite(value);
-
   public override State GetInitialState() =>
     InitialState?.Invoke() ?? new State.StateA(1, 2);
 

@@ -83,7 +83,10 @@ where TState : class, IStateLogic<TState> {
   protected abstract void Cleanup();
 
   /// <inheritdoc />
-  public void Dispose() => Dispose(true);
+  public void Dispose() {
+    Dispose(true);
+    GC.SuppressFinalize(this);
+  }
 
   private void Dispose(bool disposing) {
     if (disposing) {

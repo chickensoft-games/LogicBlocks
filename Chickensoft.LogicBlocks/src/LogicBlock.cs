@@ -18,7 +18,8 @@ using System.Runtime.CompilerServices;
 /// </para>
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
-public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
+public interface ILogicBlock<TState> : IReadOnlyBlackboard
+where TState : class, IStateLogic<TState> {
   /// <summary>
   /// Logic block execution context.
   /// </summary>
@@ -35,24 +36,11 @@ public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
   /// </summary>
   bool IsStarted { get; }
   /// <summary>
-  /// Gets data from the blackboard by its compile-time type.
-  /// </summary>
-  /// <typeparam name="TData">The type of data to retrieve.</typeparam>
-  /// <exception cref="KeyNotFoundException" />
-  TData Get<TData>() where TData : class;
-  /// <summary>
-  /// Gets data from the blackboard by its runtime type.
-  /// </summary>
-  /// <param name="type">Type of the data to retrieve.</param>
-  /// <exception cref="KeyNotFoundException" />
-  object GetObject(Type type);
-  /// <summary>
   /// Returns the initial state of the logic block. Implementations must
   /// override this to provide a valid initial state.
   /// </summary>
   /// <returns>Initial logic block state.</returns>
   TState GetInitialState();
-
   /// <summary>
   /// Adds an input value to the logic block's internal input queue.
   /// </summary>
@@ -60,13 +48,11 @@ public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
   /// <typeparam name="TInputType">Type of the input.</typeparam>
   /// <returns>Logic block input return value.</returns>
   TState Input<TInputType>(in TInputType input) where TInputType : struct;
-
   /// <summary>
   /// Creates a binding to a logic block.
   /// </summary>
   /// <returns>Logic block binding.</returns>
   LogicBlock<TState>.IBinding Bind();
-
   /// <summary>
   /// Starts the logic block by entering the current state. If the logic block
   /// is already started, nothing happens. If the logic block
@@ -74,7 +60,6 @@ public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
   /// <see cref="GetInitialState" /> and attaching it to the logic block first.
   /// </summary>
   void Start();
-
   /// <summary>
   /// Stops the logic block. This calls any OnExit callbacks the current state
   /// registered before detaching it. If any inputs are created while the
@@ -82,7 +67,6 @@ public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
   /// processed.
   /// </summary>
   void Stop();
-
   /// <summary>
   /// <para>
   /// Forcibly resets the logic block to the specified state, even if the
@@ -102,7 +86,6 @@ public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
   /// </summary>
   /// <param name="state">State to forcibly reset to.</param>
   TState ForceReset(TState state);
-
   /// <summary>
   /// Adds a binding to the logic block. This is used internally by the standard
   /// bindings implementation. Prefer using <see cref="Bind" /> to create an
@@ -134,12 +117,16 @@ public interface ILogicBlock<TState> where TState : class, IStateLogic<TState> {
 /// <typeparam name="TState">State type.</typeparam>
 public abstract partial class LogicBlock<TState> : ILogicBlock<TState>,
 IInputHandler where TState : class, IStateLogic<TState> {
+#pragma warning disable CA1000
+  // We do want static members on generic types here since it makes for a
+  // really ergonomic API.
   /// <summary>
   /// Creates a fake logic binding that can be used to more easily test objects
   /// that bind to logic blocks.
   /// </summary>
   /// <returns>Fake binding.</returns>
   public static IFakeBinding CreateFakeBinding() => new FakeBinding();
+#pragma warning restore CA1000
 
   /// <inheritdoc />
   public IContext Context { get; }
@@ -156,7 +143,7 @@ IInputHandler where TState : class, IStateLogic<TState> {
   private TState? _value;
   private int _isProcessing;
   private readonly InputQueue _inputs;
-  private readonly Dictionary<Type, object> _blackboard = new();
+  private readonly Blackboard _blackboard = new();
   private readonly HashSet<ILogicBlockBinding<TState>> _bindings = new();
 
   /// <summary>
@@ -225,22 +212,6 @@ IInputHandler where TState : class, IStateLogic<TState> {
   }
 
   /// <inheritdoc />
-  public TData Get<TData>() where TData : class {
-    var type = typeof(TData);
-    return (TData)GetData(type);
-  }
-
-  /// <inheritdoc />
-  public object GetObject(Type type) => GetData(type);
-
-  private object GetData(Type type) =>
-    _blackboard.TryGetValue(type, out var data)
-      ? data
-      : throw new LogicBlockException(
-        $"Data of type {type} not found in the blackboard."
-      );
-
-  /// <inheritdoc />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public void AddBinding(ILogicBlockBinding<TState> binding) =>
     _bindings.Add(binding);
@@ -304,6 +275,25 @@ IInputHandler where TState : class, IStateLogic<TState> {
   /// <param name="e">Exception that occurred.</param>
   protected virtual void HandleError(Exception e) { }
 
+  #region IReadOnlyBlackboard
+  /// <inheritdoc />
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  public TData Get<TData>() where TData : class => _blackboard.Get<TData>();
+
+  /// <inheritdoc />
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  public object GetObject(Type type) => _blackboard.GetObject(type);
+
+  /// <inheritdoc />
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  public bool Has<TData>() where TData : class => _blackboard.Has<TData>();
+
+  /// <inheritdoc />
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  public bool HasObject(Type type) => _blackboard.HasObject(type);
+  #endregion IReadOnlyBlackboard
+
+  #region Blackboard
   /// <summary>
   /// Adds data to the blackboard so that it can be looked up by its
   /// compile-time type.
@@ -315,10 +305,9 @@ IInputHandler where TState : class, IStateLogic<TState> {
   /// <typeparam name="TData">Type of the data to add.</typeparam>
   /// <exception cref="ArgumentException">Thrown if data of the provided type
   /// has already been added.</exception>
-  protected void Set<TData>(TData data) where TData : class {
-    var type = typeof(TData);
-    SetBlackboardData(type, data);
-  }
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  protected internal void Set<TData>(TData data) where TData : class =>
+    _blackboard.Set(data);
 
   /// <summary>
   /// Adds data to the blackboard so that it can be looked up by its runtime
@@ -328,20 +317,10 @@ IInputHandler where TState : class, IStateLogic<TState> {
   /// with the same type.
   /// </summary>
   /// <param name="data">Data to write to the blackboard.</param>
-  /// <exception cref="ArgumentException">Thrown if data of the provided type
+  /// <exception cref="LogicBlockException">Thrown if data of the provided type
   /// has already been added.</exception>
-  protected void SetObject(object data) {
-    var type = data.GetType();
-    SetBlackboardData(type, data);
-  }
-
-  private void SetBlackboardData(Type type, object data) {
-    if (!_blackboard.TryAdd(type, data)) {
-      throw new LogicBlockException(
-        $"Data of type {type} already exists in the blackboard."
-      );
-    }
-  }
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  protected internal void SetObject(object data) => _blackboard.SetObject(data);
 
   /// <summary>
   /// Adds new data or overwrites existing data in the blackboard, based on
@@ -352,8 +331,9 @@ IInputHandler where TState : class, IStateLogic<TState> {
   /// </summary>
   /// <param name="data">Data to write to the blackboard.</param>
   /// <typeparam name="TData">Type of the data to add or overwrite.</typeparam>
-  protected void Overwrite<TData>(TData data) where TData : class =>
-    _blackboard[typeof(TData)] = data;
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  protected internal void Overwrite<TData>(TData data) where TData : class =>
+    _blackboard.Overwrite(data);
 
   /// <summary>
   /// Adds new data or overwrites existing data in the blackboard, based on
@@ -363,8 +343,10 @@ IInputHandler where TState : class, IStateLogic<TState> {
   /// of the given type, unlike <see cref="Set{TData}(TData)" />.
   /// </summary>
   /// <param name="data">Data to write to the blackboard.</param>
-  protected void OverwriteObject(object data) =>
-    _blackboard[data.GetType()] = data;
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  protected internal void OverwriteObject(object data) =>
+    _blackboard.OverwriteObject(data);
+  #endregion Blackboard
 
   internal TState ProcessInputs<TInputType>(
     in TInputType? input = null

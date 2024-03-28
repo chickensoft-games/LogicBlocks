@@ -33,7 +33,7 @@ public abstract partial class LogicBlock<TState> {
     public void AddError(Exception e) => Logic.AddError(e);
 
     /// <inheritdoc />
-    public override bool Equals(object obj) => true;
+    public override bool Equals(object? obj) => true;
 
     /// <inheritdoc />
     public override int GetHashCode() => HashCode.Combine(Logic);
@@ -95,7 +95,7 @@ public abstract partial class LogicBlock<TState> {
     }
 
     /// <inheritdoc />
-    public override bool Equals(object obj) => true;
+    public override bool Equals(object? obj) => true;
 
     /// <inheritdoc />
     public override int GetHashCode() => HashCode.Combine(Context);

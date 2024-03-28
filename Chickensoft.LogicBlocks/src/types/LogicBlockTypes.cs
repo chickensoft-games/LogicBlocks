@@ -5,7 +5,15 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Chickensoft.LogicBlocks.Types;
 
-public partial class LogicBlock<TState> {
+/// <summary>
+/// LogicBlock type hierarchy lookup system — find and cache types by their
+/// base type or ancestor without reflection, using the LogicBlocks Type
+/// Generator output.
+/// <br />
+/// Be sure to call <see cref="Initialize"/> with the generated type registry
+/// before using the other methods in this class.
+/// </summary>
+public static class LogicBlockTypes {
   private static readonly Dictionary<Type, HashSet<Type>> _typesByBaseType =
     new();
   private static readonly Dictionary<Type, HashSet<Type>> _typesByAncestor =

@@ -1,8 +1,5 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 
-using Shouldly;
-using Xunit;
-
 public class HeaterTest {
   [Fact]
   public void Runs() {
@@ -75,7 +72,7 @@ public class HeaterTest {
     tempSensor.UpdateReading(74);
     heater.Value.ShouldBeOfType<Heater.State.Idle>();
 
-    messages.ShouldBe(new string[] {
+    messages.ShouldBe([
       "Heater is powered",
       "Heater is idling",
       "Heater is powered",
@@ -83,6 +80,6 @@ public class HeaterTest {
       "Finished heating :)",
       "Heater is powered",
       "Heater is idling"
-    });
+    ]);
   }
 }

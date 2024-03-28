@@ -1,8 +1,6 @@
 namespace Chickensoft.LogicBlocks.Example;
 
-using Chickensoft.LogicBlocks.Generator;
-
-[StateDiagram(typeof(State))]
+[StateDiagramAttribute(typeof(State))]
 public partial class VendingMachine {
   // Inputs
 

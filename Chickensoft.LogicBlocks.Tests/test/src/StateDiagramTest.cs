@@ -7,7 +7,7 @@ using Xunit;
 public class StateDiagramTest {
   [Fact]
   public void Initializes() {
-    var attr = new StateDiagram(typeof(StateDiagramTest));
+    var attr = new StateDiagramAttribute(typeof(StateDiagramTest));
     attr.StateType.ShouldBe(typeof(StateDiagramTest));
   }
 }

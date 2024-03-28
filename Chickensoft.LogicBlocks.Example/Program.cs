@@ -1,8 +1,4 @@
-﻿#pragma warning disable IDE0010
-
 namespace Chickensoft.LogicBlocks.Example;
-
-using System.Text.RegularExpressions;
 
 public static class Program {
   public const string IMAGE = """
@@ -347,5 +343,3 @@ public static class Program {
     }
   }
 }
-
-#pragma warning restore IDE0010

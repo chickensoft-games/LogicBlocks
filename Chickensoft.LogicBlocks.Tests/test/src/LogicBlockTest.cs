@@ -41,16 +41,26 @@ public class LogicBlockTest {
   public void GetsAndSetsBlackboardData() {
     var block = new FakeLogicBlock();
     var context = new FakeContext();
-    block.PublicSet("data");
+    block.Has<string>().ShouldBeFalse();
+    block.HasObject(typeof(string)).ShouldBeFalse();
+    block.Set("data");
+    block.Has<string>().ShouldBeTrue();
+    block.HasObject(typeof(string)).ShouldBeTrue();
     block.Get<string>().ShouldBe("data");
-    block.PublicOverwrite("string");
+    block.GetObject(typeof(string)).ShouldBe("data");
+    block.Overwrite("string");
     block.Get<string>().ShouldBe("string");
+    block.OverwriteObject("overwritten");
+    block.GetObject(typeof(string)).ShouldBe("overwritten");
+    block.SetObject(5);
+    block.GetObject(typeof(int)).ShouldBe(5);
 
     // Can't change values once set.
-    Should.Throw<LogicBlockException>(() => block.PublicSet("other"));
+    Should.Throw<LogicBlockException>(() => block.Set("other"));
     Should.Throw<LogicBlockException>(() => block.Get<string[]>());
+    Should.Throw<LogicBlockException>(() => block.GetObject(typeof(string[])));
     block.Input(new FakeLogicBlock.Input.GetString());
-    block.Value.ShouldBe(new FakeLogicBlock.State.StateC("string"));
+    block.Value.ShouldBe(new FakeLogicBlock.State.StateC("overwritten"));
   }
 
   [Fact]

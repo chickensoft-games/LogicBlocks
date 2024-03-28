@@ -8,7 +8,7 @@ using System;
 /// diagram.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
-public sealed class StateDiagram : Attribute {
+public sealed class StateDiagramAttribute : Attribute {
   /// <summary>
   /// State type. This can be an abstract record, but it can't be an interface.
   /// </summary>
@@ -21,7 +21,7 @@ public sealed class StateDiagram : Attribute {
   /// </summary>
   /// <param name="stateType">State type. This can be an abstract record,
   /// but it can't be an interface.</param>
-  public StateDiagram(Type stateType) {
+  public StateDiagramAttribute(Type stateType) {
     StateType = stateType;
   }
 }

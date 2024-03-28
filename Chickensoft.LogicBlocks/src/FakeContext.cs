@@ -82,7 +82,7 @@ internal readonly struct FakeContext : IFakeContext {
   }
 
   /// <inheritdoc />
-  public override readonly bool Equals(object obj) => true;
+  public override readonly bool Equals(object? obj) => true;
 
   /// <inheritdoc />
   public override readonly int GetHashCode() =>
