@@ -1,5 +1,9 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 
+using System.Collections.Generic;
+using Shouldly;
+using Xunit;
+
 public class HeaterTest {
   [Fact]
   public void Runs() {

@@ -1,5 +1,10 @@
 namespace Chickensoft.LogicBlocks.Example;
 
+using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Linq;
+
 public static class Program {
   public const string IMAGE = """
  :::::::::::::::::::::::::::::

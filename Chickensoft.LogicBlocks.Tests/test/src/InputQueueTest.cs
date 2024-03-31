@@ -1,5 +1,6 @@
 namespace Chickensoft.LogicBlocks.Tests;
 
+using System.Collections.Generic;
 using Chickensoft.LogicBlocks;
 using Shouldly;
 using Xunit;

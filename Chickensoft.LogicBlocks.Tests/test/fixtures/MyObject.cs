@@ -1,5 +1,7 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
+using System;
+
 public class MyObject : IDisposable {
   public IMyLogicBlock Logic { get; }
   public MyLogicBlock.IBinding Binding { get; }

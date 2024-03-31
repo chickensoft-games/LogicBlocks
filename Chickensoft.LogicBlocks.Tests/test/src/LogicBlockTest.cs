@@ -1,5 +1,8 @@
 namespace Chickensoft.LogicBlocks.Tests;
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Shouldly;
 using Xunit;
@@ -276,7 +279,7 @@ public class LogicBlockTest {
 
     listener.OnOutput -= onOutput;
 
-    outputs.ShouldBe(new object[] {
+    outputs.ShouldBe([
       new TestMachineReusable.Output.Deactivated(),
       new TestMachineReusable.Output.DeactivatedCleanUp(),
       new TestMachineReusable.Output.Activated(),
@@ -292,7 +295,7 @@ public class LogicBlockTest {
       new TestMachineReusable.Output.BloopedCleanUp(),
       new TestMachineReusable.Output.ActivatedCleanUp(),
       new TestMachineReusable.Output.Deactivated(),
-    });
+    ]);
   }
 
   [Fact]

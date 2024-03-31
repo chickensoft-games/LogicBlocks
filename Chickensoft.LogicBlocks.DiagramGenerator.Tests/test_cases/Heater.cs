@@ -1,4 +1,7 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
+
+using System;
+
 /// <summary>
 /// Temperature sensor that presumably communicates with actual hardware
 /// (not shown here).

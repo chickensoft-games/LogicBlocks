@@ -1,5 +1,6 @@
 namespace Chickensoft.LogicBlocks.Tests;
 
+using System;
 using Moq;
 using Shouldly;
 using Xunit;

@@ -1,5 +1,6 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
+using System;
 using Chickensoft.LogicBlocks.Generator;
 
 [StateDiagram(typeof(State))]

@@ -1,5 +1,7 @@
 namespace Chickensoft.LogicBlocks.Tests.Types;
 
+using System;
+using System.Collections.Generic;
 using Chickensoft.LogicBlocks;
 using Chickensoft.LogicBlocks.Types;
 using Moq;

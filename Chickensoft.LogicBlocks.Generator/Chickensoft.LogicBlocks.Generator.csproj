@@ -2,7 +2,7 @@
   <PropertyGroup>
     <!-- Source generators must target netstandard 2.0 -->
     <TargetFramework>netstandard2.0</TargetFramework>
-    <ImplicitUsings>false</ImplicitUsings>
+    <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <LangVersion>preview</LangVersion>

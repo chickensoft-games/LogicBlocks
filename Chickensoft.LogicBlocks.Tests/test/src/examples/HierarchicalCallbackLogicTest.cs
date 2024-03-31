@@ -1,5 +1,6 @@
 namespace Chickensoft.LogicBlocks.Tests.Examples;
 
+using System.Collections.Generic;
 using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Moq;
 using Shouldly;

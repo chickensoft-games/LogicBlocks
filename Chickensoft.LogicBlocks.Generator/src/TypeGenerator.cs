@@ -151,9 +151,9 @@ public class TypeGenerator : IIncrementalGenerator {
     IList<string> typeNames
   ) =>
     "  public System.Collections.Generic.IDictionary" +
-    "<System.Type, Func<object>> VisibleInstantiableTypes" +
+    "<System.Type, System.Func<object>> VisibleInstantiableTypes" +
     " { get; } = new System.Collections.Generic.Dictionary" +
-    "<System.Type, Func<object>>() {\n" +
+    "<System.Type, System.Func<object>>() {\n" +
     AddInstantiableTypeEntries(typeNames) +
     """
       };

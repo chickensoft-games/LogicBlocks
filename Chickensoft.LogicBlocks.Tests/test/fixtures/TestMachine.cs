@@ -1,5 +1,6 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
+using System;
 using Chickensoft.LogicBlocks.Generator;
 
 public enum SecondaryState {

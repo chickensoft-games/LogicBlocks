@@ -1,5 +1,7 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 
+using System;
+
 [StateDiagram(typeof(State))]
 public class CallOrderExample : LogicBlock<CallOrderExample.State> {
   public abstract record State : StateLogic<State>;

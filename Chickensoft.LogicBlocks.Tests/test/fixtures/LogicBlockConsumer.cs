@@ -1,5 +1,7 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
+using System;
+
 public class LogicBlockConsumer {
   public bool SawOutput { get; private set; }
   public bool SawInput { get; private set; }

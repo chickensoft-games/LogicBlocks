@@ -1,5 +1,6 @@
 namespace Chickensoft.LogicBlocks.Tests;
 
+using System;
 using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Chickensoft.LogicBlocks.Tests.TestUtils;
 using Moq;

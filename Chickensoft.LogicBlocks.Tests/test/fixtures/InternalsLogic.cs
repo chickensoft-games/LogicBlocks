@@ -1,5 +1,7 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
+using System;
+
 public class InternalsLogic : LogicBlock<InternalsLogic.State> {
   public record State : StateLogic<State> {
     public Action? OnAttachAction { get; init; }
