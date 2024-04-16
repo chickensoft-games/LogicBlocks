@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using Chickensoft.LogicBlocks.Generator.Types;
 using Chickensoft.LogicBlocks.Generator.Types.Models;
@@ -160,8 +159,9 @@ public class TypeGenerator : IIncrementalGenerator {
         .ThenBy(u => u.IsAlias)
         .Select(@using => @using.CodeString).ToList();
 
-      var code = new IndentedTextWriter(new StringWriter(), "  ");
+      var code = CreateCodeWriter();
 
+      code.WriteLine("#pragma warning disable");
       code.WriteLine("#nullable enable");
       code.WriteLine($"namespace {type.Location.Namespace};\n");
 
@@ -194,6 +194,7 @@ public class TypeGenerator : IIncrementalGenerator {
       }
 
       code.WriteLine("#nullable restore");
+      code.WriteLine("#pragma warning restore");
 
       context.AddSource(
         hintName: $"{type.Filename}.g.cs",
@@ -309,21 +310,20 @@ public class TypeGenerator : IIncrementalGenerator {
     SourceProductionContext context,
     GenerationData data
   ) {
-    var source = """
-        public partial class TypeRegistry : Chickensoft.LogicBlocks.Types.ITypeRegistry {
+    var code = CreateCodeWriter();
+    code.WriteLine("public partial class TypeRegistry : Chickensoft.LogicBlocks.Types.ITypeRegistry {");
+    code.WriteLine();
 
-        """;
-
-    source += CreateVisibleTypesProperty(data.VisibleTypes);
-    source += CreateVisibleInstantiableTypesProperty(
-      data.VisibleInstantiableTypes
-    );
-    source += CreateMetatypesProperty(data.Metatypes);
-    source += "}";
+    code.Indent++;
+    CreateVisibleTypesProperty(data.VisibleTypes, code);
+    CreateVisibleInstantiableTypesProperty(data.VisibleInstantiableTypes, code);
+    CreateMetatypesProperty(data.Metatypes, code);
+    code.Indent--;
+    code.Write("}");
 
     context.AddSource(
       hintName: $"TypeRegistry.g.cs",
-      source: source
+      source: code.InnerWriter.ToString()
     );
   }
 
@@ -381,89 +381,76 @@ public class TypeGenerator : IIncrementalGenerator {
     );
   }
 
-  private static string CreateVisibleTypesProperty(
-    ImmutableDictionary<string, DeclaredTypeInfo> types
-  ) =>
-    "  public System.Collections.Generic.ISet<System.Type> VisibleTypes" +
-    " { get; } = new System.Collections.Generic.HashSet<System.Type>() {\n" +
-    AddTypeEntries(types) +
-    """
-      };
+  private static void CreateVisibleTypesProperty(
+    ImmutableDictionary<string, DeclaredTypeInfo> types, IndentedTextWriter code
+  ) {
+    code.WriteLine("public System.Collections.Generic.ISet<System.Type> VisibleTypes { get; } = new System.Collections.Generic.HashSet<System.Type>() {");
+    code.Indent++;
+    AddTypeEntries(types, code);
+    code.Indent--;
+    code.WriteLine("};");
+    code.WriteLine();
+  }
 
+  private static void CreateVisibleInstantiableTypesProperty(
+    ImmutableDictionary<string, DeclaredTypeInfo> types, IndentedTextWriter code
+  ) {
+    code.WriteLine("public System.Collections.Generic.IDictionary<System.Type, System.Func<object>> VisibleInstantiableTypes { get; } = new System.Collections.Generic.Dictionary<System.Type, System.Func<object>>() {");
+    code.Indent++;
+    AddInstantiableTypeEntries(types, code);
+    code.Indent--;
+    code.WriteLine("};");
+    code.WriteLine();
+  }
 
-    """;
+  private static void CreateMetatypesProperty(
+    ImmutableDictionary<string, DeclaredTypeInfo> types, IndentedTextWriter code
+  ) {
+    code.WriteLine("public System.Collections.Generic.IDictionary<System.Type, Chickensoft.LogicBlocks.IMetatype> Metatypes { get; } = new System.Collections.Generic.Dictionary<System.Type, Chickensoft.LogicBlocks.IMetatype>() {");
+    code.Indent++;
+    AddMetatypeEntries(types, code);
+    code.Indent--;
+    code.WriteLine("};");
+    code.WriteLine();
+  }
 
-  private static string CreateVisibleInstantiableTypesProperty(
-    ImmutableDictionary<string, DeclaredTypeInfo> types
-  ) =>
-    "  public System.Collections.Generic.IDictionary" +
-    "<System.Type, System.Func<object>> VisibleInstantiableTypes" +
-    " { get; } = new System.Collections.Generic.Dictionary" +
-    "<System.Type, System.Func<object>>() {\n" +
-    AddInstantiableTypeEntries(types) +
-    """
-      };
-
-
-    """;
-
-  private static string CreateMetatypesProperty(
-    ImmutableDictionary<string, DeclaredTypeInfo> types
-  ) =>
-    "  public System.Collections.Generic.IDictionary" +
-    "<System.Type, Chickensoft.LogicBlocks.IMetatype> Metatypes" +
-    " { get; } = new System.Collections.Generic.Dictionary" +
-    "<System.Type, Chickensoft.LogicBlocks.IMetatype>() {\n" +
-    AddMetatypeEntries(types) +
-    """
-      };
-
-
-    """;
-
-  private static string AddTypeEntries(
-    ImmutableDictionary<string, DeclaredTypeInfo> types
+  private static void AddTypeEntries(
+    ImmutableDictionary<string, DeclaredTypeInfo> types, IndentedTextWriter code
   ) {
     var i = 0;
-    var sb = new StringBuilder();
     foreach (var type in types.Values) {
       var typeName = type.FullName;
       var isLast = i == types.Count - 1;
-      sb.Append($"    typeof({typeName}){(isLast ? "" : ",")}\n");
+      code.WriteLine($"typeof({typeName}){(isLast ? "" : ",")}");
       i++;
     }
-    return sb.ToString();
   }
 
-  private static string AddInstantiableTypeEntries(ImmutableDictionary<string, DeclaredTypeInfo> types) {
+  private static void AddInstantiableTypeEntries(
+    ImmutableDictionary<string, DeclaredTypeInfo> types,
+    IndentedTextWriter code
+  ) {
     var i = 0;
-    var sb = new StringBuilder();
+
     foreach (var type in types.Values) {
       var typeName = type.FullName;
       var isLast = i == types.Count - 1;
-      sb.Append(
-        $"    [typeof({typeName})] = () => " +
-        $"System.Activator.CreateInstance<{typeName}>()" +
-        $"{(isLast ? "" : ",")}\n"
-      );
+      code.WriteLine($"[typeof({typeName})] = () => System.Activator.CreateInstance<{typeName}>(){(isLast ? "" : ",")}");
       i++;
     }
-    return sb.ToString();
   }
 
-  private static string AddMetatypeEntries(ImmutableDictionary<string, DeclaredTypeInfo> types) {
+  private static void AddMetatypeEntries(
+    ImmutableDictionary<string, DeclaredTypeInfo> types,
+    IndentedTextWriter code
+  ) {
     var i = 0;
-    var sb = new StringBuilder();
     foreach (var type in types.Values) {
       var typeName = type.FullName;
       var isLast = i == types.Count - 1;
-      sb.Append(
-        $"    [typeof({typeName})] = new {typeName}.Metatype()" +
-        $"{(isLast ? "" : ",")}\n"
-      );
+      code.WriteLine($"[typeof({typeName})] = new {typeName}.Metatype(){(isLast ? "" : ",")}");
       i++;
     }
-    return sb.ToString();
   }
 
   // We identify all type declarations and filter them out later by visibility
@@ -650,5 +637,6 @@ public class TypeGenerator : IIncrementalGenerator {
     return properties.ToImmutable();
   }
 
-  public static string Tab(int indent) => new(' ', indent * 2);
+  public static IndentedTextWriter CreateCodeWriter() =>
+    new(new StringWriter(), "  ");
 }
