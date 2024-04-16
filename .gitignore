@@ -12,3 +12,4 @@ obj/
 .vs/
 .DS_Store
 *.DotSettings.user
+*.binlog

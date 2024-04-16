@@ -10,6 +10,8 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoWarn>NU5128</NoWarn>
     <OutputPath>./nupkg</OutputPath>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <DebugType>portable</DebugType>
 
     <Title>LogicBlocks Generator</Title>
     <Version>4.2.2</Version>

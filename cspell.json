@@ -41,6 +41,8 @@
     "libexec",
     "linecoverage",
     "Linq",
+    "metatype",
+    "Metatypes",
     "methodcoverage",
     "missingall",
     "Moq's",

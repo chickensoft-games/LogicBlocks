@@ -12,6 +12,10 @@
     <OutputPath>./nupkg</OutputPath>
     <DebugType>portable</DebugType>
 
+    <!-- Enable AOT warnings when building (used for development) -->
+    <!-- Note that you must change target to net8 to enable this. -->
+    <!-- <PublishAot>true</PublishAot> -->
+
     <!-- Disables most reflection — helps us simulate AOT constraints. -->
     <IlcDisableReflection>true</IlcDisableReflection>
 
@@ -50,6 +54,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="System.Text.Json" Version="8.0.3" />
   </ItemGroup>
 
   <ItemGroup>

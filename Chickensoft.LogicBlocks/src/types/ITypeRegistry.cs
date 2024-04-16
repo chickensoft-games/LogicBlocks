@@ -19,4 +19,7 @@ public interface ITypeRegistry {
   /// constructor.
   /// </summary>
   IDictionary<Type, Func<object>> VisibleInstantiableTypes { get; }
+
+  /// <summary>Map of metatypes by their system type.</summary>
+  IDictionary<Type, IMetatype> Metatypes { get; }
 }

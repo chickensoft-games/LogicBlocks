@@ -55,31 +55,42 @@ public record TypeResolutionTree {
         : null;
 
       if (
-        !current.TypeChildren.TryGetValue(containingTypeName, out var child)
+        !current.TypeChildren.TryGetValue(
+          containingTypeName.NameWithOpenGenerics, out var child
+        )
       ) {
         child = new TypeNode(
-          Name: containingTypeName,
-          IsVisible: containingDeclaredType?.IsVisible ?? false,
+          Name: containingTypeName.Name,
+          IsVisible: containingDeclaredType?.IsTopLevelAccessible ?? false,
           IsInstantiable:
             containingDeclaredType?.Kind == DeclaredTypeKind.InstantiableType,
-          OpenGenerics: containingDeclaredType?.OpenGenerics ?? "",
+          OpenGenerics: containingDeclaredType?.Reference.OpenGenerics ?? "",
           TypeChildren: new()
         );
-        current.TypeChildren.Add(containingTypeName, child);
+        current.TypeChildren.Add(
+          containingTypeName.NameWithOpenGenerics, child
+        );
       }
       current = child;
     }
 
     // Add the type itself
-    if (!current.TypeChildren.ContainsKey(declaredType.Name)) {
+    if (
+      !current.TypeChildren.ContainsKey(
+        declaredType.Reference.Name + declaredType.Reference.OpenGenerics
+      )
+    ) {
       var typeNode = new TypeNode(
-        Name: declaredType.Name,
-        IsVisible: declaredType.IsVisible,
+        Name: declaredType.Reference.Name,
+        IsVisible: declaredType.IsTopLevelAccessible,
         IsInstantiable: declaredType.Kind == DeclaredTypeKind.InstantiableType,
-        OpenGenerics: declaredType.OpenGenerics,
+        OpenGenerics: declaredType.Reference.OpenGenerics,
         TypeChildren: new()
       );
-      current.TypeChildren.Add(declaredType.Name, typeNode);
+      current.TypeChildren.Add(
+        declaredType.Reference.Name + declaredType.Reference.OpenGenerics,
+        typeNode
+      );
     }
   }
 
@@ -101,8 +112,11 @@ public record TypeResolutionTree {
     bool searchGenericTypes,
     string? namePrefix
   ) {
-    var name =
-      $"{(namePrefix is not null and not "global::" ? namePrefix + "." : "")}{node.Name}";
+    var prefix = namePrefix is not null and not "global::"
+      ? namePrefix + "."
+      : "";
+
+    var name = $"{prefix}{node.Name}";
 
     if (node is TypeNode typeNode) {
       name += typeNode.OpenGenerics;

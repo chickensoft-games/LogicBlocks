@@ -10,6 +10,9 @@ namespace Chickensoft.LogicBlocks.Generator.Tests.Types.TestCases {
       private protected sealed class AE;
       protected sealed class AF;
     }
+
+    public class A<TA>;
+
     internal sealed class B;
 
     public sealed class GA<TA>;
@@ -25,6 +28,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests.Types.TestCases {
       public class GCG<TD>;
       public class GCH<TE, TF>;
       public class GCI<TG, TH, TI>;
+      public class GCI<TG, TH, TI, TJ>;
     }
   }
 }
