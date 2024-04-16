@@ -41,6 +41,7 @@
     <ProjectReference Include="../Chickensoft.LogicBlocks.Generator/Chickensoft.LogicBlocks.Generator.csproj" />
     <ProjectReference Include="../Chickensoft.LogicBlocks.Generator/Chickensoft.LogicBlocks.Generator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
     <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
+    <PackageReference Include="Shouldly" Version="4.1.0" />
   </ItemGroup>
 
 </Project>

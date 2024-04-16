@@ -21,7 +21,9 @@ public interface IMetatype {
 
   /// <summary>
   /// Properties on the type. Only non-partial properties marked with
-  /// attributes are included.
+  /// attributes on the current type are included. To get all of the properties,
+  /// including the inherited properties from any base metatypes, see the
+  /// <see cref="LogicBlockTypes.GetProperties"/> method.
   /// </summary>
   IList<LogicProp> Properties { get; }
 }

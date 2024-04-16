@@ -313,7 +313,7 @@ public class TypeGenerator : IIncrementalGenerator {
     GenerationData data
   ) {
     var source = """
-        public class TypeRegistry : Chickensoft.LogicBlocks.Types.ITypeRegistry {
+        public partial class TypeRegistry : Chickensoft.LogicBlocks.Types.ITypeRegistry {
 
         """;
 
