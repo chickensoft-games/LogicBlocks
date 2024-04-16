@@ -1,8 +1,10 @@
 namespace Chickensoft.LogicBlocks.Generator;
 
 using System;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -158,91 +160,87 @@ public class TypeGenerator : IIncrementalGenerator {
         .ThenBy(u => u.IsAlias)
         .Select(@using => @using.CodeString).ToList();
 
-      var source = "#nullable enable\n";
-      source += $"namespace {type.Location.Namespace};\n\n";
+      var code = new IndentedTextWriter(new StringWriter(), "  ");
+
+      code.WriteLine("#nullable enable");
+      code.WriteLine($"namespace {type.Location.Namespace};\n");
 
       foreach (var usingDirective in usings) {
-        source += $"{usingDirective}\n";
+        code.WriteLine(usingDirective);
       }
 
-      if (usings.Count > 0) {
-        source += "\n";
-      }
-
-      var indent = 0;
-      var tab = "";
+      if (usings.Count > 0) { code.WriteLine(); }
 
       // Nest it inside all the containing types
-
       foreach (var containingType in type.Location.ContainingTypes) {
-        source += $"{tab}{containingType.CodeString} {{\n";
-        indent++;
-        tab = Tab(indent);
+        code.WriteLine($"{containingType.CodeString} {{");
+        code.Indent++;
       }
 
       // Nest it inside the type itself
-      source += $"{tab}{type.Reference.CodeString} : Chickensoft.LogicBlocks.IHasMetatype {{\n";
-      indent++;
-      tab = Tab(indent);
+      code.WriteLine($"{type.Reference.CodeString} : Chickensoft.LogicBlocks.IHasMetatype {{");
 
-      source += $"{tab}public record Metatype : Chickensoft.LogicBlocks.IMetatype {{\n";
+      code.Indent++;
+      code.WriteLine($"public record Metatype : Chickensoft.LogicBlocks.IMetatype {{");
+      code.Indent++;
+      OutputMetatypeInformation(type, code);
+      code.Indent -= 1;
 
-      OutputMetatypeInformation(type, indent + 1, ref source);
 
       // Close braces
-      for (var i = indent; i >= 0; i--) {
-        tab = Tab(i);
-        source += $"{tab}}}\n";
+      for (var i = code.Indent; i >= 0; i--) {
+        code.WriteLine("}");
+        code.Indent--;
       }
 
-      source += "#nullable restore\n";
+      code.WriteLine("#nullable restore");
 
       context.AddSource(
         hintName: $"{type.Filename}.g.cs",
-        source: source
+        source: code.InnerWriter.ToString()
       );
     }
   }
 
   private static void OutputMetatypeInformation(
-    DeclaredTypeInfo type, int indent, ref string source
+    DeclaredTypeInfo type, IndentedTextWriter code
   ) {
-    var tab = Tab(indent);
     var fullName = type.Reference.NameWithOpenGenerics;
 
-    source += $"{tab}public System.Text.Json.Serialization.Metadata.JsonTypeInfo CreateJsonTypeInfo(Chickensoft.LogicBlocks.Types.ITypeRegistry registry, System.Text.Json.JsonSerializerOptions options) => Chickensoft.LogicBlocks.LogicBlockTypes.CreateJsonTypeInfo(registry, options, typeof({fullName}));\n";
-
-    source += $"{tab}public System.Collections.Generic.IList<Chickensoft.LogicBlocks.LogicProp> Properties {{ get; }} = new System.Collections.Generic.List<Chickensoft.LogicBlocks.LogicProp>() {{\n";
+    code.WriteLine($"public System.Text.Json.Serialization.Metadata.JsonTypeInfo CreateJsonTypeInfo(Chickensoft.LogicBlocks.Types.ITypeRegistry registry, System.Text.Json.JsonSerializerOptions options) => Chickensoft.LogicBlocks.LogicBlockTypes.CreateJsonTypeInfo(registry, options, typeof({fullName}));");
+    code.WriteLine();
+    code.WriteLine($"public System.Collections.Generic.IList<Chickensoft.LogicBlocks.LogicProp> Properties {{ get; }} = new System.Collections.Generic.List<Chickensoft.LogicBlocks.LogicProp>() {{");
 
     for (var i = 0; i < type.Properties.Length; i++) {
       var isLast = i == type.Properties.Length - 1;
 
       var property = type.Properties[i];
-      GenerateLogicProp(type, property, indent + 1, ref source);
 
-      if (!isLast) { source += ","; }
+      code.Indent++;
+      GenerateLogicProp(type, property, code);
+      code.Indent--;
 
-      source += "\n";
+      if (!isLast) { code.Write(","); }
+
+      code.WriteLine();
     }
 
-    source += $"{tab}}};\n";
+    code.WriteLine("};");
   }
 
   public static void GenerateLogicProp(
-    DeclaredTypeInfo type, Property property, int indent, ref string source
+    DeclaredTypeInfo type, Property property, IndentedTextWriter code
   ) {
-    var tab = Tab(indent);
-    source += $"{tab}new Chickensoft.LogicBlocks.LogicProp(\n";
-    indent++;
-    tab = Tab(indent);
+    code.WriteLine($"new Chickensoft.LogicBlocks.LogicProp(");
+    code.Indent++;
 
     var propertyValue = "value" + (property.IsNullable ? "" : "!");
 
-    source += $"{tab}Name: \"{property.Name}\",\n";
-    source += $"{tab}Type: typeof({type.Reference.Name}),\n";
-    source += $"{tab}Getter: (object obj) => (({type.Reference.Name})obj).{property.Name},\n";
-    source += $"{tab}Setter: (object obj, object? value) => (({type.Reference.Name})obj).{property.Name} = ({property.Type}){propertyValue},\n";
-    source += $"{tab}AttributesByType: new System.Collections.Generic.Dictionary<System.Type, System.Attribute[]>() {{\n";
+    code.WriteLine($"Name: \"{property.Name}\",");
+    code.WriteLine($"Type: typeof({type.Reference.Name}),");
+    code.WriteLine($"Getter: (object obj) => (({type.Reference.Name})obj).{property.Name},");
+    code.WriteLine($"Setter: (object obj, object? value) => (({type.Reference.Name})obj).{property.Name} = ({property.Type}){propertyValue},");
+    code.WriteLine($"AttributesByType: new System.Collections.Generic.Dictionary<System.Type, System.Attribute[]>() {{");
 
     var attributesByType = property.Attributes
       .GroupBy(attr => attr.Name)
@@ -251,58 +249,57 @@ public class TypeGenerator : IIncrementalGenerator {
         group => group.ToImmutableArray()
       );
 
-    GenerateLogicPropAttributeMapping(attributesByType, indent + 1, ref source);
+    code.Indent++;
+    GenerateLogicPropAttributeMapping(attributesByType, code);
+    code.Indent--;
 
-    source += $"{tab}}}\n";
+    code.WriteLine("}");
 
-    indent--;
-    tab = Tab(indent);
+    code.Indent--;
 
-    source += $"{tab})";
+    code.Write(")");
   }
 
   public static void GenerateLogicPropAttributeMapping(
     Dictionary<string, ImmutableArray<PropertyAttribute>> attributes,
-    int indent,
-    ref string source
+    IndentedTextWriter code
   ) {
-    var tab = Tab(indent);
     var i = 0;
 
     foreach (var attributeKey in attributes.Keys) {
       var attributeEntries = attributes[attributeKey];
       var isLast = i == attributes.Count - 1;
 
-      source += $"{tab}[typeof({attributeKey}Attribute)] = new System.Attribute[] {{\n";
+      code.WriteLine($"[typeof({attributeKey}Attribute)] = new System.Attribute[] {{");
 
-      GenerateLogicPropAttributeMappingEntry(attributeEntries, indent + 1, ref source);
+      code.Indent++;
+      GenerateLogicPropAttributeMappingEntry(attributeEntries, code);
+      code.Indent--;
 
-      source += $"{tab}}}";
-      if (!isLast) { source += ","; }
-      source += "\n";
+      code.Write("}");
+      if (!isLast) { code.Write(","); }
+      code.WriteLine();
 
       i++;
     }
   }
 
   public static void GenerateLogicPropAttributeMappingEntry(
-    ImmutableArray<PropertyAttribute> attribute, int indent, ref string source
+    ImmutableArray<PropertyAttribute> attribute, IndentedTextWriter code
   ) {
-    var tab = Tab(indent);
     var i = 0;
 
     foreach (var entry in attribute) {
       var isLast = i == attribute.Length - 1;
 
-      source += $"{tab}new {entry.Name}Attribute(";
-
+      code.Write($"new {entry.Name}Attribute(");
       if (entry.ArgExpressions.Length > 0) {
-        source += string.Join(", ", entry.ArgExpressions);
+        code.Write(string.Join(", ", entry.ArgExpressions));
       }
+      code.Write(")");
 
-      source += ")";
-      if (!isLast) { source += ","; }
-      source += "\n";
+      if (!isLast) { code.Write(","); }
+      code.WriteLine();
 
       i++;
     }
