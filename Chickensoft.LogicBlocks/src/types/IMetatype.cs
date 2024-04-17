@@ -1,5 +1,6 @@
 namespace Chickensoft.LogicBlocks;
 
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -26,6 +27,9 @@ public interface IMetatype {
   /// <see cref="LogicBlockTypes.GetProperties"/> method.
   /// </summary>
   IList<LogicProp> Properties { get; }
+
+  /// <summary>Attributes applied to the type itself.</summary>
+  IDictionary<Type, Attribute[]> Attributes { get; }
 }
 
 /// <summary>

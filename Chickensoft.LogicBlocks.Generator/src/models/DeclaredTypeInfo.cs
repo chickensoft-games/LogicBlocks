@@ -2,22 +2,25 @@
 namespace Chickensoft.LogicBlocks.Generator.Types.Models;
 
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 
 /// <summary>
 /// Represents a declared type.
 /// </summary>
-/// <param name="Location">Location of the type in the source code.</param>
+/// <param name="Reference">Type reference, including the name, construction,
+/// type parameters, and whether or not the type is partial.</param>
+/// <param name="Location">Location of the type in the source code, including
+/// namespaces and containing types.</param>
+/// <param name="Usings">Using directives that are in scope for the type.
+/// </param>
 /// <param name="Kind">Kind of the type.</param>
 /// <param name="HasMetatypeAttribute">True if the type was tagged with the
 /// MetatypeAttribute.</param>
 /// <param name="IsTopLevelAccessible">True if the public or internal
 /// visibility modifier was seen on the type.</param>
-/// <param name="IsPartial">True if the partial modifier was seen on the type.
-/// </param>
-/// <param name="NumTypeParameters">Number of type parameters the type has.
-/// </param>
-/// <param name="Name">Name of the type itself.</param>
+/// <param name="Properties">Properties declared on the type.</param>
+/// <param name="Attributes">Attributes declared on the type.</param>
 /// <param name="Diagnostics">Diagnostics that were generated during generator
 /// transformation.</param>
 public record DeclaredTypeInfo(
@@ -28,6 +31,7 @@ public record DeclaredTypeInfo(
   bool HasMetatypeAttribute,
   bool IsTopLevelAccessible,
   ImmutableArray<Property> Properties,
+  ImmutableArray<AttributeUsage> Attributes,
   ImmutableHashSet<Diagnostic> Diagnostics
 ) {
   /// <summary>Output filename (only works for non-generic types).</summary>
@@ -69,7 +73,11 @@ public record DeclaredTypeInfo(
     Kind,
     HasMetatypeAttribute || declaredType.HasMetatypeAttribute,
     IsTopLevelAccessible || declaredType.IsTopLevelAccessible,
-    Properties.ToImmutableHashSet().Union(declaredType.Properties).ToImmutableArray(),
+    Properties
+      .ToImmutableHashSet()
+      .Union(declaredType.Properties)
+      .ToImmutableArray(),
+    Attributes.Concat(declaredType.Attributes).ToImmutableArray(),
     Diagnostics.Union(declaredType.Diagnostics)
   );
 }

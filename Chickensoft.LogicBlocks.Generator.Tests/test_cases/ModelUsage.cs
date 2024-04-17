@@ -9,6 +9,8 @@ using System;
 public class JunkAttribute : Attribute { }
 
 [LogicModel("my_type")]
+[Junk]
+[Junk]
 public partial class MyType {
   public StringBuilder MakeStringBuilder() {
     WriteLine("Making a string builder.");

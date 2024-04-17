@@ -60,7 +60,7 @@ public class TypeGenerator : IIncrementalGenerator {
     // type declarations into one.
     var incrementalGenerationData = context.SyntaxProvider.CreateSyntaxProvider(
       predicate: IsTypeCandidate,
-      transform: Resolve
+      transform: ResolveDeclaredTypeInfo
     )
     .Collect()
     .Select((declaredTypes, _) => {
@@ -210,6 +210,25 @@ public class TypeGenerator : IIncrementalGenerator {
 
     code.WriteLine($"public System.Text.Json.Serialization.Metadata.JsonTypeInfo CreateJsonTypeInfo(Chickensoft.LogicBlocks.Types.ITypeRegistry registry, System.Text.Json.JsonSerializerOptions options) => Chickensoft.LogicBlocks.LogicBlockTypes.CreateJsonTypeInfo(registry, options, typeof({fullName}));");
     code.WriteLine();
+
+    GenerateProperties(type, code);
+    code.WriteLine();
+    GenerateMetatypeAttributes(type.Attributes, code);
+  }
+
+  public static void GenerateMetatypeAttributes(
+    ImmutableArray<AttributeUsage> attributes, IndentedTextWriter code
+  ) {
+    code.WriteLine("public System.Collections.Generic.IDictionary<System.Type, System.Attribute[]> Attributes { get; } = new System.Collections.Generic.Dictionary<System.Type, System.Attribute[]>() {");
+
+    GenerateAttributeMapping(attributes, code);
+
+    code.WriteLine("};");
+  }
+
+  public static void GenerateProperties(
+    DeclaredTypeInfo type, IndentedTextWriter code
+  ) {
     code.WriteLine($"public System.Collections.Generic.IList<Chickensoft.LogicBlocks.LogicProp> Properties {{ get; }} = new System.Collections.Generic.List<Chickensoft.LogicBlocks.LogicProp>() {{");
 
     for (var i = 0; i < type.Properties.Length; i++) {
@@ -243,16 +262,7 @@ public class TypeGenerator : IIncrementalGenerator {
     code.WriteLine($"Setter: (object obj, object? value) => (({type.Reference.Name})obj).{property.Name} = ({property.Type}){propertyValue},");
     code.WriteLine($"AttributesByType: new System.Collections.Generic.Dictionary<System.Type, System.Attribute[]>() {{");
 
-    var attributesByType = property.Attributes
-      .GroupBy(attr => attr.Name)
-      .ToDictionary(
-        group => group.Key,
-        group => group.ToImmutableArray()
-      );
-
-    code.Indent++;
-    GenerateLogicPropAttributeMapping(attributesByType, code);
-    code.Indent--;
+    GenerateAttributeMapping(property.Attributes, code);
 
     code.WriteLine("}");
 
@@ -261,20 +271,29 @@ public class TypeGenerator : IIncrementalGenerator {
     code.Write(")");
   }
 
-  public static void GenerateLogicPropAttributeMapping(
-    Dictionary<string, ImmutableArray<PropertyAttribute>> attributes,
+  public static void GenerateAttributeMapping(
+    ImmutableArray<AttributeUsage> attributeUsages,
     IndentedTextWriter code
   ) {
+    var attributesByName = attributeUsages
+      .GroupBy(attr => attr.Name)
+      .ToDictionary(
+        group => group.Key,
+        group => group.ToImmutableArray()
+      );
+
+    code.Indent++;
+
     var i = 0;
 
-    foreach (var attributeKey in attributes.Keys) {
-      var attributeEntries = attributes[attributeKey];
-      var isLast = i == attributes.Count - 1;
+    foreach (var attribute in attributesByName.Keys) {
+      var attributes = attributesByName[attribute];
+      var isLast = i == attributesByName.Count - 1;
 
-      code.WriteLine($"[typeof({attributeKey}Attribute)] = new System.Attribute[] {{");
+      code.WriteLine($"[typeof({attribute}Attribute)] = new System.Attribute[] {{");
 
       code.Indent++;
-      GenerateLogicPropAttributeMappingEntry(attributeEntries, code);
+      GenerateAttributeMappingEntry(attributes, code);
       code.Indent--;
 
       code.Write("}");
@@ -283,19 +302,21 @@ public class TypeGenerator : IIncrementalGenerator {
 
       i++;
     }
+
+    code.Indent--;
   }
 
-  public static void GenerateLogicPropAttributeMappingEntry(
-    ImmutableArray<PropertyAttribute> attribute, IndentedTextWriter code
+  public static void GenerateAttributeMappingEntry(
+    ImmutableArray<AttributeUsage> attributes, IndentedTextWriter code
   ) {
     var i = 0;
 
-    foreach (var entry in attribute) {
-      var isLast = i == attribute.Length - 1;
+    foreach (var attribute in attributes) {
+      var isLast = i == attributes.Length - 1;
 
-      code.Write($"new {entry.Name}Attribute(");
-      if (entry.ArgExpressions.Length > 0) {
-        code.Write(string.Join(", ", entry.ArgExpressions));
+      code.Write($"new {attribute.Name}Attribute(");
+      if (attribute.ArgExpressions.Length > 0) {
+        code.Write(string.Join(", ", attribute.ArgExpressions));
       }
       code.Write(")");
 
@@ -327,7 +348,7 @@ public class TypeGenerator : IIncrementalGenerator {
     );
   }
 
-  public static DeclaredTypeInfo Resolve(
+  public static DeclaredTypeInfo ResolveDeclaredTypeInfo(
     GeneratorSyntaxContext context, CancellationToken _
   ) {
     var typeDecl = (TypeDeclarationSyntax)context.Node;
@@ -368,6 +389,7 @@ public class TypeGenerator : IIncrementalGenerator {
     }
 
     var properties = GetProperties(typeDecl);
+    var attributes = GetAttributes(typeDecl.AttributeLists);
 
     return new DeclaredTypeInfo(
       Reference: reference,
@@ -377,6 +399,7 @@ public class TypeGenerator : IIncrementalGenerator {
       HasMetatypeAttribute: hasMetatypeAttribute,
       IsTopLevelAccessible: isTopLevelAccessible,
       Properties: properties,
+      Attributes: attributes,
       Diagnostics: diagnostics.ToImmutableHashSet()
     );
   }
@@ -600,16 +623,7 @@ public class TypeGenerator : IIncrementalGenerator {
 
       if (isPartial) { continue; } // Partial properties are unsupported.
 
-      var propertyAttributes = property.AttributeLists
-        .SelectMany(list => list.Attributes)
-        .Select(attr => new PropertyAttribute(
-          Name: attr.Name.NormalizeWhitespace().ToString(),
-          ArgExpressions: attr.ArgumentList?.Arguments
-            .Select(arg => arg.NormalizeWhitespace().ToString())
-            .ToImmutableArray()
-            ?? ImmutableArray<string>.Empty
-        ))
-        .ToImmutableArray();
+      var propertyAttributes = GetAttributes(property.AttributeLists);
 
       if (propertyAttributes.Length == 0) {
         // Only record information about properties marked with attributes.
@@ -637,6 +651,20 @@ public class TypeGenerator : IIncrementalGenerator {
     return properties.ToImmutable();
   }
 
+  public static ImmutableArray<AttributeUsage> GetAttributes(
+    SyntaxList<AttributeListSyntax> attributeLists
+  ) => attributeLists
+    .SelectMany(list => list.Attributes)
+    .Select(attr => new AttributeUsage(
+      Name: attr.Name.NormalizeWhitespace().ToString(),
+      ArgExpressions: attr.ArgumentList?.Arguments
+        .Select(arg => arg.NormalizeWhitespace().ToString())
+        .ToImmutableArray()
+        ?? ImmutableArray<string>.Empty
+    ))
+    .ToImmutableArray();
+
   public static IndentedTextWriter CreateCodeWriter() =>
     new(new StringWriter(), "  ");
+
 }

@@ -15,5 +15,5 @@ public record Property(
   string Type,
   bool HasSetter,
   bool IsNullable,
-  ImmutableArray<PropertyAttribute> Attributes
+  ImmutableArray<AttributeUsage> Attributes
 );

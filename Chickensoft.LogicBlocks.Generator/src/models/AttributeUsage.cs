@@ -7,7 +7,7 @@ using System.Collections.Immutable;
 /// </summary>
 /// <param name="Name">Name of the attribute.</param>
 /// <param name="ArgExpressions">Attribute argument expressions.</param>
-public record PropertyAttribute(
+public record AttributeUsage(
   string Name,
   ImmutableArray<string> ArgExpressions
 );
