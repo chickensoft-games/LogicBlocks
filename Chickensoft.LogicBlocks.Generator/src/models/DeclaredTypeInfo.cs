@@ -17,10 +17,13 @@ using Microsoft.CodeAnalysis;
 /// <param name="Kind">Kind of the type.</param>
 /// <param name="HasMetatypeAttribute">True if the type was tagged with the
 /// MetatypeAttribute.</param>
+/// <param name="HasMixinAttribute">True if the type is tagged with the mixin
+/// attribute.</param>
 /// <param name="IsTopLevelAccessible">True if the public or internal
 /// visibility modifier was seen on the type.</param>
 /// <param name="Properties">Properties declared on the type.</param>
 /// <param name="Attributes">Attributes declared on the type.</param>
+/// <param name="Mixins">Mixins that are applied to the type.</param>
 /// <param name="Diagnostics">Diagnostics that were generated during generator
 /// transformation.</param>
 public record DeclaredTypeInfo(
@@ -29,9 +32,11 @@ public record DeclaredTypeInfo(
   ImmutableHashSet<UsingDirective> Usings,
   DeclaredTypeKind Kind,
   bool HasMetatypeAttribute,
+  bool HasMixinAttribute,
   bool IsTopLevelAccessible,
   ImmutableArray<Property> Properties,
   ImmutableArray<AttributeUsage> Attributes,
+  ImmutableArray<string> Mixins,
   ImmutableHashSet<Diagnostic> Diagnostics
 ) {
   /// <summary>Output filename (only works for non-generic types).</summary>
@@ -58,6 +63,18 @@ public record DeclaredTypeInfo(
     Location.IsInGenericType;
 
   /// <summary>
+  /// Identifier of the type. For logic models, this is the provided type
+  /// identifier. For other types, this is just the simple name of the type.
+  /// </summary>
+  public string Id => LogicModelAttribute?.ArgExpressions.FirstOrDefault()
+    ?? Reference.Name;
+
+  private AttributeUsage? LogicModelAttribute => Attributes
+    .FirstOrDefault(
+      (attr) => attr.Name == "LogicModel"
+    );
+
+  /// <summary>
   /// Merge this partial type definition with another partial type definition
   /// for the same type.
   /// </summary>
@@ -72,12 +89,14 @@ public record DeclaredTypeInfo(
     Usings.Union(declaredType.Usings),
     Kind,
     HasMetatypeAttribute || declaredType.HasMetatypeAttribute,
+    HasMixinAttribute || declaredType.HasMixinAttribute,
     IsTopLevelAccessible || declaredType.IsTopLevelAccessible,
     Properties
       .ToImmutableHashSet()
       .Union(declaredType.Properties)
       .ToImmutableArray(),
     Attributes.Concat(declaredType.Attributes).ToImmutableArray(),
+    Mixins.Concat(declaredType.Mixins).ToImmutableArray(),
     Diagnostics.Union(declaredType.Diagnostics)
   );
 }

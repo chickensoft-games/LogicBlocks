@@ -30,10 +30,21 @@ public interface IMetatype {
 
   /// <summary>Attributes applied to the type itself.</summary>
   IDictionary<Type, Attribute[]> Attributes { get; }
-}
 
-/// <summary>
-/// Interface applied to a type to indicate that it has metatype information
-/// available.
-/// </summary>
-public interface IHasMetatype { }
+  /// <summary>
+  /// List of mixins applied to the type, in the order that they were applied.
+  /// </summary>
+  IList<Type> Mixins { get; }
+
+  /// <summary>
+  /// Map of mixin handler invocation functions by mixin type.
+  /// </summary>
+  IDictionary<Type, Action<object>> MixinHandlers { get; }
+
+  /// <summary>
+  /// Metatype identifier. This will be used as the type discriminator for
+  /// serialization and deserialization if used with LogicBlock's serialization
+  /// utilities.
+  /// </summary>
+  string Id { get; }
+}

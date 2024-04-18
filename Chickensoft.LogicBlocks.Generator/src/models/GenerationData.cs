@@ -13,8 +13,11 @@ using System.Collections.Immutable;
 /// <param name="VisibleInstantiableTypes">Declared types that are visible
 /// at the top level of the project's source code and are not interfaces, static
 /// classes, or abstract types.</param>
+/// <param name="Mixins">Map of declared types that are marked with the mixin
+/// attribute by their type name.</param>
 public record GenerationData(
   ImmutableDictionary<string, DeclaredTypeInfo> Metatypes,
   ImmutableDictionary<string, DeclaredTypeInfo> VisibleTypes,
-  ImmutableDictionary<string, DeclaredTypeInfo> VisibleInstantiableTypes
+  ImmutableDictionary<string, DeclaredTypeInfo> VisibleInstantiableTypes,
+  ImmutableDictionary<string, DeclaredTypeInfo> Mixins
 );

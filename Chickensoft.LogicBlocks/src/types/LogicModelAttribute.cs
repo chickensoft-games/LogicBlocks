@@ -24,13 +24,22 @@ public sealed class LogicModelAttribute : Attribute {
   public string Id { get; }
 
   /// <summary>
+  /// Mixins applied to the model. Mixins are other types whose members are
+  /// copied into the model at build-time.
+  /// </summary>
+  public Type[] Mixins { get; }
+
+  /// <summary>
   /// Creates a new instance of the <see cref="LogicModelAttribute"/> class
   /// with the specified model identifier. Models represent groups of
   /// serializable data.
   /// </summary>
   /// <param name="id">The identifier of the model to be used as the type
   /// discriminator during serialization and deserialization.</param>
-  public LogicModelAttribute(string id) {
+  /// <param name="mixins">Mixins to apply to this model. Mixins are other types
+  /// whose members are copied into the model at build-time.</param>
+  public LogicModelAttribute(string id, params Type[] mixins) {
     Id = id;
+    Mixins = mixins;
   }
 }

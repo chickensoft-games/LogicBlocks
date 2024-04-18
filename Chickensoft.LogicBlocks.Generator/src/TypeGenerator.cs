@@ -88,37 +88,40 @@ public class TypeGenerator : IIncrementalGenerator {
         searchGenericTypes: false
       );
 
-      // TODO: Replace the next 3 loops with one single loop and build the
-      // dictionaries manually.
+      var visibleTypesBuilder =
+        ImmutableDictionary.CreateBuilder<string, DeclaredTypeInfo>();
+      var visibleInstantiableTypesBuilder =
+        ImmutableDictionary.CreateBuilder<string, DeclaredTypeInfo>();
+      var metatypesBuilder =
+        ImmutableDictionary.CreateBuilder<string, DeclaredTypeInfo>();
+      var mixinsBuilder =
+        ImmutableDictionary.CreateBuilder<string, DeclaredTypeInfo>();
 
-      var visibleTypes = uniqueTypes.Values
-        .Where(type => visibleTypeIds.Contains(type.FullName))
-        .ToImmutableDictionary(
-          type => type.FullName,
-          type => type
-        );
+      // Build up relevant registries to enable convenient and performant
+      // introspection.
+      foreach (var type in uniqueTypes.Values) {
+        if (visibleTypeIds.Contains(type.FullName)) {
+          visibleTypesBuilder.Add(type.FullName, type);
+        }
 
-      var visibleInstantiableTypes = uniqueTypes
-        .Values
-        .Where(type => visibleInstantiableTypeIds.Contains(type.FullName))
-        .ToImmutableDictionary(
-          type => type.FullName,
-          type => type
-        );
+        if (visibleInstantiableTypeIds.Contains(type.FullName)) {
+          visibleInstantiableTypesBuilder.Add(type.FullName, type);
+        }
 
-      var metatypes = visibleTypes.Values
-        .Where(
-          type => type.HasMetatypeAttribute && type.CanGenerateMetatypeInfo
-        )
-        .ToImmutableDictionary(
-          type => type.FullName,
-          type => type
-        );
+        if (type.HasMetatypeAttribute && type.CanGenerateMetatypeInfo) {
+          metatypesBuilder.Add(type.FullName, type);
+        }
+
+        if (type.HasMixinAttribute) {
+          mixinsBuilder.Add(type.FullName, type);
+        }
+      }
 
       var generationData = new GenerationData(
-        Metatypes: metatypes,
-        VisibleTypes: visibleTypes,
-        VisibleInstantiableTypes: visibleInstantiableTypes
+        Metatypes: metatypesBuilder.ToImmutable(),
+        VisibleTypes: visibleTypesBuilder.ToImmutable(),
+        VisibleInstantiableTypes: visibleInstantiableTypesBuilder.ToImmutable(),
+        Mixins: mixinsBuilder.ToImmutable()
       );
 
       return generationData;
@@ -177,11 +180,24 @@ public class TypeGenerator : IIncrementalGenerator {
         code.Indent++;
       }
 
-      // Nest it inside the type itself
-      code.WriteLine($"{type.Reference.CodeString} : Chickensoft.LogicBlocks.IHasMetatype {{");
+      // Apply mixin interfaces to the type.
+      var mixins = type.Mixins.Length > 0
+        ? ", " + string.Join(", ", type.Mixins)
+        : "";
 
+      // Nest it inside the type itself
+      code.WriteLine($"{type.Reference.CodeString} : Chickensoft.LogicBlocks.IHasMetatype{mixins} {{");
       code.Indent++;
-      code.WriteLine($"public record Metatype : Chickensoft.LogicBlocks.IMetatype {{");
+
+      // Add a mixin state bucket to the type itself.
+      code.WriteLine("public Chickensoft.LogicBlocks.IBlackboard MixinState { get; } = new Chickensoft.LogicBlocks.Blackboard();");
+      code.WriteLine();
+
+      // Add a metatype accessor to the type for convenience
+      code.WriteLine($"public Chickensoft.LogicBlocks.IMetatype Metatype => TypeRegistry.Instance.Metatypes[typeof({type.Reference.Name})];");
+      code.WriteLine();
+
+      code.WriteLine($"public record MetatypeInfo : Chickensoft.LogicBlocks.IMetatype {{");
       code.Indent++;
       OutputMetatypeInformation(type, code);
       code.Indent -= 1;
@@ -208,13 +224,56 @@ public class TypeGenerator : IIncrementalGenerator {
   ) {
     var fullName = type.Reference.NameWithOpenGenerics;
 
+    GenerateMetatypeId(type.Id, code);
+    code.WriteLine();
     code.WriteLine($"public System.Text.Json.Serialization.Metadata.JsonTypeInfo CreateJsonTypeInfo(Chickensoft.LogicBlocks.Types.ITypeRegistry registry, System.Text.Json.JsonSerializerOptions options) => Chickensoft.LogicBlocks.LogicBlockTypes.CreateJsonTypeInfo(registry, options, typeof({fullName}));");
     code.WriteLine();
-
     GenerateProperties(type, code);
     code.WriteLine();
     GenerateMetatypeAttributes(type.Attributes, code);
+    code.WriteLine();
+    GenerateMixins(type, code);
+    code.WriteLine();
+    GenerateMixinHandlers(type, code);
   }
+
+  public static void GenerateMixins(
+    DeclaredTypeInfo type,
+    IndentedTextWriter code
+  ) {
+    code.WriteLine("public System.Collections.Generic.IList<System.Type> Mixins { get; } = new System.Collections.Generic.List<System.Type>() {");
+    code.Indent++;
+    GenerateMixinsEntries(type.Mixins, code);
+    code.Indent--;
+    code.WriteLine("};");
+    code.WriteLine();
+  }
+
+  public static void GenerateMixinsEntries(
+    ImmutableArray<string> mixins, IndentedTextWriter code
+  ) {
+    for (var i = 0; i < mixins.Length; i++) {
+      var isLast = i == mixins.Length - 1;
+      var mixin = mixins[i];
+      code.Write($"typeof({mixin})");
+      if (!isLast) { code.Write(","); }
+      code.WriteLine();
+    }
+  }
+
+  private static void GenerateMixinHandlers(
+    DeclaredTypeInfo type, IndentedTextWriter code
+  ) {
+    code.WriteLine("public System.Collections.Generic.IDictionary<System.Type, System.Action<object>> MixinHandlers { get; } = new System.Collections.Generic.Dictionary<System.Type, System.Action<object>>() {");
+    code.Indent++;
+    AddMixinHandlerEntries(type, code);
+    code.Indent--;
+    code.WriteLine("};");
+    code.WriteLine();
+  }
+
+  public static void GenerateMetatypeId(string id, IndentedTextWriter code) =>
+    code.WriteLine($"public string Id => {id};");
 
   public static void GenerateMetatypeAttributes(
     ImmutableArray<AttributeUsage> attributes, IndentedTextWriter code
@@ -260,6 +319,7 @@ public class TypeGenerator : IIncrementalGenerator {
     code.WriteLine($"Type: typeof({type.Reference.Name}),");
     code.WriteLine($"Getter: (object obj) => (({type.Reference.Name})obj).{property.Name},");
     code.WriteLine($"Setter: (object obj, object? value) => (({type.Reference.Name})obj).{property.Name} = ({property.Type}){propertyValue},");
+    code.WriteLine($"GenericTypeGetter: (ITypeReceiver receiver) => receiver.Receive<{property.Type}>(),");
     code.WriteLine($"AttributesByType: new System.Collections.Generic.Dictionary<System.Type, System.Attribute[]>() {{");
 
     GenerateAttributeMapping(property.Attributes, code);
@@ -336,6 +396,8 @@ public class TypeGenerator : IIncrementalGenerator {
     code.WriteLine();
 
     code.Indent++;
+    code.WriteLine("public static Chickensoft.LogicBlocks.Types.ITypeRegistry Instance { get; } = new TypeRegistry();");
+    code.WriteLine();
     CreateVisibleTypesProperty(data.VisibleTypes, code);
     CreateVisibleInstantiableTypesProperty(data.VisibleInstantiableTypes, code);
     CreateMetatypesProperty(data.Metatypes, code);
@@ -366,9 +428,9 @@ public class TypeGenerator : IIncrementalGenerator {
     );
 
     var location = GetLocation(typeDecl);
-    var usings = GetUsings(typeDecl);
     var kind = GetKind(typeDecl);
     var hasMetatypeAttribute = HasMetatypeAttribute(typeDecl);
+    var hasMixinAttribute = HasMixinAttribute(typeDecl);
     var isTopLevelAccessible = IsTopLevelAccessible(typeDecl);
 
     var diagnostics = new HashSet<Diagnostic>();
@@ -388,8 +450,19 @@ public class TypeGenerator : IIncrementalGenerator {
       );
     }
 
-    var properties = GetProperties(typeDecl);
-    var attributes = GetAttributes(typeDecl.AttributeLists);
+    // Only compute usings, properties, attributes, and mixins of metatypes.
+    var usings = hasMetatypeAttribute
+      ? GetUsings(typeDecl)
+      : ImmutableHashSet<UsingDirective>.Empty;
+    var properties = hasMetatypeAttribute
+      ? GetProperties(typeDecl)
+      : ImmutableArray<Property>.Empty;
+    var attributes = hasMetatypeAttribute
+      ? GetAttributes(typeDecl.AttributeLists)
+      : ImmutableArray<AttributeUsage>.Empty;
+    var mixins = hasMetatypeAttribute
+      ? GetMixins(typeDecl)
+      : ImmutableArray<string>.Empty;
 
     return new DeclaredTypeInfo(
       Reference: reference,
@@ -397,9 +470,11 @@ public class TypeGenerator : IIncrementalGenerator {
       Usings: usings,
       Kind: kind,
       HasMetatypeAttribute: hasMetatypeAttribute,
+      HasMixinAttribute: hasMixinAttribute,
       IsTopLevelAccessible: isTopLevelAccessible,
       Properties: properties,
       Attributes: attributes,
+      Mixins: mixins,
       Diagnostics: diagnostics.ToImmutableHashSet()
     );
   }
@@ -471,10 +546,23 @@ public class TypeGenerator : IIncrementalGenerator {
     foreach (var type in types.Values) {
       var typeName = type.FullName;
       var isLast = i == types.Count - 1;
-      code.WriteLine($"[typeof({typeName})] = new {typeName}.Metatype(){(isLast ? "" : ",")}");
+      code.WriteLine($"[typeof({typeName})] = new {typeName}.MetatypeInfo(){(isLast ? "" : ",")}");
       i++;
     }
   }
+
+  private static void AddMixinHandlerEntries(
+    DeclaredTypeInfo type,
+    IndentedTextWriter code
+  ) {
+    var i = 0;
+    foreach (var mixinType in type.Mixins) {
+      var isLast = i == type.Mixins.Length - 1;
+      code.WriteLine($"[typeof({mixinType})] = (obj) => (({mixinType})obj).Handler(){(isLast ? "" : ",")}");
+      i++;
+    }
+  }
+
 
   // We identify all type declarations and filter them out later by visibility
   // based on all the information about the type from any partial declarations
@@ -526,7 +614,8 @@ public class TypeGenerator : IIncrementalGenerator {
 
   /// <summary>
   /// True if the type declaration is explicitly marked as visible at the
-  /// top-level of the project.
+  /// top-level of the project. Doesn't check containing types, so this alone
+  /// is not sufficient to determine overall visibility.
   /// </summary>
   /// <param name="typeDecl">Type declaration syntax.</param>
   /// <returns>True if marked as `public` or `internal`.</returns>
@@ -540,10 +629,16 @@ public class TypeGenerator : IIncrementalGenerator {
     typeDecl.Modifiers.Any(SyntaxKind.PartialKeyword);
 
   public static bool HasMetatypeAttribute(TypeDeclarationSyntax typeDecl) =>
+    HasAttributeNamed(typeDecl, "LogicModel");
+
+  public static bool HasMixinAttribute(TypeDeclarationSyntax typeDecl) =>
+    HasAttributeNamed(typeDecl, "Mixin");
+
+  private static bool HasAttributeNamed(
+    TypeDeclarationSyntax typeDecl, string name
+  ) =>
     typeDecl.AttributeLists.Any(
-      list => list.Attributes.Any(
-        attr => attr.Name.ToString() == "LogicModel"
-      )
+      list => list.Attributes.Any(attr => attr.Name.ToString() == name)
     );
 
   /// <summary>
@@ -649,6 +744,28 @@ public class TypeGenerator : IIncrementalGenerator {
       );
     }
     return properties.ToImmutable();
+  }
+
+  public static ImmutableArray<string> GetMixins(
+    TypeDeclarationSyntax typeDecl
+  ) {
+    var mixins = ImmutableArray.CreateBuilder<string>();
+
+    foreach (var attributeList in typeDecl.AttributeLists) {
+      foreach (var attr in attributeList.Attributes) {
+        if (attr.Name.ToString() == "LogicModel") {
+          mixins.AddRange(
+            attr.ArgumentList?.Arguments
+              .Select(arg => arg.Expression)
+              .OfType<TypeOfExpressionSyntax>()
+              .Select(arg => arg.Type.NormalizeWhitespace().ToString())
+              .ToImmutableArray() ?? ImmutableArray<string>.Empty
+          );
+        }
+      }
+    }
+
+    return mixins.ToImmutable();
   }
 
   public static ImmutableArray<AttributeUsage> GetAttributes(
