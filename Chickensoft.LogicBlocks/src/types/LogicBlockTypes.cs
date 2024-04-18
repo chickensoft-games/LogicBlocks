@@ -25,6 +25,13 @@ public static class LogicBlockTypes {
   private static readonly Dictionary<Type, List<LogicProp>> _propertiesByType =
     new();
 
+  internal static void Reset() {
+    _typesByBaseType.Clear();
+    _typesByAncestor.Clear();
+    _jsonTypeInfosByType.Clear();
+    _propertiesByType.Clear();
+  }
+
   /// <summary>
   /// This caches the types shown in the generated registry by their base type
   /// for more performant type-hierarchy lookups later.

@@ -85,6 +85,7 @@ public class LogicBlockTypeUtilsTest {
       .Setup(reg => reg.VisibleTypes)
       .Returns(new HashSet<Type> { typeof(object) });
 
+    LogicBlockTypes.Reset();
     LogicBlockTypes.Initialize(_registry.Object);
 
     LogicBlockTypes.GetDescendants(typeof(object)).ShouldBeEmpty();
