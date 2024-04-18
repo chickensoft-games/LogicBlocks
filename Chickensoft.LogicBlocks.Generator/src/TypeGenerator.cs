@@ -401,6 +401,7 @@ public class TypeGenerator : IIncrementalGenerator {
     CreateVisibleTypesProperty(data.VisibleTypes, code);
     CreateVisibleInstantiableTypesProperty(data.VisibleInstantiableTypes, code);
     CreateMetatypesProperty(data.Metatypes, code);
+    CreateModuleInitializer(code);
     code.Indent--;
     code.Write("}");
 
@@ -408,6 +409,11 @@ public class TypeGenerator : IIncrementalGenerator {
       hintName: $"TypeRegistry.g.cs",
       source: code.InnerWriter.ToString()
     );
+  }
+
+  public static void CreateModuleInitializer(IndentedTextWriter code) {
+    code.WriteLine("[System.Runtime.CompilerServices.ModuleInitializer]");
+    code.WriteLine("internal static void Initialize() => Chickensoft.LogicBlocks.LogicBlockTypes.Initialize(TypeRegistry.Instance);");
   }
 
   public static DeclaredTypeInfo ResolveDeclaredTypeInfo(
