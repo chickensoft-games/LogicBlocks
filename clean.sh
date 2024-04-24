@@ -9,3 +9,4 @@ find . -name "nupkg" -type d | xargs rm -rf
 
 dotnet nuget locals all --clear
 dotnet restore --no-cache --force
+dotnet build --no-incremental
