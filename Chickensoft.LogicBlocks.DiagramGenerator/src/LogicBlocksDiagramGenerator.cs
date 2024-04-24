@@ -151,8 +151,16 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator {
   public static bool IsLogicBlockCandidate(SyntaxNode node) =>
     node is ClassDeclarationSyntax classDeclaration &&
     classDeclaration.AttributeLists.SelectMany(list => list.Attributes)
-      .Any(attribute => attribute.Name.ToString() ==
-        Constants.STATE_DIAGRAM_ATTRIBUTE_NAME
+      .Any(attribute =>
+        attribute.Name.ToString() == Constants.LOGIC_BLOCK_ATTRIBUTE_NAME &&
+        attribute.ArgumentList is AttributeArgumentListSyntax argumentList &&
+        argumentList.Arguments.Any(
+          arg =>
+            arg.NameEquals is NameEqualsSyntax nameEquals &&
+            nameEquals.Name.ToString() == "Diagram" &&
+            arg.Expression is LiteralExpressionSyntax literalExpression &&
+            literalExpression.Token.ValueText == "true"
+        )
       );
 
   public LogicBlockImplementation? GetStateGraph(

@@ -1,6 +1,6 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 
-[StateDiagram(typeof(State))]
+[LogicBlock(typeof(State), Diagram = true)]
 public class LightSwitch : LogicBlock<LightSwitch.State> {
   public override State GetInitialState() => new State.Powered();
 

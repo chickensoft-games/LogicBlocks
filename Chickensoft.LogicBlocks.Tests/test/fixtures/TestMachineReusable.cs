@@ -1,9 +1,8 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using System;
-using Chickensoft.LogicBlocks.Generator;
 
-[StateDiagram(typeof(State))]
+[LogicBlock(typeof(State), Diagram = true)]
 public partial class TestMachineReusable :
 LogicBlock<TestMachineReusable.State> {
   public static class Input {

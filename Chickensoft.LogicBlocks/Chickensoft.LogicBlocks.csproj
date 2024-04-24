@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <LangVersion>preview</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Nullable>enable</Nullable>
     <CopyAllFiles>true</CopyAllFiles>
     <RootNamespace>Chickensoft.LogicBlocks</RootNamespace>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -39,13 +39,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../README.md" Pack="true" PackagePath="\" />
-    <None Include="../LICENSE" Pack="true" PackagePath="\" />
+    <None Include="../README.md" Pack="true" PackagePath="/" />
+    <None Include="../LICENSE" Pack="true" PackagePath="/" />
     <None Include="./icon.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Dependencies go here. -->
     <PackageReference Include="SauceControl.InheritDoc" Version="1.3.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -55,10 +54,25 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.Text.Json" Version="8.0.3" />
+    <ProjectReference Include="../Chickensoft.Introspection/Chickensoft.Introspection.csproj" />
+  </ItemGroup>
+
+  <!-- Include analyzers as part of logic blocks -->
+  <ItemGroup>
+      <ProjectReference Include="..\Chickensoft.LogicBlocks.Analyzers\Chickensoft.LogicBlocks.Analyzers.csproj" Pack="false">
+          <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+          <OutputItemType>Content</OutputItemType>
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Include the stuff inside ./buildTransitive so our props get picked up by consuming packages -->
+    <None Remove="$(OutputPath)/Chickensoft.LogicBlocks.Analyzers.dll" />
+    <None Include="$(OutputPath)/Chickensoft.LogicBlocks.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+
+  <!-- Include the stuff inside ./buildTransitive so our props get picked up by consuming packages -->
+  <ItemGroup>
     <None Include="./buildTransitive/**/*" Pack="true" PackagePath="buildTransitive" />
   </ItemGroup>
 </Project>

@@ -9,15 +9,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.Example", "Chickensoft.LogicBlocks.Example\Chickensoft.LogicBlocks.Example.csproj", "{B1161A42-CC61-4238-9E34-007A37C84841}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.Generator", "Chickensoft.LogicBlocks.Generator\Chickensoft.LogicBlocks.Generator.csproj", "{1C63CE27-DA55-48B6-B4CD-2425E7C75E20}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.DiagramGenerator", "Chickensoft.LogicBlocks.DiagramGenerator\Chickensoft.LogicBlocks.DiagramGenerator.csproj", "{D6C4E778-70FF-461C-A59C-F3668C175602}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.DiagramGenerator.Tests", "Chickensoft.LogicBlocks.DiagramGenerator.Tests\Chickensoft.LogicBlocks.DiagramGenerator.Tests.csproj", "{D8CB5FA1-4748-4BAF-BB93-88B4C5CF272A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.Generator.Tests", "Chickensoft.LogicBlocks.Generator.Tests\Chickensoft.LogicBlocks.Generator.Tests.csproj", "{1C10F02C-1A1A-4CA7-B234-5B5B237AD205}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.GeneratorTester", "Chickensoft.GeneratorTester\Chickensoft.GeneratorTester.csproj", "{33A2BAAC-5FAC-4869-B901-45286A1B54A8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.Introspection.Generator.Tests", "Chickensoft.Introspection.Generator.Tests\Chickensoft.Introspection.Generator.Tests.csproj", "{C8AAFAF0-6B88-4C77-8459-B5FB5C382667}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.Introspection.Generator", "Chickensoft.Introspection.Generator\Chickensoft.Introspection.Generator.csproj", "{B7B19A98-8FAB-4D78-9D01-C76384F2ED0B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.Introspection", "Chickensoft.Introspection\Chickensoft.Introspection.csproj", "{2C7FE3FA-EC4A-4CC5-8EB9-45F08F0D6887}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.Analyzers", "Chickensoft.LogicBlocks.Analyzers\Chickensoft.LogicBlocks.Analyzers.csproj", "{FC526459-EB9E-4B81-B0BA-C3B3FD1BCAF7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,10 +44,6 @@ Global
 		{B1161A42-CC61-4238-9E34-007A37C84841}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1161A42-CC61-4238-9E34-007A37C84841}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1161A42-CC61-4238-9E34-007A37C84841}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1C63CE27-DA55-48B6-B4CD-2425E7C75E20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1C63CE27-DA55-48B6-B4CD-2425E7C75E20}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1C63CE27-DA55-48B6-B4CD-2425E7C75E20}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1C63CE27-DA55-48B6-B4CD-2425E7C75E20}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D6C4E778-70FF-461C-A59C-F3668C175602}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D6C4E778-70FF-461C-A59C-F3668C175602}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6C4E778-70FF-461C-A59C-F3668C175602}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -52,13 +52,25 @@ Global
 		{D8CB5FA1-4748-4BAF-BB93-88B4C5CF272A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D8CB5FA1-4748-4BAF-BB93-88B4C5CF272A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D8CB5FA1-4748-4BAF-BB93-88B4C5CF272A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1C10F02C-1A1A-4CA7-B234-5B5B237AD205}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1C10F02C-1A1A-4CA7-B234-5B5B237AD205}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1C10F02C-1A1A-4CA7-B234-5B5B237AD205}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1C10F02C-1A1A-4CA7-B234-5B5B237AD205}.Release|Any CPU.Build.0 = Release|Any CPU
 		{33A2BAAC-5FAC-4869-B901-45286A1B54A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{33A2BAAC-5FAC-4869-B901-45286A1B54A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{33A2BAAC-5FAC-4869-B901-45286A1B54A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{33A2BAAC-5FAC-4869-B901-45286A1B54A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8AAFAF0-6B88-4C77-8459-B5FB5C382667}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8AAFAF0-6B88-4C77-8459-B5FB5C382667}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8AAFAF0-6B88-4C77-8459-B5FB5C382667}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8AAFAF0-6B88-4C77-8459-B5FB5C382667}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7B19A98-8FAB-4D78-9D01-C76384F2ED0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7B19A98-8FAB-4D78-9D01-C76384F2ED0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7B19A98-8FAB-4D78-9D01-C76384F2ED0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7B19A98-8FAB-4D78-9D01-C76384F2ED0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C7FE3FA-EC4A-4CC5-8EB9-45F08F0D6887}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C7FE3FA-EC4A-4CC5-8EB9-45F08F0D6887}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C7FE3FA-EC4A-4CC5-8EB9-45F08F0D6887}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C7FE3FA-EC4A-4CC5-8EB9-45F08F0D6887}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC526459-EB9E-4B81-B0BA-C3B3FD1BCAF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC526459-EB9E-4B81-B0BA-C3B3FD1BCAF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC526459-EB9E-4B81-B0BA-C3B3FD1BCAF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC526459-EB9E-4B81-B0BA-C3B3FD1BCAF7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

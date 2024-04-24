@@ -12,7 +12,7 @@ public class Constants {
   public const string LOGIC_BLOCK_STATE_LOGIC_ON_ENTER = "OnEnter";
   public const string LOGIC_BLOCK_STATE_LOGIC_ON_EXIT = "OnExit";
   public const string LOGIC_BLOCK_INPUT_INTERFACE_ID = "global::Chickensoft.LogicBlocks.LogicBlock.IGet";
-  public const string STATE_DIAGRAM_ATTRIBUTE_NAME = "StateDiagram";
+  public const string LOGIC_BLOCK_ATTRIBUTE_NAME = "LogicBlock";
 
   /// <summary>
   /// A dictionary of source code that must be injected into the compilation

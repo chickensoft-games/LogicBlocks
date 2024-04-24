@@ -23,7 +23,7 @@ public record TemperatureSensor : ITemperatureSensor {
   }
 }
 
-[StateDiagram(typeof(State))]
+[LogicBlock(typeof(State), Diagram = true)]
 public class Heater : LogicBlock<Heater.State> {
   public Heater(ITemperatureSensor tempSensor) {
     // Make sure states can access the temperature sensor.

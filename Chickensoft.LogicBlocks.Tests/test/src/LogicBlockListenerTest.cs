@@ -7,6 +7,8 @@ using Xunit;
 
 public class LogicBlockListenerTest {
   public interface ITestLogic : ILogicBlock<TestLogic.IState> { }
+
+  [LogicBlock(typeof(State))]
   public class TestLogic : LogicBlock<TestLogic.IState> {
     public override IState GetInitialState() => new State();
 

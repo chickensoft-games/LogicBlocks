@@ -2,9 +2,7 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using System;
 using System.Collections.Generic;
-using Chickensoft.LogicBlocks.Generator;
 
-[StateDiagram(typeof(State))]
 public partial class FakeLogicBlock {
   public static class Input {
     public readonly record struct InputOne(int Value1, int Value2);
@@ -108,6 +106,7 @@ public partial class FakeLogicBlock {
   }
 }
 
+[LogicBlock(typeof(State), Diagram = true)]
 public partial class FakeLogicBlock : LogicBlock<FakeLogicBlock.State> {
   public Func<State>? InitialState { get; set; }
 

@@ -2,7 +2,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 
 using System;
 
-[StateDiagram(typeof(State))]
+[LogicBlock(typeof(State), Diagram = true)]
 public partial class PartialLogic : LogicBlock<PartialLogic.State> {
   public override State GetInitialState() => throw new NotImplementedException();
 

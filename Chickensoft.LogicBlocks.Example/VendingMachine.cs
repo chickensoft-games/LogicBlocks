@@ -1,9 +1,7 @@
 namespace Chickensoft.LogicBlocks.Example;
 
 using System.Collections.Generic;
-using Chickensoft.LogicBlocks.Generator;
 
-[StateDiagram(typeof(State))]
 public partial class VendingMachine {
   // Inputs
 
@@ -38,7 +36,7 @@ public partial class VendingMachine {
 }
 
 // Logic Block / Hierarchical State Machine
-
+[LogicBlock(typeof(State), Diagram = true)]
 public partial class VendingMachine : LogicBlock<VendingMachine.State> {
   public VendingMachine(VendingMachineStock stock) {
     Set(stock);

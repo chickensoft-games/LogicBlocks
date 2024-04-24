@@ -1,14 +1,13 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using System;
-using Chickensoft.LogicBlocks.Generator;
 
 public enum SecondaryState {
   Blooped,
   Bopped
 }
 
-[StateDiagram(typeof(State))]
+[LogicBlock(typeof(State), Diagram = true)]
 public partial class TestMachine : LogicBlock<TestMachine.State> {
   public static class Input {
     public readonly record struct Activate(SecondaryState Secondary);

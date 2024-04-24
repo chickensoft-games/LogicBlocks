@@ -1,5 +1,6 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
+[LogicBlock(typeof(State))]
 public class GreedyLogic : LogicBlock<GreedyLogic.State> {
   public override State GetInitialState() => new State.A();
 

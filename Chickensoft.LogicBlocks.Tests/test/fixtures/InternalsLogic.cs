@@ -2,6 +2,7 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using System;
 
+[LogicBlock(typeof(State))]
 public class InternalsLogic : LogicBlock<InternalsLogic.State> {
   public record State : StateLogic<State> {
     public Action? OnAttachAction { get; init; }

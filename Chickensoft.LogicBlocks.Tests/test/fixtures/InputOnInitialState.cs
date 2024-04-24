@@ -1,5 +1,6 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
+[LogicBlock(typeof(State))]
 public class InputOnInitialState : LogicBlock<InputOnInitialState.State> {
   public override State GetInitialState() => new();
 

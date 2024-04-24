@@ -8,6 +8,7 @@ using Xunit;
 public class StateBaseTest {
   private interface ITestLogic : ILogicBlock<TestLogic.IState> { }
 
+  [LogicBlock(typeof(State))]
   private sealed class TestLogic : LogicBlock<TestLogic.IState> {
     public required State InitialState { get; init; }
 

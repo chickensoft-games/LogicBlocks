@@ -1,10 +1,8 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
-using Chickensoft.LogicBlocks.Generator;
-
 public interface IMyLogicBlock : ILogicBlock<MyLogicBlock.State> { }
 
-[StateDiagram(typeof(State))]
+[LogicBlock(typeof(State), Diagram = true)]
 public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBlock {
   public override State GetInitialState() => new State.SomeState();
 

@@ -1,9 +1,8 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using System;
-using Chickensoft.LogicBlocks.Generator;
 
-[StateDiagram(typeof(State))]
+[LogicBlock(typeof(State), Diagram = true)]
 public class HierarchicalCallbackLogic :
   LogicBlock<HierarchicalCallbackLogic.State> {
   public Func<State> InitialState { get; init; } =

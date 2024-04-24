@@ -53,9 +53,9 @@ public class LogicBlockTest {
     block.GetObject(typeof(string)).ShouldBe("data");
     block.Overwrite("string");
     block.Get<string>().ShouldBe("string");
-    block.OverwriteObject("overwritten");
+    block.OverwriteObject(typeof(string), "overwritten");
     block.GetObject(typeof(string)).ShouldBe("overwritten");
-    block.SetObject(5);
+    block.SetObject(typeof(int), 5);
     block.GetObject(typeof(int)).ShouldBe(5);
 
     // Can't change values once set.

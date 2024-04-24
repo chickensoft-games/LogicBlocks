@@ -1,7 +1,6 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using System;
-using Chickensoft.LogicBlocks.Generator;
 
 /// <summary>
 /// A service that announces the passage of time, roughly once per second.
@@ -14,7 +13,7 @@ public interface IClock {
   event Action<double> TimeElapsed;
 }
 
-[StateDiagram(typeof(State))]
+[LogicBlock(typeof(State), Diagram = true)]
 public class Timer : LogicBlock<Timer.IState> {
   public override IState GetInitialState() => Get<State.IPoweredOff>();
 

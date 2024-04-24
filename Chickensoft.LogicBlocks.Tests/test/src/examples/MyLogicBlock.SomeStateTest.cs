@@ -12,9 +12,7 @@ public class SomeStateTest {
 
     state.Enter();
 
-    context.Outputs.ShouldBe(
-      new object[] { new MyLogicBlock.Output.SomeOutput() }
-    );
+    context.Outputs.ShouldBe([new MyLogicBlock.Output.SomeOutput()]);
   }
 
   [Fact]
@@ -24,9 +22,7 @@ public class SomeStateTest {
 
     state.Exit();
 
-    context.Outputs.ShouldBe(
-      new object[] { new MyLogicBlock.Output.SomeOutput() }
-    );
+    context.Outputs.ShouldBe([new MyLogicBlock.Output.SomeOutput()]);
   }
 
   [Fact]
@@ -38,8 +34,6 @@ public class SomeStateTest {
 
     nextState.ShouldBeOfType<MyLogicBlock.State.SomeOtherState>();
 
-    context.Outputs.ShouldBe(
-      new object[] { new MyLogicBlock.Output.SomeOutput() }
-    );
+    context.Outputs.ShouldBe([new MyLogicBlock.Output.SomeOutput()]);
   }
 }

@@ -34,9 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
-
-    <ProjectReference Include="../Chickensoft.LogicBlocks.Generator/Chickensoft.LogicBlocks.Generator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
+    <PackageReference Include="Chickensoft.LogicBlocks" Version="*" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

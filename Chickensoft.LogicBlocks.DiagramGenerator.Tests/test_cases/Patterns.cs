@@ -2,7 +2,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 
 using System;
 
-[StateDiagram(typeof(State))]
+[LogicBlock(typeof(State), Diagram = true)]
 public class Patterns : LogicBlock<Patterns.State> {
   public enum Mode { One, Two, Three }
 

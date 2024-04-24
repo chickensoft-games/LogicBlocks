@@ -3,6 +3,9 @@ namespace Chickensoft.LogicBlocks;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
+using Chickensoft.Introspection;
 
 /// <summary>
 /// <para>
@@ -115,9 +118,8 @@ where TState : class, IStateLogic<TState> {
 /// </para>
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
-public abstract partial class LogicBlock<TState> : ILogicBlock<TState>,
-IInputHandler where TState : class, IStateLogic<TState> {
-#pragma warning disable CA1000
+public abstract partial class LogicBlock<TState> : LogicBlockBase,
+ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   // We do want static members on generic types here since it makes for a
   // really ergonomic API.
   /// <summary>
@@ -126,7 +128,6 @@ IInputHandler where TState : class, IStateLogic<TState> {
   /// </summary>
   /// <returns>Fake binding.</returns>
   public static IFakeBinding CreateFakeBinding() => new FakeBinding();
-#pragma warning restore CA1000
 
   /// <inheritdoc />
   public IContext Context { get; }
@@ -143,7 +144,7 @@ IInputHandler where TState : class, IStateLogic<TState> {
   private TState? _value;
   private int _isProcessing;
   private readonly InputQueue _inputs;
-  private readonly Blackboard _blackboard = new();
+  internal readonly SerializableBlackboard _blackboard = new();
   private readonly HashSet<ILogicBlockBinding<TState>> _bindings = new();
 
   /// <summary>
@@ -293,60 +294,48 @@ IInputHandler where TState : class, IStateLogic<TState> {
   public bool HasObject(Type type) => _blackboard.HasObject(type);
   #endregion IReadOnlyBlackboard
 
-  #region Blackboard
-  /// <summary>
-  /// Adds data to the blackboard so that it can be looked up by its
-  /// compile-time type.
-  /// <br />
-  /// Data is retrieved by its type, so do not add more than one piece of data
-  /// with the same type.
-  /// </summary>
-  /// <param name="data">Data to write to the blackboard.</param>
-  /// <typeparam name="TData">Type of the data to add.</typeparam>
-  /// <exception cref="ArgumentException">Thrown if data of the provided type
-  /// has already been added.</exception>
+  #region IBlackboard
+  /// <inheritdoc cref="IBlackboard.Set{TData}(TData)" />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  protected internal void Set<TData>(TData data) where TData : class =>
+  public void Set<TData>(TData data) where TData : class =>
     _blackboard.Set(data);
 
-  /// <summary>
-  /// Adds data to the blackboard so that it can be looked up by its runtime
-  /// type.
-  /// <br />
-  /// Data is retrieved by its type, so do not add more than one piece of data
-  /// with the same type.
-  /// </summary>
-  /// <param name="data">Data to write to the blackboard.</param>
-  /// <exception cref="LogicBlockException">Thrown if data of the provided type
-  /// has already been added.</exception>
+  /// <inheritdoc cref="IBlackboard.SetObject(Type, object)" />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  protected internal void SetObject(object data) => _blackboard.SetObject(data);
+  public void SetObject(Type type, object data) =>
+    _blackboard.SetObject(type, data);
 
-  /// <summary>
-  /// Adds new data or overwrites existing data in the blackboard, based on
-  /// its compile-time type.
-  /// <br />
-  /// Data is retrieved by its type, so this will overwrite any existing data
-  /// of the given type, unlike <see cref="Set{TData}(TData)" />.
-  /// </summary>
-  /// <param name="data">Data to write to the blackboard.</param>
-  /// <typeparam name="TData">Type of the data to add or overwrite.</typeparam>
+  /// <inheritdoc cref="IBlackboard.Overwrite{TData}(TData)" />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  protected internal void Overwrite<TData>(TData data) where TData : class =>
+  public void Overwrite<TData>(TData data) where TData : class =>
     _blackboard.Overwrite(data);
 
-  /// <summary>
-  /// Adds new data or overwrites existing data in the blackboard, based on
-  /// its runtime type.
-  /// <br />
-  /// Data is retrieved by its type, so this will overwrite any existing data
-  /// of the given type, unlike <see cref="Set{TData}(TData)" />.
-  /// </summary>
-  /// <param name="data">Data to write to the blackboard.</param>
+  /// <inheritdoc cref="IBlackboard.OverwriteObject(Type, object)" />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  protected internal void OverwriteObject(object data) =>
-    _blackboard.OverwriteObject(data);
-  #endregion Blackboard
+  public void OverwriteObject(Type type, object data) =>
+    _blackboard.OverwriteObject(type, data);
+  #endregion IBlackboard
+
+  #region ISerializableBlackboard
+  /// <inheritdoc cref="ISerializableBlackboard.Save{TData}(Func{TData})" />
+  public void Save<TData>(Func<TData> factory)
+    where TData : class, IIntrospective => _blackboard.Save(factory);
+  #endregion ISerializableBlackboard
+
+  #region Serialization
+  private void CreateTypeInfo(
+    ITypeRegistry registry, JsonSerializerOptions options
+  ) {
+    var type = GetType();
+    var typeInfo = JsonTypeInfo.CreateJsonTypeInfo(type, options);
+
+    typeInfo.CreateObject = registry.VisibleInstantiableTypes[type];
+
+    // Each persisted blackboard value becomes a property on the serialized
+    // logic block.
+    _blackboard.RegisterJsonPropertyInfo<TState>(typeInfo, registry);
+  }
+  #endregion Serialization
 
   internal TState ProcessInputs<TInputType>(
     in TInputType? input = null
