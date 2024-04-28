@@ -15,16 +15,16 @@ public abstract record TypeResolutionNode(
 /// Represents a type in the type resolution tree.
 /// </summary>
 /// <param name="Name">Name of the type.</param>
-/// <param name="Children">Map of child type names to the child type nodes.
-/// </param>
 /// <param name="IsVisible">Whether the type is visible from the top-level of
 /// the project.</param>
-/// <param name="IsInstantiable">Whether the type is instantiable.</param>
+/// <param name="IsConcrete">Whether the type is a concrete type or not.
+/// </param>
+/// <param name="OpenGenerics">True if the type node contains open generics.</param>
 /// <param name="TypeChildren">Map of type names to type nodes.</param>
 public record TypeNode(
   string Name,
   bool IsVisible,
-  bool IsInstantiable,
+  bool IsConcrete,
   string OpenGenerics,
   Dictionary<string, TypeNode> TypeChildren
 ) : TypeResolutionNode(Name, TypeChildren);

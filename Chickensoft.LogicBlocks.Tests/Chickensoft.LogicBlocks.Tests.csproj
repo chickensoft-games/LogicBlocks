@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
 
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
     <LangVersion>preview</LangVersion>
     <DebugType>portable</DebugType>
 
@@ -34,7 +35,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Chickensoft.LogicBlocks" Version="*" PrivateAssets="all" />
+    <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
+    <ProjectReference Include="../Chickensoft.Introspection.Generator/Chickensoft.Introspection.Generator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
   </ItemGroup>
 
 </Project>

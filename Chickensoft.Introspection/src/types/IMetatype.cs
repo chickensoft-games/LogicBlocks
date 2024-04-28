@@ -18,20 +18,20 @@ public interface IMetatype {
   /// Properties on the type. Only non-partial properties marked with
   /// attributes on the current type are included. To get all of the properties,
   /// including the inherited properties from any base metatypes, see the
-  /// <see cref="Types.GetAllProperties"/> method.
+  /// <see cref="ITypeGraph.GetProperties(Type)"/> method.
   /// </summary>
-  IList<PropertyMetadata> Properties { get; }
+  IReadOnlyList<PropertyMetadata> Properties { get; }
 
   /// <summary>Attributes applied to the type itself.</summary>
-  IDictionary<Type, Attribute[]> Attributes { get; }
+  IReadOnlyDictionary<Type, Attribute[]> Attributes { get; }
 
   /// <summary>
   /// List of mixins applied to the type, in the order that they were applied.
   /// </summary>
-  IList<Type> Mixins { get; }
+  IReadOnlyList<Type> Mixins { get; }
 
   /// <summary>
   /// Map of mixin handler invocation functions by mixin type.
   /// </summary>
-  IDictionary<Type, Action<object>> MixinHandlers { get; }
+  IReadOnlyDictionary<Type, Action<object>> MixinHandlers { get; }
 }

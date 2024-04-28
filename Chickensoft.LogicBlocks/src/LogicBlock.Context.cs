@@ -73,15 +73,12 @@ public abstract partial class LogicBlock<TState> {
     }
 
     /// <inheritdoc />
-    public TDataType Get<TDataType>() where TDataType : class {
-      if (Context is not IContext context) {
-        throw new InvalidOperationException(
+    public TDataType Get<TDataType>() where TDataType : class =>
+      Context is not IContext context
+        ? throw new InvalidOperationException(
           "Cannot get value from a logic block with an uninitialized context."
-        );
-      }
-
-      return context.Get<TDataType>();
-    }
+        )
+        : context.Get<TDataType>();
 
     /// <inheritdoc />
     public void AddError(Exception e) {

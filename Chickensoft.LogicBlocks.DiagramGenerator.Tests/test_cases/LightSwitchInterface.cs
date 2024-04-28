@@ -4,7 +4,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 public class LightSwitchInterface : LogicBlock<LightSwitchInterface.IState> {
   public override IState GetInitialState() => new State.TurnedOff();
 
-  public interface IState : IStateLogic<IState> { }
+  public interface IState : IStateLogic<IState>;
 
   public static class Input {
     public readonly record struct Toggle;

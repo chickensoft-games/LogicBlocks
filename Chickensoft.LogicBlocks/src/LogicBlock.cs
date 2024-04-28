@@ -3,9 +3,9 @@ namespace Chickensoft.LogicBlocks;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
+using Chickensoft.Collections;
 using Chickensoft.Introspection;
+using Chickensoft.Serialization;
 
 /// <summary>
 /// <para>
@@ -21,29 +21,34 @@ using Chickensoft.Introspection;
 /// </para>
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
-public interface ILogicBlock<TState> : IReadOnlyBlackboard
+public interface ILogicBlock<TState> : ISerializableBlackboard
 where TState : class, IStateLogic<TState> {
   /// <summary>
   /// Logic block execution context.
   /// </summary>
   IContext Context { get; }
+
   /// <summary>Current state of the logic block.</summary>
   TState Value { get; }
+
   /// <summary>
   /// Whether or not the logic block is currently processing inputs.
   /// </summary>
   bool IsProcessing { get; }
+
   /// <summary>
   /// Whether or not the logic block has been started. A logic block is started
   /// if its underlying state has been initialized.
   /// </summary>
   bool IsStarted { get; }
+
   /// <summary>
   /// Returns the initial state of the logic block. Implementations must
   /// override this to provide a valid initial state.
   /// </summary>
   /// <returns>Initial logic block state.</returns>
   TState GetInitialState();
+
   /// <summary>
   /// Adds an input value to the logic block's internal input queue.
   /// </summary>
@@ -51,11 +56,13 @@ where TState : class, IStateLogic<TState> {
   /// <typeparam name="TInputType">Type of the input.</typeparam>
   /// <returns>Logic block input return value.</returns>
   TState Input<TInputType>(in TInputType input) where TInputType : struct;
+
   /// <summary>
   /// Creates a binding to a logic block.
   /// </summary>
   /// <returns>Logic block binding.</returns>
   LogicBlock<TState>.IBinding Bind();
+
   /// <summary>
   /// Starts the logic block by entering the current state. If the logic block
   /// is already started, nothing happens. If the logic block
@@ -63,6 +70,7 @@ where TState : class, IStateLogic<TState> {
   /// <see cref="GetInitialState" /> and attaching it to the logic block first.
   /// </summary>
   void Start();
+
   /// <summary>
   /// Stops the logic block. This calls any OnExit callbacks the current state
   /// registered before detaching it. If any inputs are created while the
@@ -70,6 +78,7 @@ where TState : class, IStateLogic<TState> {
   /// processed.
   /// </summary>
   void Stop();
+
   /// <summary>
   /// <para>
   /// Forcibly resets the logic block to the specified state, even if the
@@ -89,6 +98,7 @@ where TState : class, IStateLogic<TState> {
   /// </summary>
   /// <param name="state">State to forcibly reset to.</param>
   TState ForceReset(TState state);
+
   /// <summary>
   /// Adds a binding to the logic block. This is used internally by the standard
   /// bindings implementation. Prefer using <see cref="Bind" /> to create an
@@ -97,6 +107,7 @@ where TState : class, IStateLogic<TState> {
   /// </summary>
   /// <param name="binding">Logic block binding.</param>
   void AddBinding(ILogicBlockBinding<TState> binding);
+
   /// <summary>
   /// Removes a binding from the logic block. This is used internally by the
   /// standard bindings implementation. Prefer using <see cref="Bind" /> to
@@ -141,10 +152,26 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   /// <inheritdoc />
   public TState Value => _value ?? Flush();
 
+  #region LogicBlockBase
+  /// <inheritdoc />
+  public override object ValueAsPlainObject => Value;
+
+  /// <inheritdoc />
+  public override void RestoreState(object state) {
+    if (_value is not null) {
+      throw new LogicBlockException(
+        "Cannot restore state once a state has been initialized."
+      );
+    }
+
+    _restoredState = (TState)state;
+  }
+  #endregion LogicBlockBase
+
+  private TState? _restoredState;
   private TState? _value;
   private int _isProcessing;
   private readonly InputQueue _inputs;
-  internal readonly SerializableBlackboard _blackboard = new();
   private readonly HashSet<ILogicBlockBinding<TState>> _bindings = new();
 
   /// <summary>
@@ -181,6 +208,8 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   /// <inheritdoc />
   public void Start() {
     if (IsProcessing || _value is not null) { return; }
+
+    _blackboard.InstantiateAnyMissingSavedData();
 
     Flush();
   }
@@ -264,6 +293,7 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   /// to communicate with the world outside the logic block. Outputs are
   /// equivalent to the idea of actions in statecharts.
   /// </summary>
+  /// <typeparam name="TOutput">Output type.</typeparam>
   /// <param name="output">Output value.</param>
   internal virtual void OutputValue<TOutput>(in TOutput output)
     where TOutput : struct => AnnounceOutput(output);
@@ -277,6 +307,9 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   protected virtual void HandleError(Exception e) { }
 
   #region IReadOnlyBlackboard
+  /// <inheritdoc />
+  public IEnumerable<Type> Types => _blackboard.Types;
+
   /// <inheritdoc />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public TData Get<TData>() where TData : class => _blackboard.Get<TData>();
@@ -320,31 +353,20 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   /// <inheritdoc cref="ISerializableBlackboard.Save{TData}(Func{TData})" />
   public void Save<TData>(Func<TData> factory)
     where TData : class, IIntrospective => _blackboard.Save(factory);
+
+  /// <inheritdoc cref="ISerializableBlackboard.SavedTypes" />
+  public IEnumerable<Type> SavedTypes => _blackboard.SavedTypes;
   #endregion ISerializableBlackboard
 
-  #region Serialization
-  private void CreateTypeInfo(
-    ITypeRegistry registry, JsonSerializerOptions options
-  ) {
-    var type = GetType();
-    var typeInfo = JsonTypeInfo.CreateJsonTypeInfo(type, options);
-
-    typeInfo.CreateObject = registry.VisibleInstantiableTypes[type];
-
-    // Each persisted blackboard value becomes a property on the serialized
-    // logic block.
-    _blackboard.RegisterJsonPropertyInfo<TState>(typeInfo, registry);
-  }
-  #endregion Serialization
-
   internal TState ProcessInputs<TInputType>(
-    in TInputType? input = null
+    TInputType? input = null
   ) where TInputType : struct {
     _isProcessing++;
 
     if (_value is null) {
       // No state yet. Let's get the first state going!
-      _value = GetInitialState();
+      _value = _restoredState ?? GetInitialState();
+      _restoredState = null;
       _value.Attach(Context);
       _value.Enter(null);
     }

@@ -17,9 +17,9 @@ public class InternalsLogic : LogicBlock<InternalsLogic.State> {
     }
   }
 
-  public static class Input { }
+  public static class Input;
 
-  public static class Output { }
+  public static class Output;
 
   public override State GetInitialState() => new();
 }

@@ -1,6 +1,6 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
-public interface IMyLogicBlock : ILogicBlock<MyLogicBlock.State> { }
+public interface IMyLogicBlock : ILogicBlock<MyLogicBlock.State>;
 
 [LogicBlock(typeof(State), Diagram = true)]
 public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBlock {

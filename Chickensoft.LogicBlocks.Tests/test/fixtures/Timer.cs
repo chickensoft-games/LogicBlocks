@@ -52,7 +52,6 @@ public class Timer : LogicBlock<Timer.IState> {
 
   public interface IState : IStateLogic<IState>;
   public abstract record State : StateLogic<IState>, IState {
-
     public interface IPoweredOff : IState;
     public record PoweredOff :
     State, IPoweredOff, IGet<Input.PowerButtonPressed> {
@@ -91,10 +90,7 @@ public class Timer : LogicBlock<Timer.IState> {
         public IState On(in Input.TimeElapsed input) {
           var data = Get<Data>();
           data.TimeRemaining -= input.Delta;
-          if (data.TimeRemaining <= 0.0d) {
-            return Get<Beeping>();
-          }
-          return this;
+          return data.TimeRemaining <= 0.0d ? Get<Beeping>() : this;
         }
 
         public IState On(in Input.StartStopButtonPressed input) => Get<Idle>();

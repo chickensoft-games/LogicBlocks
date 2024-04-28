@@ -42,6 +42,7 @@ internal readonly struct InternalState {
   internal IContextAdapter ContextAdapter { get; }
 
   /// <summary>Creates a new state logic internal state.</summary>
+  /// <param name="contextAdapter">LogicBlock context adapter.</param>
   public InternalState(IContextAdapter contextAdapter) {
     EnterCallbacks = new();
     ExitCallbacks = new();

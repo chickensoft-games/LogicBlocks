@@ -483,3 +483,7 @@ dotnet_diagnostic.RCS1158.severity = none
 dotnet_diagnostic.IDE0028.severity = none
 # You're wrong about redundant constructors.
 dotnet_diagnostic.RCS1074.severity = none
+# Allow me to nest ternary operators
+dotnet_diagnostic.RCS1238.severity = none
+# Leave me alone about equality comparers
+dotnet_diagnostic.RCS1241.severity = none

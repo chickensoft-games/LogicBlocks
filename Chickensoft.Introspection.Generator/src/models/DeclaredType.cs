@@ -68,7 +68,7 @@ public record DeclaredType(
   /// back to the type's simple name.
   /// </summary>
   public string Id => IntrospectiveAttribute?.ConstructorArgs.FirstOrDefault()
-    ?? $"nameof({Reference.Name})";
+    ?? $"nameof({Reference.NameWithOpenGenerics})";
 
   private DeclaredAttribute? IntrospectiveAttribute => Attributes
     .FirstOrDefault(

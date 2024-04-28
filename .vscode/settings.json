@@ -1,4 +1,6 @@
 {
+  // TODO: until https://github.com/dotnet/vscode-csharp/issues/3970 is solved.
+  "omnisharp.sdkVersion": "7.0.404",
   "[csharp]": {
     "editor.codeActionsOnSave": {
       "source.addMissingImports": "explicit",

@@ -49,6 +49,7 @@ public abstract partial class LogicBlock<TState> {
     /// <typeparamref name="TStateType" /> is encountered.
     /// </summary>
     /// <typeparam name="TStateType">Type of state to bind to.</typeparam>
+    /// <param name="handler">Handler invoked when the state changes.</param>
     /// <returns>The new binding group.</returns>
     public IBinding When<TStateType>(Action<TStateType> handler)
       where TStateType : TState;
@@ -109,7 +110,7 @@ public abstract partial class LogicBlock<TState> {
     // binding when a particular type of error is encountered.
     internal readonly List<Action<Exception>> _exceptionRunners;
 
-    internal BindingBase() : base() {
+    internal BindingBase() {
       _inputRunners = new();
       _outputRunners = new();
       _stateCheckers = new();
@@ -201,14 +202,14 @@ public abstract partial class LogicBlock<TState> {
       }
     }
 
-    protected override void ReceiveException(Exception exception) {
+    protected override void ReceiveException(Exception e) {
       // Run each error binding that should be run.
       for (var i = 0; i < _exceptionCheckers.Count; i++) {
         var checker = _exceptionCheckers[i];
         var runner = _exceptionRunners[i];
-        if (checker(exception)) {
+        if (checker(e)) {
           // If the binding handles this type of error, run it!
-          runner(exception);
+          runner(e);
         }
       }
     }
@@ -227,7 +228,7 @@ public abstract partial class LogicBlock<TState> {
     /// <summary>Logic block being listened to.</summary>
     public LogicBlock<TState> LogicBlock { get; }
 
-    internal Binding(LogicBlock<TState> logicBlock) : base() {
+    internal Binding(LogicBlock<TState> logicBlock) {
       LogicBlock = logicBlock;
       logicBlock.AddBinding(this);
     }

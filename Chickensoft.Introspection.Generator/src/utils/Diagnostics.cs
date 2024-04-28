@@ -6,7 +6,9 @@ public static class Diagnostics {
   public const string ERR_PREFIX = "LOGIC_BLOCKS";
   public const string ERR_CATEGORY = "Chickensoft.LogicBlocks.Generator";
 
-  public static Diagnostic InvalidMetatype(SyntaxNode node, string name)
+  public static Diagnostic InvalidIntrospectiveType(
+    SyntaxNode node, string name
+  )
   => Diagnostic.Create(
     new(
       $"{ERR_PREFIX}_000",
@@ -24,20 +26,4 @@ public static class Diagnostics {
     node.GetLocation(),
     name
   );
-
-  public static DiagnosticDescriptor MissingLogicBlockAttributeDescriptor {
-    get;
-  } = new(
-    $"{ERR_PREFIX}_001",
-    "Missing LogicBlockAttribute",
-    messageFormat: "Missing [LogicBlockAttribute] on logic block " +
-    "implementation `{0}`",
-    ERR_CATEGORY,
-    DiagnosticSeverity.Error,
-    isEnabledByDefault: true
-  );
-
-  public static Diagnostic MissingLogicBlockAttribute(
-    Location location, string name
-  ) => Diagnostic.Create(MissingLogicBlockAttributeDescriptor, location, name);
 }

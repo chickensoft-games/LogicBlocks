@@ -54,14 +54,12 @@ public sealed record LogicBlockGraph(
       $"{indent}}}").Replace("global::Chickensoft.LogicBlocks.Example.", "");
   }
 
-  public bool Equals(LogicBlockGraph? other) {
-    if (other is null) {
-      return false;
-    }
-
-    return Id == other.Id && Name == other.Name && BaseId == other.BaseId &&
-      Children.SequenceEqual(other.Children);
-  }
+  public bool Equals(LogicBlockGraph? other) =>
+    other is not null &&
+    Id == other.Id &&
+    Name == other.Name &&
+    BaseId == other.BaseId &&
+    Children.SequenceEqual(other.Children);
 
   public override int GetHashCode() => Id.GetHashCode();
 }
@@ -74,13 +72,11 @@ public sealed record LogicBlockImplementation(
   LogicBlockGraph Graph,
   ImmutableDictionary<string, LogicBlockGraph> StatesById
 ) {
-  public bool Equals(LogicBlockImplementation? other) {
-    if (other is null) {
-      return false;
-    }
-
-    return Id == other.Id && Name == other.Name && Graph.Equals(other.Graph);
-  }
+  public bool Equals(LogicBlockImplementation? other) =>
+    other is not null &&
+    Id == other.Id &&
+    Name == other.Name &&
+    Graph.Equals(other.Graph);
 
   public override int GetHashCode() => Id.GetHashCode();
 }
@@ -94,7 +90,7 @@ public record LogicBlockSubclass(
 public record LogicBlockInput(string Id, string Name);
 public record LogicBlockOutput(string Id, string Name);
 
-public interface ILogicBlockResult { }
+public interface ILogicBlockResult;
 public record InvalidLogicBlockResult : ILogicBlockResult;
 public record LogicBlockOutputResult(
   string FilePath, string Name, string Content

@@ -6,13 +6,13 @@ using Shouldly;
 using Xunit;
 
 public class LogicBlockListenerTest {
-  public interface ITestLogic : ILogicBlock<TestLogic.IState> { }
+  public interface ITestLogic : ILogicBlock<TestLogic.IState>;
 
   [LogicBlock(typeof(State))]
   public class TestLogic : LogicBlock<TestLogic.IState> {
     public override IState GetInitialState() => new State();
 
-    public interface IState : IStateLogic<IState> { }
+    public interface IState : IStateLogic<IState>;
     public sealed record State : StateLogic<IState>, IState { }
   }
 

@@ -21,7 +21,7 @@ public class HierarchicalCallbackLogic :
     }
 
     public record Substate : State {
-      public Substate() : base() {
+      public Substate() {
         this.OnEnter(() => Output(new Output.Log("substate")));
         this.OnExit(() => Output(new Output.Log("substate")));
       }

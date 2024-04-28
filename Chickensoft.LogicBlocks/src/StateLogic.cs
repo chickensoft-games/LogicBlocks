@@ -49,15 +49,11 @@ public abstract record StateLogic<TState> : StateBase, IStateLogic<TState>
 
   /// <inheritdoc />
   public void Enter(TState? previous = default) =>
-    CallOnEnterCallbacks(
-      previous, this as TState, InternalState.ContextAdapter.OnError
-    );
+    CallOnEnterCallbacks(previous, this as TState);
 
   /// <inheritdoc />
   public void Exit(TState? next = default) =>
-    CallOnExitCallbacks(
-      this as TState, next, InternalState.ContextAdapter.OnError
-    );
+    CallOnExitCallbacks(this as TState, next);
 
   /// <summary>
   /// Adds an input value to the logic block's internal input queue and
@@ -91,9 +87,7 @@ public abstract record StateLogic<TState> : StateBase, IStateLogic<TState>
   /// <param name="e">Exception to add.</param>
   protected void AddError(Exception e) => Context.AddError(e);
 
-  private void CallOnEnterCallbacks(
-    TState? previous, TState? next, Action<Exception>? onError
-  ) {
+  private void CallOnEnterCallbacks(TState? previous, TState? next) {
     if (next is StateLogic<TState> nextLogic) {
       foreach (var onEnter in nextLogic.InternalState.EnterCallbacks) {
         if (onEnter.IsType(previous)) {
@@ -105,9 +99,7 @@ public abstract record StateLogic<TState> : StateBase, IStateLogic<TState>
     }
   }
 
-  private void CallOnExitCallbacks(
-    TState? previous, TState? next, Action<Exception>? onError
-  ) {
+  private void CallOnExitCallbacks(TState? previous, TState? next) {
     if (previous is StateLogic<TState> previousLogic) {
       foreach (var onExit in previousLogic.InternalState.ExitCallbacks) {
         if (onExit.IsType(next)) {

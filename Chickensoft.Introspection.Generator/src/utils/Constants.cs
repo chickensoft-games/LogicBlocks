@@ -9,6 +9,6 @@ public static class Constants {
   public const string METATYPE = "Chickensoft.Introspection.IMetatype";
   public const string METATYPE_IMPL = "MetatypeMetadata";
   public const string TYPE_REGISTRY_INTERFACE = "Chickensoft.Introspection.ITypeRegistry";
-  public const string TYPES = "Chickensoft.Introspection.Types";
+  public const string TYPES_GRAPH = "Chickensoft.Introspection.Types.Graph";
   public const string PROPERTY_METADATA = "Chickensoft.Introspection.PropertyMetadata";
 }

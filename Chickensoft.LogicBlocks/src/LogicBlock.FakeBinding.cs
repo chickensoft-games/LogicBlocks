@@ -16,11 +16,13 @@ public abstract partial class LogicBlock<TState> {
     /// <summary>
     /// Triggers bindings to run in response to a new input.
     /// </summary>
+    /// <typeparam name="TInputType">Input type.</typeparam>
     /// <param name="input">Input.</param>
     void Input<TInputType>(in TInputType input) where TInputType : struct;
     /// <summary>
     /// Triggers bindings to run in response to an output.
     /// </summary>
+    /// <typeparam name="TOutputType">Output type.</typeparam>
     /// <param name="output">Output.</param>
     void Output<TOutputType>(in TOutputType output) where TOutputType : struct;
     /// <summary>

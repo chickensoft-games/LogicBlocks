@@ -48,24 +48,17 @@ public class HeaterTest {
     binding.Handle(
       (in Heater.Output.FinishedHeating output) =>
         messages.Add("Finished heating :)")
-    );
-
-    binding.When<Heater.State.Off>(
+    ).When<Heater.State.Off>(
       (state) => messages.Add("Heater turned off")
+    ).When<Heater.State.Powered>(
+      (state) => messages.Add("Heater is powered")
+    ).When<Heater.State.Idle>(
+      (state) => messages.Add("Heater is idling")
+    ).When<Heater.State.Heating>(
+      (state) => messages.Add("Heater is heating")
     );
 
     // Listen to all states that inherit from Heater.State.Powered.
-    binding.When<Heater.State.Powered>(
-      (state) => messages.Add("Heater is powered")
-    );
-
-    binding.When<Heater.State.Idle>(
-      (state) => messages.Add("Heater is idling")
-    );
-
-    binding.When<Heater.State.Heating>(
-      (state) => messages.Add("Heater is heating")
-    );
 
     heater.Input(new Heater.Input.TurnOn());
 

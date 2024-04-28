@@ -8,7 +8,7 @@ using static System.Console;
 using JSON = System.Text.Json;
 
 [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
-public class JunkAttribute : Attribute { }
+public class JunkAttribute : Attribute;
 
 [Introspective("my_type")]
 [Junk]
@@ -28,13 +28,13 @@ public partial class MyType {
   [Save("optional_int")]
   public int? OptionalInt { get; set; } = 10;
 
-#pragma warning disable IDE0001
+#pragma warning disable IDE0001, RCS1020
   [Save("optional_float")]
   public Nullable<float> OptionalFloat { get; set; } = 10.0f;
-#pragma warning restore IDE0001
+#pragma warning restore IDE0001, RCS1020
 }
 
-public partial class MyType<T> { }
+public partial class MyType<T>;
 
 public static partial class One {
   internal partial record struct Two {
@@ -52,7 +52,7 @@ public static partial class One {
 
 #pragma warning disable IDE0001
           [Save("optional_float")]
-          public Nullable<float> OptionalFloat { get; set; } = 10.0f;
+          public float? OptionalFloat { get; set; } = 10.0f;
 #pragma warning restore IDE0001
         }
       }

@@ -206,8 +206,7 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator {
     var concreteState = (INamedTypeSymbol)symbol
       .GetAttributes()
       .First()
-      .ConstructorArguments
-      .First()
+      .ConstructorArguments[0]
       .Value!;
 
     // Search the logic block for all state subtypes, found recursively
@@ -458,7 +457,6 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator {
       var outputs = graph.Data.Outputs[outputContext]
         .Select(output => output.Name)
         .OrderBy(output => output);
-      // TODO: Instead of adding these inside the state, add them to the
       var line = string.Join(", ", outputs);
       stateDescriptions.Add(
         $"{graph.UmlId} : {outputContext.DisplayName} → {line}"

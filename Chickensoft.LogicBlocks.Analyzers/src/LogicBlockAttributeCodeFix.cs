@@ -31,7 +31,7 @@ public class LogicBlockAttributeCodeFixProvider : CodeFixProvider {
       .GetSyntaxRootAsync(context.CancellationToken)
       .ConfigureAwait(false);
 
-    var diagnostic = context.Diagnostics.First();
+    var diagnostic = context.Diagnostics[0];
     var diagnosticSpan = diagnostic.Location.SourceSpan;
 
     var classDeclaration = root?
@@ -132,8 +132,6 @@ public class LogicBlockAttributeCodeFixProvider : CodeFixProvider {
         .ConfigureAwait(false)
     )!;
     var newRoot = root.ReplaceNode(classDeclaration, newClassDeclaration);
-    var newDocument = document.WithSyntaxRoot(newRoot);
-
-    return newDocument;
+    return document.WithSyntaxRoot(newRoot);
   }
 }

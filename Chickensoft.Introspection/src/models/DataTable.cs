@@ -33,4 +33,11 @@ public class DataTable {
   /// <param name="value">The object instance to set.</param>
   /// <exception cref="ArgumentNullException" />
   public void Set<T>(T value) where T : class => _data[typeof(T)] = value;
+
+  /// <inheritdoc />
+  // Equal to everything to avoid being a factor when a child of a record type.
+  public override bool Equals(object obj) => true;
+
+  /// <inheritdoc />
+  public override int GetHashCode() => base.GetHashCode();
 }

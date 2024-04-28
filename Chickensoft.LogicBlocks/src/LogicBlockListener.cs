@@ -52,6 +52,7 @@ where TState : class, IStateLogic<TState> {
   /// Called whenever the logic block produces an output.
   /// </summary>
   /// <typeparam name="TOutputType">Output type.</typeparam>
+  /// <param name="output">Output.</param>
   protected virtual void ReceiveOutput<TOutputType>(in TOutputType output)
     where TOutputType : struct { }
 

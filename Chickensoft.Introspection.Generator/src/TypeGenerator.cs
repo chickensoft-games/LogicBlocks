@@ -28,7 +28,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 /// </summary>
 [Generator]
 public class TypeGenerator : IIncrementalGenerator {
-
   public void Initialize(IncrementalGeneratorInitializationContext context) {
     // If you need to debug the source generator, uncomment the following line
     // and use Visual Studio 2022 on Windows to attach to debugging next time
@@ -85,15 +84,15 @@ public class TypeGenerator : IIncrementalGenerator {
       tree.AddDeclaredTypes(uniqueTypes);
 
       var visibleTypeIds = tree.GetVisibleTypes();
-      var visibleInstantiableTypeIds = tree.GetVisibleTypes(
+      var concreteVisibleTypeIds = tree.GetVisibleTypes(
         predicate:
-          static (type) => type.IsInstantiable && type.OpenGenerics == "",
+          static (type) => type.IsConcrete && type.OpenGenerics.Length == 0,
         searchGenericTypes: false
       );
 
       var visibleTypesBuilder =
         ImmutableDictionary.CreateBuilder<string, DeclaredType>();
-      var visibleInstantiableTypesBuilder =
+      var concreteVisibleTypesBuilder =
         ImmutableDictionary.CreateBuilder<string, DeclaredType>();
       var metatypesBuilder =
         ImmutableDictionary.CreateBuilder<string, DeclaredType>();
@@ -107,8 +106,8 @@ public class TypeGenerator : IIncrementalGenerator {
           visibleTypesBuilder.Add(type.FullName, type);
         }
 
-        if (visibleInstantiableTypeIds.Contains(type.FullName)) {
-          visibleInstantiableTypesBuilder.Add(type.FullName, type);
+        if (concreteVisibleTypeIds.Contains(type.FullName)) {
+          concreteVisibleTypesBuilder.Add(type.FullName, type);
         }
 
         if (type.CanGenerateMetatypeInfo) {
@@ -120,14 +119,12 @@ public class TypeGenerator : IIncrementalGenerator {
         }
       }
 
-      var generationData = new GenerationData(
+      return new GenerationData(
         Metatypes: metatypesBuilder.ToImmutable(),
         VisibleTypes: visibleTypesBuilder.ToImmutable(),
-        VisibleInstantiableTypes: visibleInstantiableTypesBuilder.ToImmutable(),
+        ConcreteVisibleTypes: concreteVisibleTypesBuilder.ToImmutable(),
         Mixins: mixinsBuilder.ToImmutable()
       );
-
-      return generationData;
     });
 
     context.RegisterSourceOutput(
@@ -167,8 +164,8 @@ public class TypeGenerator : IIncrementalGenerator {
 
       var code = CreateCodeWriter();
 
-      code.WriteLine("#pragma warning disable");
-      code.WriteLine("#nullable enable");
+      WriteFileStart(code);
+
       code.WriteLine($"namespace {type.Location.Namespace};\n");
 
       foreach (var usingDirective in usings) {
@@ -213,7 +210,7 @@ public class TypeGenerator : IIncrementalGenerator {
       );
       code.Indent++;
       OutputMetatypeInformation(type, code);
-      code.Indent -= 1;
+      code.Indent--;
 
       // Close braces
       for (var i = code.Indent; i >= 0; i--) {
@@ -221,14 +218,23 @@ public class TypeGenerator : IIncrementalGenerator {
         code.Indent--;
       }
 
-      code.WriteLine("#nullable restore");
-      code.WriteLine("#pragma warning restore");
+      WriteFileEnd(code);
 
       context.AddSource(
         hintName: $"{type.Filename}.g.cs",
         source: code.InnerWriter.ToString()
       );
     }
+  }
+
+  private static void WriteFileStart(IndentedTextWriter code) {
+    code.WriteLine("#pragma warning disable");
+    code.WriteLine("#nullable enable");
+  }
+
+  private static void WriteFileEnd(IndentedTextWriter code) {
+    code.WriteLine("#nullable restore");
+    code.WriteLine("#pragma warning restore");
   }
 
   private static void OutputMetatypeInformation(
@@ -251,7 +257,7 @@ public class TypeGenerator : IIncrementalGenerator {
     DeclaredType type,
     IndentedTextWriter code
   ) {
-    code.WriteLine("public System.Collections.Generic.IList<System.Type> Mixins { get; } = new System.Collections.Generic.List<System.Type>() {");
+    code.WriteLine("public System.Collections.Generic.IReadOnlyList<System.Type> Mixins { get; } = new System.Collections.Generic.List<System.Type>() {");
     code.Indent++;
     GenerateMixinsEntries(type.Mixins, code);
     code.Indent--;
@@ -274,7 +280,7 @@ public class TypeGenerator : IIncrementalGenerator {
   private static void GenerateMixinHandlers(
     DeclaredType type, IndentedTextWriter code
   ) {
-    code.WriteLine("public System.Collections.Generic.IDictionary<System.Type, System.Action<object>> MixinHandlers { get; } = new System.Collections.Generic.Dictionary<System.Type, System.Action<object>>() {");
+    code.WriteLine("public System.Collections.Generic.IReadOnlyDictionary<System.Type, System.Action<object>> MixinHandlers { get; } = new System.Collections.Generic.Dictionary<System.Type, System.Action<object>>() {");
     code.Indent++;
     AddMixinHandlerEntries(type, code);
     code.Indent--;
@@ -288,7 +294,7 @@ public class TypeGenerator : IIncrementalGenerator {
   public static void GenerateMetatypeAttributes(
     ImmutableArray<DeclaredAttribute> attributes, IndentedTextWriter code
   ) {
-    code.WriteLine("public System.Collections.Generic.IDictionary<System.Type, System.Attribute[]> Attributes { get; } = new System.Collections.Generic.Dictionary<System.Type, System.Attribute[]>() {");
+    code.WriteLine("public System.Collections.Generic.IReadOnlyDictionary<System.Type, System.Attribute[]> Attributes { get; } = new System.Collections.Generic.Dictionary<System.Type, System.Attribute[]>() {");
 
     GenerateAttributeMapping(attributes, code);
 
@@ -299,7 +305,7 @@ public class TypeGenerator : IIncrementalGenerator {
     DeclaredType type, IndentedTextWriter code
   ) {
     code.WriteLine(
-      "public System.Collections.Generic.IList<" +
+      "public System.Collections.Generic.IReadOnlyList<" +
       $"{Constants.PROPERTY_METADATA}> Properties {{ get; }} = " +
       "new System.Collections.Generic.List<" +
       $"{Constants.PROPERTY_METADATA}>() {{"
@@ -331,11 +337,11 @@ public class TypeGenerator : IIncrementalGenerator {
     var propertyValue = "value" + (property.IsNullable ? "" : "!");
 
     code.WriteLine($"Name: \"{property.Name}\",");
-    code.WriteLine($"Type: typeof({type.Reference.Name}),");
+    code.WriteLine($"Type: typeof({property.Type}),");
     code.WriteLine($"Getter: (object obj) => (({type.Reference.Name})obj).{property.Name},");
     code.WriteLine($"Setter: (object obj, object? value) => (({type.Reference.Name})obj).{property.Name} = ({property.Type}){propertyValue},");
     code.WriteLine($"GenericTypeGetter: (ITypeReceiver receiver) => receiver.Receive<{property.Type}>(),");
-    code.WriteLine($"AttributesByType: new System.Collections.Generic.Dictionary<System.Type, System.Attribute[]>() {{");
+    code.WriteLine("AttributesByType: new System.Collections.Generic.Dictionary<System.Type, System.Attribute[]>() {");
 
     GenerateAttributeMapping(property.Attributes, code);
 
@@ -410,8 +416,11 @@ public class TypeGenerator : IIncrementalGenerator {
     GenerationData data
   ) {
     var code = CreateCodeWriter();
+
+    WriteFileStart(code);
+
     code.WriteLine(
-      $"public partial class TypeRegistry : " +
+      "public partial class TypeRegistry : " +
       $"{Constants.TYPE_REGISTRY_INTERFACE} {{"
     );
     code.WriteLine();
@@ -423,14 +432,16 @@ public class TypeGenerator : IIncrementalGenerator {
     );
     code.WriteLine();
     CreateVisibleTypesProperty(data.VisibleTypes, code);
-    CreateVisibleInstantiableTypesProperty(data.VisibleInstantiableTypes, code);
+    CreateConcreteVisibleTypesProperty(data.ConcreteVisibleTypes, code);
     CreateMetatypesProperty(data.Metatypes, code);
     CreateModuleInitializer(code);
     code.Indent--;
-    code.Write("}");
+    code.WriteLine("}");
+
+    WriteFileEnd(code);
 
     context.AddSource(
-      hintName: $"TypeRegistry.g.cs",
+      hintName: "TypeRegistry.g.cs",
       source: code.InnerWriter.ToString()
     );
   }
@@ -439,7 +450,7 @@ public class TypeGenerator : IIncrementalGenerator {
     code.WriteLine("[System.Runtime.CompilerServices.ModuleInitializer]");
     code.WriteLine(
       "internal static void Initialize() => " +
-      $"{Constants.TYPES}.Register(TypeRegistry.Instance);"
+      $"{Constants.TYPES_GRAPH}.Register(TypeRegistry.Instance);"
     );
   }
 
@@ -462,7 +473,7 @@ public class TypeGenerator : IIncrementalGenerator {
 
     var location = GetLocation(typeDecl);
     var kind = GetKind(typeDecl);
-    var hasMetatypeAttribute = HasMetatypeAttribute(typeDecl);
+    var hasMetatypeAttribute = HasIntrospectiveAttribute(typeDecl);
     var hasMixinAttribute = HasMixinAttribute(typeDecl);
     var isTopLevelAccessible = IsTopLevelAccessible(typeDecl);
 
@@ -476,7 +487,7 @@ public class TypeGenerator : IIncrementalGenerator {
       )
     ) {
       diagnostics.Add(
-        Diagnostics.InvalidMetatype(
+        Diagnostics.InvalidIntrospectiveType(
           typeDecl,
           name
         )
@@ -515,7 +526,7 @@ public class TypeGenerator : IIncrementalGenerator {
   private static void CreateVisibleTypesProperty(
     ImmutableDictionary<string, DeclaredType> types, IndentedTextWriter code
   ) {
-    code.WriteLine("public System.Collections.Generic.ISet<System.Type> VisibleTypes { get; } = new System.Collections.Generic.HashSet<System.Type>() {");
+    code.WriteLine("public System.Collections.Generic.IReadOnlyDictionary<System.Type, string> VisibleTypes { get; } = new System.Collections.Generic.Dictionary<System.Type, string>() {");
     code.Indent++;
     AddTypeEntries(types, code);
     code.Indent--;
@@ -523,12 +534,12 @@ public class TypeGenerator : IIncrementalGenerator {
     code.WriteLine();
   }
 
-  private static void CreateVisibleInstantiableTypesProperty(
+  private static void CreateConcreteVisibleTypesProperty(
     ImmutableDictionary<string, DeclaredType> types, IndentedTextWriter code
   ) {
-    code.WriteLine("public System.Collections.Generic.IDictionary<System.Type, System.Func<object>> VisibleInstantiableTypes { get; } = new System.Collections.Generic.Dictionary<System.Type, System.Func<object>>() {");
+    code.WriteLine("public System.Collections.Generic.IReadOnlyDictionary<System.Type, System.Func<object>> ConcreteVisibleTypes { get; } = new System.Collections.Generic.Dictionary<System.Type, System.Func<object>>() {");
     code.Indent++;
-    AddInstantiableTypeEntries(types, code);
+    AddConcreteTypeEntries(types, code);
     code.Indent--;
     code.WriteLine("};");
     code.WriteLine();
@@ -538,9 +549,9 @@ public class TypeGenerator : IIncrementalGenerator {
     ImmutableDictionary<string, DeclaredType> types, IndentedTextWriter code
   ) {
     code.WriteLine(
-      $"public System.Collections.Generic.IDictionary<System.Type, " +
+      "public System.Collections.Generic.IReadOnlyDictionary<System.Type, " +
       $"{Constants.METATYPE}> Metatypes {{ get; }} = new " +
-      $"System.Collections.Generic.Dictionary<System.Type, " +
+      "System.Collections.Generic.Dictionary<System.Type, " +
       $"{Constants.METATYPE}>() {{"
     );
     code.Indent++;
@@ -557,12 +568,12 @@ public class TypeGenerator : IIncrementalGenerator {
     foreach (var type in types.Values) {
       var typeName = type.FullName;
       var isLast = i == types.Count - 1;
-      code.WriteLine($"typeof({typeName}){(isLast ? "" : ",")}");
+      code.WriteLine($"[typeof({typeName})] = \"{type.Reference.NameWithOpenGenerics}\"{(isLast ? "" : ",")}");
       i++;
     }
   }
 
-  private static void AddInstantiableTypeEntries(
+  private static void AddConcreteTypeEntries(
     ImmutableDictionary<string, DeclaredType> types,
     IndentedTextWriter code
   ) {
@@ -610,7 +621,6 @@ public class TypeGenerator : IIncrementalGenerator {
     }
   }
 
-
   // We identify all type declarations and filter them out later by visibility
   // based on all the information about the type from any partial declarations
   // of the same type that we discover, as well as visibility information about
@@ -626,12 +636,12 @@ public class TypeGenerator : IIncrementalGenerator {
     if (typeDecl is ClassDeclarationSyntax classDecl) {
       return classDecl.Modifiers.Any(SyntaxKind.StaticKeyword)
         ? DeclaredTypeKind.StaticClass
-        : DeclaredTypeKind.InstantiableType;
+        : DeclaredTypeKind.ConcreteType;
     }
     else if (typeDecl is InterfaceDeclarationSyntax) {
       return DeclaredTypeKind.Interface;
     }
-    return DeclaredTypeKind.InstantiableType;
+    return DeclaredTypeKind.ConcreteType;
   }
 
   public static Construction GetConstruction(TypeDeclarationSyntax typeDecl) {
@@ -675,8 +685,9 @@ public class TypeGenerator : IIncrementalGenerator {
   public static bool IsPartial(TypeDeclarationSyntax typeDecl) =>
     typeDecl.Modifiers.Any(SyntaxKind.PartialKeyword);
 
-  public static bool HasMetatypeAttribute(TypeDeclarationSyntax typeDecl) =>
-    HasAttributeNamed(typeDecl, Constants.INTROSPECTIVE_ATTRIBUTE_NAME);
+  public static bool HasIntrospectiveAttribute(
+    TypeDeclarationSyntax typeDecl
+  ) => HasAttributeNamed(typeDecl, Constants.INTROSPECTIVE_ATTRIBUTE_NAME);
 
   public static bool HasMixinAttribute(TypeDeclarationSyntax typeDecl) =>
     HasAttributeNamed(typeDecl, Constants.MIXIN_ATTRIBUTE_NAME);
@@ -851,7 +862,6 @@ public class TypeGenerator : IIncrementalGenerator {
     return attributes.ToImmutable();
   }
 
-
   // public static ImmutableArray<AttributeUsage> GetAttributes(
   //   SyntaxList<AttributeListSyntax> attributeLists
   // ) => attributeLists
@@ -871,5 +881,4 @@ public class TypeGenerator : IIncrementalGenerator {
 
   public static IndentedTextWriter CreateCodeWriter() =>
     new(new StringWriter(), "  ");
-
 }

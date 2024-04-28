@@ -11,6 +11,9 @@ internal readonly struct UpdateCallback {
   public Func<object?, bool> IsType { get; }
 
   /// <summary>Create a new update callback.</summary>
+  /// <param name="callback">Callback to invoke.</param>
+  /// <param name="isType">Predicate that determines whether or not an object
+  /// is the type the update callback handles.</param>
   public UpdateCallback(Action<object?> callback, Func<object?, bool> isType) {
     Callback = callback;
     IsType = isType;

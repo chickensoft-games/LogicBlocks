@@ -7,14 +7,12 @@ public partial class VendingMachine {
       this.OnEnter(() => Output(new Output.ClearTransactionTimeOutTimer()));
     }
 
-    public State On(in Input.SelectionEntered input) {
-      if (Get<VendingMachineStock>().HasItem(input.Type)) {
-        return new TransactionStarted(
+    public State On(in Input.SelectionEntered input) =>
+      Get<VendingMachineStock>().HasItem(input.Type)
+        ? new TransactionStarted(
           input.Type, Prices[input.Type], 0
-        );
-      }
-      return this;
-    }
+        )
+        : this;
 
     public State On(in Input.PaymentReceived input) {
       // Money was deposited with no selection — eject it right back.

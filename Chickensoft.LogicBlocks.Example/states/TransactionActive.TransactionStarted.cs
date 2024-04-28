@@ -3,7 +3,6 @@ namespace Chickensoft.LogicBlocks.Example;
 public partial class VendingMachine {
   public record TransactionStarted : TransactionActive,
   IGet<Input.SelectionEntered> {
-
     public TransactionStarted(
       ItemType type, int price, int amountReceived
     ) : base(type, price, amountReceived) {

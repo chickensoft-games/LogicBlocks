@@ -10,7 +10,7 @@ using System.Collections.Immutable;
 /// source code.</param>
 /// <param name="VisibleTypes">Declared types that are visible at the top-level
 /// of the project's source code.</param>
-/// <param name="VisibleInstantiableTypes">Declared types that are visible
+/// <param name="ConcreteVisibleTypes">Declared types that are visible
 /// at the top level of the project's source code and are not interfaces, static
 /// classes, or abstract types.</param>
 /// <param name="Mixins">Map of declared types that are marked with the mixin
@@ -18,6 +18,6 @@ using System.Collections.Immutable;
 public record GenerationData(
   ImmutableDictionary<string, DeclaredType> Metatypes,
   ImmutableDictionary<string, DeclaredType> VisibleTypes,
-  ImmutableDictionary<string, DeclaredType> VisibleInstantiableTypes,
+  ImmutableDictionary<string, DeclaredType> ConcreteVisibleTypes,
   ImmutableDictionary<string, DeclaredType> Mixins
 );

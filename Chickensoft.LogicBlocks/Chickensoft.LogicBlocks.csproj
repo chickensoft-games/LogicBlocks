@@ -22,7 +22,7 @@
     <Title>LogicBlocks</Title>
     <Version>4.2.2</Version>
     <Description>Human-friendly, hierarchical state machines for games and apps in C#.</Description>
-    <Copyright>© 2023 Chickensoft</Copyright>
+    <Copyright>© 2024 Chickensoft</Copyright>
     <Authors>Chickensoft</Authors>
     <Company>Chickensoft</Company>
 
@@ -54,7 +54,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.Text.Json" Version="8.0.3" />
+    <PackageReference Include="Chickensoft.Collections" Version="1.1.0" />
+
+    <!-- TODO: Reference published packages -->
     <ProjectReference Include="../Chickensoft.Introspection/Chickensoft.Introspection.csproj" />
+    <ProjectReference Include="../Chickensoft.Serialization/Chickensoft.Serialization.csproj" />
   </ItemGroup>
 
   <!-- Include analyzers as part of logic blocks -->

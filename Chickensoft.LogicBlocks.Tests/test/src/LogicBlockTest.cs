@@ -2,6 +2,7 @@ namespace Chickensoft.LogicBlocks.Tests;
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Shouldly;
@@ -58,10 +59,13 @@ public class LogicBlockTest {
     block.SetObject(typeof(int), 5);
     block.GetObject(typeof(int)).ShouldBe(5);
 
+    block.Types.ShouldBe([typeof(string), typeof(int)], ignoreOrder: true);
+    block.SavedTypes.ShouldBe([], ignoreOrder: true);
+
     // Can't change values once set.
-    Should.Throw<LogicBlockException>(() => block.Set("other"));
-    Should.Throw<LogicBlockException>(() => block.Get<string[]>());
-    Should.Throw<LogicBlockException>(() => block.GetObject(typeof(string[])));
+    Should.Throw<DuplicateNameException>(() => block.Set("other"));
+    Should.Throw<KeyNotFoundException>(() => block.Get<string[]>());
+    Should.Throw<KeyNotFoundException>(() => block.GetObject(typeof(string[])));
     block.Input(new FakeLogicBlock.Input.GetString());
     block.Value.ShouldBe(new FakeLogicBlock.State.StateC("overwritten"));
   }
@@ -534,5 +538,25 @@ public class LogicBlockTest {
     state.Enter();
 
     context.Errors.ShouldBe([e]);
+  }
+
+  [Fact]
+  public void RestoreStateRestoresState() {
+    var logic = new FakeLogicBlock();
+    var state = new FakeLogicBlock.State.StateC("c");
+
+    logic.RestoreState(state);
+
+    logic.Value.ShouldBe(state);
+  }
+
+  [Fact]
+  public void RestoreStateThrowsIfStateAlreadyExists() {
+    var logic = new FakeLogicBlock();
+    var state = new FakeLogicBlock.State.StateC("c");
+
+    logic.Start();
+
+    Should.Throw<LogicBlockException>(() => logic.RestoreState(state));
   }
 }

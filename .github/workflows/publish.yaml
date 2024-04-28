@@ -92,6 +92,12 @@ jobs:
 
       - name: 📦 Publish Package
         run: |
+          # Build local packages used as PackageReference with nuget.config
+          dotnet restore
+          dotnet build Chickensoft.LogicBlocks.Analyzers
+          dotnet build Chickensoft.Introspection
+          dotnet build Chickensoft.LogicBlocks
+
           # build the package
           dotnet build Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj -c Release
 

@@ -6,7 +6,7 @@ using Shouldly;
 using Xunit;
 
 public class StateBaseTest {
-  private interface ITestLogic : ILogicBlock<TestLogic.IState> { }
+  private interface ITestLogic : ILogicBlock<TestLogic.IState>;
 
   [LogicBlock(typeof(State))]
   private sealed class TestLogic : LogicBlock<TestLogic.IState> {
@@ -16,7 +16,7 @@ public class StateBaseTest {
 
     public Action<Exception>? ErrorHandler { get; init; }
 
-    public interface IState : IStateLogic<IState> { }
+    public interface IState : IStateLogic<IState>;
     public sealed record State : StateLogic<IState>, IState {
       public State(Action callback) {
         OnAttach(callback);
@@ -37,7 +37,6 @@ public class StateBaseTest {
 
     Should.Throw<InvalidOperationException>(() => state.Attach(adapter));
   }
-
 
   [Fact]
   public void AttachmentCallbackErrorsGetHandled() {

@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-
 /// <summary>
 /// Fake logic block context — provided for your testing convenience.
 /// </summary>
@@ -36,7 +35,6 @@ public interface IFakeContext : IContext {
   /// </summary>
   void Reset();
 }
-
 
 /// <summary>Fake logic block context used when testing LogicBlocks.</summary>
 internal readonly struct FakeContext : IFakeContext {

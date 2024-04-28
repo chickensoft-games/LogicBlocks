@@ -27,7 +27,6 @@ internal interface IInputHandler {
 /// </para>
 /// </summary>
 internal class InputQueue {
-
   private abstract class TypedInputQueue {
     public abstract void HandleInput(IInputHandler inputProcessor);
     public abstract void Clear();

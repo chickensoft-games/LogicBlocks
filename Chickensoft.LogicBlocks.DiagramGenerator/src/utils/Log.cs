@@ -16,7 +16,6 @@ public class Log {
     var lines = msg.Split('\n').Select(line => "//\t" + line);
     Logs.AddRange(lines);
 #endif
-    return;
   }
 
   public void Clear() => Logs.Clear();

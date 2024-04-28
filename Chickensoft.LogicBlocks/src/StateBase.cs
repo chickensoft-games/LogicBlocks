@@ -83,7 +83,6 @@ public abstract record StateBase : IStateBase {
   public void OnDetach(Action handler) =>
     InternalState.DetachCallbacks.Push(handler);
 
-
   /// <inheritdoc />
   public void Attach(IContext context) {
     InternalState.ContextAdapter.Adapt(context);

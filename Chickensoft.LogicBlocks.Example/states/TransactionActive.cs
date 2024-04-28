@@ -3,7 +3,6 @@ namespace Chickensoft.LogicBlocks.Example;
 public partial class VendingMachine {
   public abstract record TransactionActive : State,
   IGet<Input.PaymentReceived>, IGet<Input.TransactionTimedOut> {
-
     public ItemType Type { get; }
     public int Price { get; }
     public int AmountReceived { get; }

@@ -62,8 +62,8 @@ public record TypeResolutionTree {
         child = new TypeNode(
           Name: containingTypeName.Name,
           IsVisible: containingDeclaredType?.IsTopLevelAccessible ?? false,
-          IsInstantiable:
-            containingDeclaredType?.Kind == DeclaredTypeKind.InstantiableType,
+          IsConcrete:
+            containingDeclaredType?.Kind == DeclaredTypeKind.ConcreteType,
           OpenGenerics: containingDeclaredType?.Reference.OpenGenerics ?? "",
           TypeChildren: new()
         );
@@ -83,7 +83,7 @@ public record TypeResolutionTree {
       var typeNode = new TypeNode(
         Name: declaredType.Reference.Name,
         IsVisible: declaredType.IsTopLevelAccessible,
-        IsInstantiable: declaredType.Kind == DeclaredTypeKind.InstantiableType,
+        IsConcrete: declaredType.Kind == DeclaredTypeKind.ConcreteType,
         OpenGenerics: declaredType.Reference.OpenGenerics,
         TypeChildren: new()
       );
@@ -116,7 +116,7 @@ public record TypeResolutionTree {
       ? namePrefix + "."
       : "";
 
-    var name = $"{prefix}{node.Name}";
+    var name = prefix + node.Name;
 
     if (node is TypeNode typeNode) {
       name += typeNode.OpenGenerics;

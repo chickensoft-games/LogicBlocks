@@ -14,9 +14,7 @@ public class LogicBlockIdentifierTest {
 
   [Fact]
   public void IdentifiesLogicBlock() {
-    Types.Register(TypeRegistry.Instance);
-
-    var descendants = Types.GetDescendants(typeof(LogicBlockBase));
+    var descendants = Types.Graph.GetDescendantSubtypes(typeof(LogicBlockBase));
 
     // Make sure our logic block is identified as a descendant of the base type
     // for all logic blocks.

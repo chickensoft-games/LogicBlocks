@@ -9,17 +9,19 @@ using System.Collections.Generic;
 /// </summary>
 public interface ITypeRegistry {
   /// <summary>
-  /// Visible types, including any visible abstract types and interfaces.
+  /// Map of non-generic reference types that are visible from the assembly's
+  /// global scope to their names.
   /// </summary>
-  ISet<Type> VisibleTypes { get; }
+  IReadOnlyDictionary<Type, string> VisibleTypes { get; }
   /// <summary>
-  /// Map of visible types that are instantiable and non-generic to a function
-  /// which can be invoked to create a new instance of an object of that type.
-  /// The function will throw if the type does not have a parameterless
-  /// constructor.
+  /// Map of non-generic reference types that are visible from the assembly's
+  /// global scope that are not abstract (or interfaces).
   /// </summary>
-  IDictionary<Type, Func<object>> VisibleInstantiableTypes { get; }
+  IReadOnlyDictionary<Type, Func<object>> ConcreteVisibleTypes { get; }
 
-  /// <summary>Map of metatypes by their system type.</summary>
-  IDictionary<Type, IMetatype> Metatypes { get; }
+  /// <summary>
+  /// Map of metatype instances by the system type of their associated
+  /// introspective type.
+  /// </summary>
+  IReadOnlyDictionary<Type, IMetatype> Metatypes { get; }
 }

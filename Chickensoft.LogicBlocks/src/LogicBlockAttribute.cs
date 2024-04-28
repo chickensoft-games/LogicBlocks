@@ -21,7 +21,7 @@ public sealed class LogicBlockAttribute : Attribute {
   /// Whether or not a diagram should be generated for this logic block. The
   /// default is false.
   /// </summary>
-  public bool Diagram { get; set; } = false;
+  public bool Diagram { get; set; }
 
   /// <summary>
   /// Logic block attribute. Place this on a class that extends

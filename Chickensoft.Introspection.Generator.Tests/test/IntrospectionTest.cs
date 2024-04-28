@@ -7,7 +7,6 @@ using Moq;
 using Shouldly;
 using Xunit;
 
-
 public class LogicBlockTypeUtilsTest {
   public class Ancestor;
   public class Parent : Ancestor;
@@ -17,13 +16,13 @@ public class LogicBlockTypeUtilsTest {
   public class ParentCousin : AncestorSibling;
   public class ChildCousin : ParentCousin;
 
-  private static readonly HashSet<Type> _visibleTypes = new() {
-    typeof(Ancestor),
-    typeof(Parent),
-    typeof(Child),
-    typeof(AncestorSibling),
-    typeof(ParentCousin),
-    typeof(ChildCousin),
+  private static readonly Dictionary<Type, string> _visibleTypes = new() {
+    [typeof(Ancestor)] = nameof(Ancestor),
+    [typeof(Parent)] = nameof(Parent),
+    [typeof(Child)] = nameof(Child),
+    [typeof(AncestorSibling)] = nameof(AncestorSibling),
+    [typeof(ParentCousin)] = nameof(ParentCousin),
+    [typeof(ChildCousin)] = nameof(ChildCousin),
   };
 
   private readonly Mock<ITypeRegistry> _registry;
@@ -32,18 +31,18 @@ public class LogicBlockTypeUtilsTest {
     _registry = new Mock<ITypeRegistry>();
   }
 
-
   [Fact]
-  public void GetsDescendants() {
+  public void GetDescendantSubtypes() {
     _registry.Setup(reg => reg.VisibleTypes).Returns(_visibleTypes);
-    _registry.Setup(reg => reg.VisibleInstantiableTypes)
+    _registry.Setup(reg => reg.ConcreteVisibleTypes)
       .Returns(new Dictionary<Type, Func<object>>());
     _registry.Setup(reg => reg.Metatypes)
       .Returns(new Dictionary<Type, IMetatype>());
 
-    Types.Register(_registry.Object);
+    Types.Graph.Register(_registry.Object);
 
-    var ancestorDescendants = Types.GetDescendants(typeof(Ancestor));
+    var ancestorDescendants =
+      Types.Graph.GetDescendantSubtypes(typeof(Ancestor));
 
     ancestorDescendants.ShouldBe(new HashSet<Type> {
         typeof(Parent),
@@ -53,31 +52,31 @@ public class LogicBlockTypeUtilsTest {
 
     // Should be the exact same object reference since a repeated lookup is
     // cached.
-    Types.GetDescendants(typeof(Ancestor))
+    Types.Graph.GetDescendantSubtypes(typeof(Ancestor))
       .ShouldBeSameAs(ancestorDescendants);
 
-    Types.GetDescendants(typeof(Parent))
+    Types.Graph.GetDescendantSubtypes(typeof(Parent))
       .ShouldBe(new HashSet<Type> {
         typeof(Child),
       }, ignoreOrder: true
     );
 
-    Types.GetDescendants(typeof(Child)).ShouldBeEmpty();
+    Types.Graph.GetDescendantSubtypes(typeof(Child)).ShouldBeEmpty();
 
-    Types.GetDescendants(typeof(AncestorSibling))
+    Types.Graph.GetDescendantSubtypes(typeof(AncestorSibling))
       .ShouldBe(new HashSet<Type> {
         typeof(ParentCousin),
         typeof(ChildCousin),
       }, ignoreOrder: true
     );
 
-    Types.GetDescendants(typeof(ParentCousin))
+    Types.Graph.GetDescendantSubtypes(typeof(ParentCousin))
       .ShouldBe(new HashSet<Type> {
         typeof(ChildCousin),
       }, ignoreOrder: true
     );
 
-    Types.GetDescendants(typeof(ChildCousin)).ShouldBeEmpty();
+    Types.Graph.GetDescendantSubtypes(typeof(ChildCousin)).ShouldBeEmpty();
   }
 
   [Fact]
@@ -86,15 +85,19 @@ public class LogicBlockTypeUtilsTest {
     // we want to make sure we don't crash.
     _registry
       .Setup(reg => reg.VisibleTypes)
-      .Returns(new HashSet<Type> { typeof(object) });
-    _registry.Setup(reg => reg.VisibleInstantiableTypes)
+      .Returns(new Dictionary<Type, string> {
+        [typeof(LogicBlockTypeUtilsTest)] = nameof(LogicBlockTypeUtilsTest)
+      });
+    _registry.Setup(reg => reg.ConcreteVisibleTypes)
       .Returns(new Dictionary<Type, Func<object>>());
     _registry.Setup(reg => reg.Metatypes)
       .Returns(new Dictionary<Type, IMetatype>());
 
-    Types.Reset();
-    Types.Register(_registry.Object);
+    Types.InternalGraph.Reset();
+    Types.Graph.Register(_registry.Object);
 
-    Types.GetDescendants(typeof(object)).ShouldBeEmpty();
+    Types.Graph
+    .GetDescendantSubtypes(typeof(LogicBlockTypeUtilsTest))
+    .ShouldBeEmpty();
   }
 }

@@ -12,4 +12,4 @@ using System;
   AllowMultiple = false,
   Inherited = false
 )]
-public sealed class InterpolatedStringHandlerAttribute : Attribute { }
+public sealed class InterpolatedStringHandlerAttribute : Attribute;

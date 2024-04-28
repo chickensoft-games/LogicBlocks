@@ -86,8 +86,9 @@ public class BindingTest {
     var callStateA = 0;
     var callStateB = 0;
 
-    binding.When<FakeLogicBlock.State.StateA>((state) => callStateA++);
-    binding.When<FakeLogicBlock.State.StateB>((state) => callStateB++);
+    binding
+      .When<FakeLogicBlock.State.StateA>((state) => callStateA++)
+      .When<FakeLogicBlock.State.StateB>((state) => callStateB++);
 
     callStateA.ShouldBe(0);
     callStateB.ShouldBe(0);
@@ -133,9 +134,8 @@ public class BindingTest {
     var block = new FakeLogicBlock();
     var binding = block.Bind();
 
-    binding.When<FakeLogicBlock.State.StateA>((value1) => callStateUpdate++);
-
-    binding.Handle(
+    binding.When<FakeLogicBlock.State.StateA>((value1) => callStateUpdate++)
+      .Handle(
       (in FakeLogicBlock.Output.OutputOne effect) => callSideEffectHandler++
     );
 

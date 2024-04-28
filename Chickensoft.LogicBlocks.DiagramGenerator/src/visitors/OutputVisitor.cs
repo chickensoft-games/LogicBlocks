@@ -52,7 +52,6 @@ public class OutputVisitor : CSharpSyntaxWalker {
       }
     }
 
-
     if (node.Expression is not MemberAccessExpressionSyntax memberAccess) {
       var methodName = "";
 
@@ -107,7 +106,6 @@ public class OutputVisitor : CSharpSyntaxWalker {
           Constants.LOGIC_BLOCK_STATE_LOGIC_ON_EXIT
       ) {
         pushContext(OutputContexts.OnExit);
-        return;
       }
     }
   }
