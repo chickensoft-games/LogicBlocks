@@ -8,7 +8,7 @@ using System;
 /// generate serialization utilities and/or a state diagram of the hierarchical
 /// state machine that the logic block represents.
 /// </summary>
-[AttributeUsage(AttributeTargets.Class)]
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
 public sealed class LogicBlockAttribute : Attribute {
   /// <summary>
   /// State type. If the state type is an interface, this should be the single

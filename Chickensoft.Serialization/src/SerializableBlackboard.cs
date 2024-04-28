@@ -16,6 +16,7 @@ public interface ISerializableBlackboard : IBlackboard {
   /// Types that should be persisted when the owning object is serialized.
   /// </summary>
   IEnumerable<Type> SavedTypes { get; }
+
   /// <summary>
   /// Establishes a factory that will be used for the given data type if the
   /// data was not provided during deserialization or if creating a new
@@ -24,6 +25,15 @@ public interface ISerializableBlackboard : IBlackboard {
   /// <typeparam name="TData">Type of data to persist.</typeparam>
   /// <param name="factory">Factory closure which creates the data.</param>
   void Save<TData>(Func<TData> factory) where TData : class, IIntrospective;
+
+  /// <summary>
+  /// Establishes a factory that will be used for the given data type if the
+  /// data was not provided during deserialization or if creating a new
+  /// instance that has never been serialized.
+  /// </summary>
+  /// <param name="type">Type of data to persist.</param>
+  /// <param name="factory">Factory closure which creates the data.</param>
+  void SaveObject(Type type, Func<object> factory);
 }
 
 /// <summary>
@@ -41,15 +51,13 @@ public class SerializableBlackboard : Blackboard, ISerializableBlackboard {
 
   /// <inheritdoc cref="ISerializableBlackboard.Save{TData}(Func{TData})" />
   public void Save<TData>(Func<TData> factory)
-    where TData : class, IIntrospective {
-    if (_blackboard.ContainsKey(typeof(TData))) {
-      throw new DuplicateNameException(
-        $"Cannot mark blackboard data `{typeof(TData)}` to be persisted " +
-        "since it would conflict with existing data added to the blackboard."
-      );
-    }
-    _serializedTypes[typeof(TData)] = () => factory();
-  }
+    where TData : class, IIntrospective =>
+    SaveObject(typeof(TData), factory);
+
+  /// <inheritdoc
+  ///   cref="ISerializableBlackboard.SaveObject(Type, Func{object})" />
+  public void SaveObject(Type type, Func<object> factory) =>
+    SaveObjectData(type, factory);
 
   /// <summary>
   /// Instantiates and adds any missing saved data types that have not been
@@ -61,6 +69,18 @@ public class SerializableBlackboard : Blackboard, ISerializableBlackboard {
         _blackboard[type] = _serializedTypes[type]();
       }
     }
+  }
+
+  /// <inheritdoc
+  ///   cref="ISerializableBlackboard.SaveObject(Type, Func{object})" />
+  protected virtual void SaveObjectData(Type type, Func<object> factory) {
+    if (_blackboard.ContainsKey(type)) {
+      throw new DuplicateNameException(
+        $"Cannot mark blackboard data `{type}` to be persisted " +
+        "since it would conflict with existing data added to the blackboard."
+      );
+    }
+    _serializedTypes[type] = factory;
   }
 
   /// <inheritdoc />

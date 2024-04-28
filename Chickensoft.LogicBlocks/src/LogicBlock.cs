@@ -140,6 +140,10 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   /// <returns>Fake binding.</returns>
   public static IFakeBinding CreateFakeBinding() => new FakeBinding();
 
+  internal static ITypeGraph DefaultGraph => Introspection.Types.Graph;
+  // Graph to use for introspection. Allows it to be shimmed for testing.
+  internal static ITypeGraph Graph { get; set; } = DefaultGraph;
+
   /// <inheritdoc />
   public IContext Context { get; }
 
@@ -186,6 +190,7 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   protected LogicBlock() {
     _inputs = new(this);
     Context = new DefaultContext(this);
+    PreallocateStatesIfPossible();
   }
 
   /// <inheritdoc />
@@ -276,6 +281,62 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
     return true;
   }
 
+  internal void PreallocateStatesIfPossible() {
+    var type = GetType();
+    // If we're not an introspective type, we can't examine our state hierarchy.
+    if (!Graph.IsIntrospectiveType(type)) {
+      return;
+    }
+
+    var metatype = Graph.GetMetatype(type);
+
+    var logicBlockAttributes =
+      metatype.Attributes.ContainsKey(typeof(LogicBlockAttribute))
+        ? metatype.Attributes[typeof(LogicBlockAttribute)]
+        : null;
+
+    // Identify the logic block attribute, if any.
+    if (
+      logicBlockAttributes is not { } attributes ||
+      attributes.Length < 1 ||
+      attributes[0] is not LogicBlockAttribute logicBlockAttribute
+    ) {
+      return;
+    }
+
+    var baseStateType = logicBlockAttribute.StateType;
+
+    var subtypes = Graph.GetDescendantSubtypes(baseStateType);
+
+    var stateTypesThatAreNotIntrospective =
+      new HashSet<Type>(subtypes.Count + 1);
+
+    if (!Graph.IsIntrospectiveType(baseStateType)) {
+      stateTypesThatAreNotIntrospective.Add(baseStateType);
+    }
+
+    foreach (var stateType in subtypes) {
+      _blackboard.SaveObject(
+        stateType, () => Activator.CreateInstance(stateType)
+      );
+
+      if (!Graph.IsIntrospectiveType(stateType)) {
+        stateTypesThatAreNotIntrospective.Add(stateType);
+      }
+    }
+
+    if (stateTypesThatAreNotIntrospective.Count == 0) { return; }
+
+    var statesNeedingAttention = string.Join(
+      ", ", stateTypesThatAreNotIntrospective
+    );
+
+    throw new LogicBlockException(
+      $"Introspective LogicBlock `{type}` has states that are missing the " +
+      $"[{nameof(IntrospectiveAttribute)}] attribute and cannot be " + $"preallocated: {statesNeedingAttention}."
+    );
+  }
+
   /// <summary>
   /// Adds an error to the logic block. Call this from your states to
   /// register errors that occur. Logic blocks are designed to be resilient
@@ -350,12 +411,17 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   #endregion IBlackboard
 
   #region ISerializableBlackboard
+  /// <inheritdoc cref="ISerializableBlackboard.SavedTypes" />
+  public IEnumerable<Type> SavedTypes => _blackboard.SavedTypes;
+
   /// <inheritdoc cref="ISerializableBlackboard.Save{TData}(Func{TData})" />
   public void Save<TData>(Func<TData> factory)
     where TData : class, IIntrospective => _blackboard.Save(factory);
 
-  /// <inheritdoc cref="ISerializableBlackboard.SavedTypes" />
-  public IEnumerable<Type> SavedTypes => _blackboard.SavedTypes;
+  /// <inheritdoc
+  ///   cref="ISerializableBlackboard.SaveObject(Type, Func{object})" />
+  public void SaveObject(Type type, Func<object> factory) =>
+    _blackboard.SaveObject(type, factory);
   #endregion ISerializableBlackboard
 
   internal TState ProcessInputs<TInputType>(

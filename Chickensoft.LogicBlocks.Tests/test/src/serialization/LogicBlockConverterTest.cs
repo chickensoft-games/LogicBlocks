@@ -106,7 +106,25 @@ public partial class LogicBlockConverterTest {
           },
           "$type": "serializable_parallel_logic_block_state_parallel"
         },
-        "blackboard": {}
+        "blackboard": {
+          "serializable_parallel_logic_block_state_not_parallel": {},
+          "serializable_parallel_logic_block_state_parallel": {
+            "state_a": {
+              "$type": "serializable_logic_block",
+              "state": {
+                "$type": "serializable_logic_block_state"
+              },
+              "blackboard": {}
+            },
+            "state_b": {
+              "$type": "serializable_logic_block",
+              "state": {
+                "$type": "serializable_logic_block_state"
+              },
+              "blackboard": {}
+            }
+          }
+        }
       }
       """,
       options: StringCompareShould.IgnoreLineEndings
