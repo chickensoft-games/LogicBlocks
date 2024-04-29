@@ -2,6 +2,7 @@ namespace Chickensoft.LogicBlocks.Serialization;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -236,19 +237,22 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
     writer.WritePropertyName(BLACKBOARD_PROPERTY);
     writer.WriteStartObject();
 
-    foreach (var blackboardObjType in logicBlock._blackboard.SavedTypes) {
-      var blackboardObjTypeId =
-        Introspection.Types.Graph.GetMetatype(blackboardObjType).Id;
+    var savedTypesWithMetatypes = logicBlock._blackboard.SavedTypes
+      .Select((type) => new {
+        Type = type,
+        Metatype = Introspection.Types.Graph.GetMetatype(type)
+      }).OrderBy((pair) => pair.Metatype.Id);
 
+    foreach (var blackboardObjType in savedTypesWithMetatypes) {
       var blackboardObj =
-        logicBlock._blackboard.GetObject(blackboardObjType);
+        logicBlock._blackboard.GetObject(blackboardObjType.Type);
 
-      writer.WritePropertyName(blackboardObjTypeId);
+      writer.WritePropertyName(blackboardObjType.Metatype.Id);
 
       JsonSerializer.Serialize(
         writer,
         blackboardObj,
-        blackboardObjType,
+        blackboardObjType.Type,
         options
       );
     }
