@@ -1,34 +1,38 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
+using Chickensoft.Introspection;
+
 public interface IMyLogicBlock : ILogicBlock<MyLogicBlock.State>;
 
+[Introspective("my_logic_block")]
 [LogicBlock(typeof(State), Diagram = true)]
 public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBlock {
-  public override State GetInitialState() => new State.SomeState();
+  public override Transition GetInitialState() => To<State.SomeState>();
 
   public static class Input {
     public readonly record struct SomeInput;
     public readonly record struct SomeOtherInput;
   }
 
-  public abstract record State : StateLogic<State> {
-    public record SomeState : State, IGet<Input.SomeInput> {
+  [Introspective("my_logic_block_state")]
+  public abstract partial record State : StateLogic<State> {
+    public partial record SomeState : State, IGet<Input.SomeInput> {
       public SomeState() {
         this.OnEnter(() => Output(new Output.SomeOutput()));
         this.OnExit(() => Output(new Output.SomeOutput()));
       }
 
-      public State On(in Input.SomeInput input) {
+      public Transition On(Input.SomeInput input) {
         Output(new Output.SomeOutput());
-        return new SomeOtherState();
+        return To<SomeOtherState>();
       }
     }
 
-    public record SomeOtherState : State,
-      IGet<Input.SomeOtherInput> {
-      public State On(in Input.SomeOtherInput input) {
+    [Introspective("my_logic_block_state_some_other")]
+    public partial record SomeOtherState : State, IGet<Input.SomeOtherInput> {
+      public Transition On(Input.SomeOtherInput input) {
         Output(new Output.SomeOtherOutput());
-        return new SomeState();
+        return To<SomeState>();
       }
     }
   }

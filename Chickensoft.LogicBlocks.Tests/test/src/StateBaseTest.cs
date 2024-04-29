@@ -6,18 +6,17 @@ using Shouldly;
 using Xunit;
 
 public class StateBaseTest {
-  private interface ITestLogic : ILogicBlock<TestLogic.IState>;
+  private interface ITestLogic : ILogicBlock<TestLogic.State>;
 
   [LogicBlock(typeof(State))]
-  private sealed class TestLogic : LogicBlock<TestLogic.IState> {
-    public required State InitialState { get; init; }
+  private sealed class TestLogic : LogicBlock<TestLogic.State> {
+    public required Func<Transition> InitialState { get; init; }
 
-    public override IState GetInitialState() => InitialState;
+    public override Transition GetInitialState() => InitialState();
 
     public Action<Exception>? ErrorHandler { get; init; }
 
-    public interface IState : IStateLogic<IState>;
-    public sealed record State : StateLogic<IState>, IState {
+    public sealed record State : StateLogic<State> {
       public State(Action callback) {
         OnAttach(callback);
       }
@@ -43,7 +42,9 @@ public class StateBaseTest {
     var called = false;
     var logic = new TestLogic() {
       InitialState =
-        new TestLogic.State(() => throw new InvalidOperationException()),
+        () => new(
+          new TestLogic.State(() => throw new InvalidOperationException())
+        ),
       ErrorHandler = e => called = true
     };
 

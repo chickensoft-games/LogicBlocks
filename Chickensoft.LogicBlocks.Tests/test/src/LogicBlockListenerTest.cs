@@ -1,19 +1,20 @@
 namespace Chickensoft.LogicBlocks.Tests;
 
 using System;
+using Chickensoft.Introspection;
 using Moq;
 using Shouldly;
 using Xunit;
 
-public class LogicBlockListenerTest {
-  public interface ITestLogic : ILogicBlock<TestLogic.IState>;
+public partial class LogicBlockListenerTest {
+  public interface ITestLogic : ILogicBlock<TestLogic.State>;
 
+  [Introspective("logic_block_listener_test_logic")]
   [LogicBlock(typeof(State))]
-  public class TestLogic : LogicBlock<TestLogic.IState> {
-    public override IState GetInitialState() => new State();
+  public partial class TestLogic : LogicBlock<TestLogic.State> {
+    public override Transition GetInitialState() => To<State>();
 
-    public interface IState : IStateLogic<IState>;
-    public sealed record State : StateLogic<IState>, IState { }
+    public sealed record State : StateLogic<State> { }
   }
 
   public readonly record struct ValueType;
@@ -21,7 +22,7 @@ public class LogicBlockListenerTest {
   [Fact]
   public void ImplementsListenerMethodsThatDoNothing() {
     var logic = new Mock<ITestLogic>();
-    var listener = new LogicBlockListener<TestLogic.IState>(logic.Object) as ILogicBlockBinding<TestLogic.IState>;
+    var listener = new LogicBlockListener<TestLogic.State>(logic.Object) as ILogicBlockBinding<TestLogic.State>;
 
     Should.NotThrow(() => listener.MonitorInput(new ValueType()));
     Should.NotThrow(() => listener.MonitorState(new TestLogic.State()));

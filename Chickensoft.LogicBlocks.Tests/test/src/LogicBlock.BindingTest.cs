@@ -29,12 +29,16 @@ public class BindingTest {
     using var binding = block.Bind();
 
     var count = 0;
-    binding.When<FakeLogicBlock.State.StateB>(state => count++);
+    binding.When<FakeLogicBlock.State>(state => count++);
 
     var a = "a";
     var b = "b";
+    // Only one of each type is ever created, so these 2 inputs result in same
+    // state instance
     block.Input(new FakeLogicBlock.Input.InputTwo(a, b));
     block.Input(new FakeLogicBlock.Input.InputTwo(a, "c"));
+
+    block.Input(new FakeLogicBlock.Input.InputThree("c", "d"));
 
     count.ShouldBe(2);
   }
@@ -92,7 +96,7 @@ public class BindingTest {
 
     callStateA.ShouldBe(0);
     callStateB.ShouldBe(0);
-    block.Value.ShouldBe(block.GetInitialState());
+    block.Value.ShouldBe(block.GetInitialState().State);
 
     // State is StateA initially, so switch to State B
     block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
@@ -110,19 +114,19 @@ public class BindingTest {
     block.Input(new FakeLogicBlock.Input.InputTwo("c", "d"));
 
     callStateA.ShouldBe(0);
-    callStateB.ShouldBe(2);
+    callStateB.ShouldBe(1); // State B instance is reused, so no change
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
 
     block.Input(new FakeLogicBlock.Input.InputOne(1, 2));
 
     callStateA.ShouldBe(1);
-    callStateB.ShouldBe(2);
+    callStateB.ShouldBe(1);
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateA>();
 
     block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
 
     callStateA.ShouldBe(1);
-    callStateB.ShouldBe(3);
+    callStateB.ShouldBe(2);
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
   }
 
@@ -197,7 +201,7 @@ public class BindingTest {
     var binding = new Mock<FakeLogicBlock.IBinding>();
 
     var input = new FakeLogicBlock.Input.InputOne(1, 2);
-    var state = new FakeLogicBlock.State.StateA(1, 2);
+    var state = new FakeLogicBlock.State.StateA() { Value1 = 1, Value2 = 2 };
 
     logic.Setup(logic => logic.Bind()).Returns(binding.Object);
     logic.Setup(logic => logic.Input(input)).Returns(state);

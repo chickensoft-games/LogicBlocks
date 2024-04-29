@@ -30,9 +30,12 @@ public class SomeStateTest {
     var state = new MyLogicBlock.State.SomeState();
     var context = state.CreateFakeContext();
 
-    var nextState = state.On(new MyLogicBlock.Input.SomeInput());
+    var otherState = new MyLogicBlock.State.SomeOtherState();
+    context.Set(otherState);
 
-    nextState.ShouldBeOfType<MyLogicBlock.State.SomeOtherState>();
+    var result = state.On(new MyLogicBlock.Input.SomeInput());
+
+    result.State.ShouldBeSameAs(otherState);
 
     context.Outputs.ShouldBe([new MyLogicBlock.Output.SomeOutput()]);
   }

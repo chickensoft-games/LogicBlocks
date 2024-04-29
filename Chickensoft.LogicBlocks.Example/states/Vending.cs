@@ -1,17 +1,14 @@
 namespace Chickensoft.LogicBlocks.Example;
 
+using Chickensoft.Introspection;
+
 public partial class VendingMachine {
-  public record Vending : State, IGet<Input.VendingCompleted> {
-    public ItemType Type { get; }
-    public int Price { get; }
-
-    public Vending(ItemType type, int price) {
-      Type = type;
-      Price = price;
-
+  [Introspective("vending_machine_vending")]
+  public partial record Vending : State, IGet<Input.VendingCompleted> {
+    public Vending() {
       this.OnEnter(() => Output(new Output.BeginVending()));
     }
 
-    public State On(in Input.VendingCompleted input) => new Idle();
+    public Transition On(Input.VendingCompleted input) => To<Idle>();
   }
 }

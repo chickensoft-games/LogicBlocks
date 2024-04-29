@@ -12,7 +12,7 @@ public class TimerTest {
     var clock = new Mock<IClock>();
     var timer = new Timer(clock.Object);
 
-    var state = timer.GetInitialState();
+    var state = timer.GetInitialState().State;
 
     // Verify the timer starts in the expected state.
     state.ShouldBeOfType<State.PoweredOff>();
@@ -29,9 +29,9 @@ public class TimerPoweredOffStateTest() {
     var state = new State.PoweredOff();
     var context = state.CreateFakeContext();
 
-    var idle = new Mock<State.PoweredOn.IIdle>();
-    context.Set(idle.Object);
+    context.Set(new State.PoweredOn.Idle());
 
-    state.On(new Input.PowerButtonPressed()).ShouldBeSameAs(idle.Object);
+    state.On(new Input.PowerButtonPressed()).State
+      .ShouldBeOfType<State.PoweredOn.Idle>();
   }
 }

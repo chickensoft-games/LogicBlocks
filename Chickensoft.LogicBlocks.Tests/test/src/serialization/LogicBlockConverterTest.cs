@@ -21,6 +21,7 @@ public partial class LogicBlockConverterTest {
         "$type": "serializable_logic_block_state"
       },
       "blackboard": {
+        "serializable_logic_block_state": {},
         "a": {
           "a_value": "a"
         },
@@ -95,35 +96,43 @@ public partial class LogicBlockConverterTest {
             "state": {
               "$type": "serializable_logic_block_state"
             },
-            "blackboard": {}
+            "blackboard": {
+              "serializable_logic_block_state": {}
+            }
           },
           "state_b": {
             "$type": "serializable_logic_block",
             "state": {
               "$type": "serializable_logic_block_state"
             },
-            "blackboard": {}
+            "blackboard": {
+              "serializable_logic_block_state": {}
+            }
           },
           "$type": "serializable_parallel_logic_block_state_parallel"
         },
         "blackboard": {
-          "serializable_parallel_logic_block_state_not_parallel": {},
           "serializable_parallel_logic_block_state_parallel": {
             "state_a": {
               "$type": "serializable_logic_block",
               "state": {
                 "$type": "serializable_logic_block_state"
               },
-              "blackboard": {}
+              "blackboard": {
+                "serializable_logic_block_state": {}
+              }
             },
             "state_b": {
               "$type": "serializable_logic_block",
               "state": {
                 "$type": "serializable_logic_block_state"
               },
-              "blackboard": {}
+              "blackboard": {
+                "serializable_logic_block_state": {}
+              }
             }
-          }
+          },
+          "serializable_parallel_logic_block_state_not_parallel": {}
         }
       }
       """,

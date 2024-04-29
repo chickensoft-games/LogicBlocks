@@ -2,7 +2,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 
 [LogicBlock(typeof(State), Diagram = true)]
 public class LightSwitch : LogicBlock<LightSwitch.State> {
-  public override State GetInitialState() => new State.Powered();
+  public override Transition GetInitialState() => To<State.Powered>();
 
   public static class Input {
     public readonly record struct Toggle;
@@ -15,7 +15,7 @@ public class LightSwitch : LogicBlock<LightSwitch.State> {
         this.OnEnter(() => Output(new Output.StatusChanged(IsOn: true)));
       }
 
-      public State On(in Input.Toggle input) => new Powered();
+      public Transition On(Input.Toggle input) => To<Powered>();
     }
 
     public record Powered : State, IGet<Input.Toggle> {
@@ -24,7 +24,7 @@ public class LightSwitch : LogicBlock<LightSwitch.State> {
         this.OnEnter(() => Output(new Output.StatusChanged(IsOn: false)));
       }
 
-      public State On(in Input.Toggle input) => new PoweredOn();
+      public Transition On(Input.Toggle input) => To<PoweredOn>();
     }
   }
 

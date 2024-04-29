@@ -1,10 +1,7 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
-
-using System;
-
 [LogicBlock(typeof(State), Diagram = true)]
 public partial class PartialLogic : LogicBlock<PartialLogic.State> {
-  public override State GetInitialState() => throw new NotImplementedException();
+  public override Transition GetInitialState() => To<State.A>();
 
   public static class Input {
     public readonly record struct One;

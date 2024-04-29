@@ -10,4 +10,6 @@ Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_State_A : DoSomething() →
 Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_State_A : OnEnter → OutputEnterA
 Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_State_A : OnExit → OutputExitA
 Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_State_A : OnOne → OutputA
+
+[*] --> Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_State_A
 @enduml

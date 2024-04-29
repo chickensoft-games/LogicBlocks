@@ -6,18 +6,18 @@ using System;
 public class Patterns : LogicBlock<Patterns.State> {
   public enum Mode { One, Two, Three }
 
-  public override State GetInitialState() => new State.One();
+  public override Transition GetInitialState() => To<State.One>();
 
   public static class Input {
     public readonly record struct SetMode(Mode Mode);
   }
 
   public abstract record State : StateLogic<State>, IGet<Input.SetMode> {
-    public State On(in Input.SetMode input) => input.Mode switch {
-      Mode.One => new One(),
-      Mode.Two => new Two(),
+    public Transition On(Input.SetMode input) => input.Mode switch {
+      Mode.One => To<One>(),
+      Mode.Two => To<Two>(),
       Mode.Three => true switch {
-        true => new Three(),
+        true => To<Three>(),
         false => throw new NotImplementedException()
       },
       _ => throw new NotImplementedException()

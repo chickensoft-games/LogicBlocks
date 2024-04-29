@@ -68,7 +68,8 @@ public static class Program {
   }
 
   public static int Main(string[] args) {
-    var machine = new VendingMachine(Stock);
+    var machine = new VendingMachine();
+    machine.Set(Stock);
     var listener = new VendingMachineListener(machine);
     var shouldContinue = true;
     var lastState = machine.Value;

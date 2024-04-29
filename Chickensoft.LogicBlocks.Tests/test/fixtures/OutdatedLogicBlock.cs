@@ -6,14 +6,11 @@ using Chickensoft.Serialization;
 
 [Introspective("outdated_logic_block")]
 [LogicBlock(typeof(State), Diagram = false)]
-public partial class OutdatedLogicBlock :
-LogicBlock<OutdatedLogicBlock.IState> {
-  public override IState GetInitialState() => new V1();
-
-  public interface IState : IStateLogic<IState>;
+public partial class OutdatedLogicBlock : LogicBlock<OutdatedLogicBlock.State> {
+  public override Transition GetInitialState() => To<V1>();
 
   [Introspective("outdated_logic_block_state")]
-  public abstract partial record State : StateLogic<IState>, IState;
+  public abstract partial record State : StateLogic<State>;
 
   [Introspective("outdated_logic_block_state_v1")]
   public partial record V1 : State, IOutdated {

@@ -6,22 +6,20 @@ using Chickensoft.Serialization;
 [Introspective("serializable_parallel_logic_block")]
 [LogicBlock(typeof(State), Diagram = false)]
 public partial class SerializableParallelLogicBlock :
-LogicBlock<SerializableParallelLogicBlock.IState> {
-  public override IState GetInitialState() => new NotParallelState();
-
-  public interface IState : IStateLogic<IState>;
+LogicBlock<SerializableParallelLogicBlock.State> {
+  public override Transition GetInitialState() => To<NotParallelState>();
 
   [Introspective("serializable_parallel_logic_block_state")]
-  public abstract partial record State : StateLogic<IState>, IState;
+  public abstract partial record State : StateLogic<State>;
 
   [Introspective("serializable_parallel_logic_block_state_not_parallel")]
   public partial record NotParallelState : State,
   IGet<Input.GoToParallelState> {
-    public IState On(in Input.GoToParallelState input) => new ParallelState();
+    public Transition On(Input.GoToParallelState input) => To<ParallelState>();
   }
 
   [Introspective("serializable_parallel_logic_block_state_parallel")]
-  public partial record ParallelState : State, IState {
+  public partial record ParallelState : State {
     [Save("state_a")]
     public SerializableLogicBlock StateA { get; set; } = new();
 

@@ -36,5 +36,5 @@ public class CallOrderExample : LogicBlock<CallOrderExample.State> {
     }
   }
 
-  public override State GetInitialState() => new Standing();
+  public override Transition GetInitialState() => To<Standing>();
 }

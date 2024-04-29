@@ -22,7 +22,7 @@ using System;
 /// <typeparam name="TState">State type.</typeparam>
 public abstract class LogicBlockListenerBase<TState> :
 ILogicBlockBinding<TState>, IDisposable
-where TState : class, IStateLogic<TState> {
+where TState : StateLogic<TState> {
   /// <summary>
   /// <para>
   /// Creates a new logic block listener.
@@ -103,7 +103,7 @@ where TState : class, IStateLogic<TState> {
 
 /// <inheritdoc />
 public class LogicBlockListener<TState> : LogicBlockListenerBase<TState>
-where TState : class, IStateLogic<TState> {
+where TState : StateLogic<TState> {
   /// <summary>Logic block being listened to.</summary>
   public ILogicBlock<TState> LogicBlock { get; }
 

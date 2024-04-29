@@ -3,32 +3,12 @@ namespace Chickensoft.LogicBlocks;
 using System;
 
 /// <summary>
-/// Logic block state interface. Inherit from <see cref="StateLogic{TState}" />
-/// to create compatible logic block state.
-/// </summary>
-/// <typeparam name="TState">State type implementing this interface.</typeparam>
-public interface IStateLogic<TState> : IStateBase
-  where TState : class, IStateLogic<TState> {
-  /// <summary>
-  /// Runs all of the registered entrance callbacks for the state.
-  /// </summary>
-  /// <param name="previous">Previous state, if any.</param>
-  void Enter(TState? previous = default);
-
-  /// <summary>
-  /// Runs all of the registered exit callbacks for the state.
-  /// </summary>
-  /// <param name="next">Next state, if any.</param>
-  void Exit(TState? next = default);
-}
-
-/// <summary>
 /// Logic block state. Inherit from this class to create a base state for a
 /// logic block.
 /// </summary>
 /// <typeparam name="TState">State type inheriting from this record.</typeparam>
-public abstract record StateLogic<TState> : StateBase, IStateLogic<TState>
-  where TState : class, IStateLogic<TState> {
+public abstract record StateLogic<TState> : StateBase
+  where TState : StateLogic<TState> {
   /// <summary>
   /// Logic block state. Inherit from this class to create a base state for a
   /// logic block.
@@ -47,13 +27,29 @@ public abstract record StateLogic<TState> : StateBase, IStateLogic<TState>
       new((obj) => handler(obj as TState), (state) => state is TDerivedState)
     );
 
-  /// <inheritdoc />
+  /// <summary>
+  /// Runs all of the registered entrance callbacks for the state.
+  /// </summary>
+  /// <param name="previous">Previous state, if any.</param>
   public void Enter(TState? previous = default) =>
     CallOnEnterCallbacks(previous, this as TState);
 
-  /// <inheritdoc />
+  /// <summary>
+  /// Runs all of the registered exit callbacks for the state.
+  /// </summary>
+  /// <param name="next">Next state, if any.</param>
   public void Exit(TState? next = default) =>
     CallOnExitCallbacks(this as TState, next);
+
+  /// <summary>
+  /// Defines a transition to a state stored on the logic block's blackboard.
+  /// </summary>
+  /// <typeparam name="TStateType">Type of state to transition to.</typeparam>
+  protected LogicBlock<TState>.Transition To<TStateType>()
+    where TStateType : TState => new(Context.Get<TStateType>());
+
+  /// <summary>Defines a self-transition.</summary>
+  protected LogicBlock<TState>.Transition ToSelf() => new((this as TState)!);
 
   /// <summary>
   /// Adds an input value to the logic block's internal input queue and

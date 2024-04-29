@@ -43,11 +43,11 @@ public class SerializableBlackboard : Blackboard, ISerializableBlackboard {
   /// <summary>
   /// Factory closures that create instances of the expected data types.
   /// </summary>
-  protected readonly Dictionary<Type, Func<object>> _serializedTypes =
+  protected readonly Dictionary<Type, Func<object>> _saveTypes =
     new();
 
   /// <inheritdoc />
-  public IEnumerable<Type> SavedTypes => _serializedTypes.Keys;
+  public IEnumerable<Type> SavedTypes => _saveTypes.Keys;
 
   /// <inheritdoc cref="ISerializableBlackboard.Save{TData}(Func{TData})" />
   public void Save<TData>(Func<TData> factory)
@@ -64,9 +64,9 @@ public class SerializableBlackboard : Blackboard, ISerializableBlackboard {
   /// added to the blackboard yet.
   /// </summary>
   public void InstantiateAnyMissingSavedData() {
-    foreach (var type in _serializedTypes.Keys) {
+    foreach (var type in _saveTypes.Keys) {
       if (!_blackboard.ContainsKey(type)) {
-        _blackboard[type] = _serializedTypes[type]();
+        _blackboard[type] = _saveTypes[type]();
       }
     }
   }
@@ -80,7 +80,7 @@ public class SerializableBlackboard : Blackboard, ISerializableBlackboard {
         "since it would conflict with existing data added to the blackboard."
       );
     }
-    _serializedTypes[type] = factory;
+    _saveTypes[type] = factory;
   }
 
   /// <inheritdoc />
@@ -92,8 +92,8 @@ public class SerializableBlackboard : Blackboard, ISerializableBlackboard {
 
     // Otherwise, create an instance of the data and add it to the main
     // blackboard since we are being asked for it.
-    if (_serializedTypes.ContainsKey(type)) {
-      data = _serializedTypes[type]();
+    if (_saveTypes.ContainsKey(type)) {
+      data = _saveTypes[type]();
       _blackboard[type] = data;
       return data;
     }
@@ -104,7 +104,7 @@ public class SerializableBlackboard : Blackboard, ISerializableBlackboard {
 
   /// <inheritdoc />
   protected override void SetBlackboardData(Type type, object data) {
-    if (_serializedTypes.ContainsKey(type)) {
+    if (_saveTypes.ContainsKey(type)) {
       throw new DuplicateNameException(
         $"Cannot set blackboard data `{type}` since it would conflict with " +
         "persisted data on the blackboard."

@@ -2,7 +2,9 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using System;
 using System.Collections.Generic;
+using Chickensoft.Introspection;
 
+[Introspective("fake_logic_block")]
 public partial class FakeLogicBlock {
   public static class Input {
     public readonly record struct InputOne(int Value1, int Value2);
@@ -15,12 +17,13 @@ public partial class FakeLogicBlock {
     public readonly record struct SelfInput(InputOne Input);
     public readonly record struct InputCallback(
       Action Callback,
-      Func<IContext, State> Next
+      Func<IContext, Transition> Next
     );
-    public readonly record struct Custom(Func<IContext, State> Next);
+    public readonly record struct Custom(Func<IContext, Transition> Next);
   }
 
-  public abstract record State : StateLogic<State>,
+  [Introspective("fake_logic_block_state")]
+  public abstract partial record State : StateLogic<State>,
     IGet<Input.InputOne>,
     IGet<Input.InputTwo>,
     IGet<Input.InputThree>,
@@ -30,72 +33,106 @@ public partial class FakeLogicBlock {
     IGet<Input.GetString>,
     IGet<Input.SelfInput>,
     IGet<Input.Custom> {
-    public State On(in Input.InputOne input) {
+    public Transition On(Input.InputOne input) {
       Output(new Output.OutputOne(1));
-      return new StateA(input.Value1, input.Value2);
+      return To<StateA>().With(state => {
+        var a = (StateA)state;
+        a.Value1 = input.Value1;
+        a.Value2 = input.Value2;
+      });
     }
 
-    public State On(in Input.InputTwo input) {
+    public Transition On(Input.InputTwo input) {
       Output(new Output.OutputTwo("2"));
-      return new StateB(input.Value1, input.Value2);
+      return To<StateB>().With(state => {
+        var b = (StateB)state;
+        b.Value1 = input.Value1;
+        b.Value2 = input.Value2;
+      });
     }
 
-    public State On(in Input.InputThree input) => new StateD(
-      input.Value1, input.Value2
-    );
+    public Transition On(Input.InputThree input) => To<StateD>().With(state => {
+      var d = (StateD)state;
+      d.Value1 = input.Value1;
+      d.Value2 = input.Value2;
+    });
 
-    public State On(in Input.InputError input)
+    public Transition On(Input.InputError input)
       => throw new InvalidOperationException();
 
-    public State On(in Input.NoNewState input) {
+    public Transition On(Input.NoNewState input) {
       Output(new Output.OutputOne(1));
-      return this;
+      return ToSelf();
     }
 
-    public State On(in Input.InputCallback input) {
+    public Transition On(Input.InputCallback input) {
       input.Callback();
       return input.Next(Context);
     }
 
-    public State On(in Input.Custom input) => input.Next(Context);
+    public Transition On(Input.Custom input) => input.Next(Context);
 
-    public State On(in Input.GetString input) => new StateC(
-      Get<string>()
-    );
+    public Transition On(Input.GetString input) => To<StateC>()
+      .With(state => ((StateC)state).Value = Get<string>());
 
-    public State On(in Input.SelfInput input) {
+    public Transition On(Input.SelfInput input) {
       Input(input.Input);
-      return this;
+      return ToSelf();
     }
 
-    public record StateA(int Value1, int Value2) : State;
-    public record StateB(string Value1, string Value2) : State;
-    public record StateC(string Value) : State;
-    public record StateD(string Value1, string Value2) : State;
+    [Introspective("fake_logic_block_state_start")]
+    public partial record StartState : State;
 
-    public record NothingState : State;
+    [Introspective("fake_logic_block_state_a")]
+    public partial record StateA : State {
+      public int Value1 { get; set; }
+      public int Value2 { get; set; }
+    }
 
-    public record Custom : State {
-      public Custom(Action setupCallback) {
-        setupCallback();
+    [Introspective("fake_logic_block_state_b")]
+    public partial record StateB : State {
+      public string Value1 { get; set; } = default!;
+      public string Value2 { get; set; } = default!;
+    }
+
+    [Introspective("fake_logic_block_state_c")]
+    public partial record StateC : State {
+      public string Value { get; set; } = default!;
+    }
+
+    [Introspective("fake_logic_block_state_d")]
+    public partial record StateD : State {
+      public string Value1 { get; set; } = default!;
+      public string Value2 { get; set; } = default!;
+    }
+
+    [Introspective("fake_logic_block_state_nothing")]
+    public partial record NothingState : State;
+
+    [Introspective("fake_logic_block_state_on_enter")]
+    public partial record OnEnterState : State {
+      public Action<State?> Callback { get; set; } = default!;
+
+      public OnEnterState() {
+        this.OnEnter((State? previous) => Callback(previous));
       }
     }
 
-    public record OnEnterState : State {
-      public OnEnterState(Action<State?> onEnter) {
-        this.OnEnter(onEnter);
+    [Introspective("fake_logic_block_state_on_exit")]
+    public partial record OnExitState : State {
+      public Action<State?> Callback { get; set; } = default!;
+
+      public OnExitState() {
+        this.OnExit((State? next) => Callback(next));
       }
     }
 
-    public record OnExitState : State {
-      public OnExitState(Action<State?> onExit) {
-        this.OnExit(onExit);
-      }
-    }
+    [Introspective("fake_logic_block_state_add_error")]
+    public partial record AddErrorOnEnterState : State {
+      public Exception E { get; set; } = default!;
 
-    public record AddErrorOnEnterState : State {
-      public AddErrorOnEnterState(Exception e) {
-        this.OnEnter(() => AddError(e));
+      public AddErrorOnEnterState() {
+        this.OnEnter(() => AddError(E));
       }
     }
   }
@@ -108,12 +145,12 @@ public partial class FakeLogicBlock {
 
 [LogicBlock(typeof(State), Diagram = true)]
 public partial class FakeLogicBlock : LogicBlock<FakeLogicBlock.State> {
-  public Func<State>? InitialState { get; set; }
+  public Func<Transition>? InitialState { get; set; }
 
   public List<Exception> Exceptions { get; } = new();
 
-  public override State GetInitialState() =>
-    InitialState?.Invoke() ?? new State.StateA(1, 2);
+  public override Transition GetInitialState() =>
+    InitialState?.Invoke() ?? To<State.StartState>();
 
   private readonly Action<Exception>? _onError;
 

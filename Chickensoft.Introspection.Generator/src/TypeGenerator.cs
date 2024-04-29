@@ -473,14 +473,14 @@ public class TypeGenerator : IIncrementalGenerator {
 
     var location = GetLocation(typeDecl);
     var kind = GetKind(typeDecl);
-    var hasMetatypeAttribute = HasIntrospectiveAttribute(typeDecl);
+    var hasIntrospectiveAttribute = HasIntrospectiveAttribute(typeDecl);
     var hasMixinAttribute = HasMixinAttribute(typeDecl);
     var isTopLevelAccessible = IsTopLevelAccessible(typeDecl);
 
     var diagnostics = new HashSet<Diagnostic>();
 
     if (
-      hasMetatypeAttribute && (
+      hasIntrospectiveAttribute && (
         !isTopLevelAccessible || // Must be top-level accessible
         !isPartial || // Must be partial
         typeParameters.Length > 0 // Must be non-generic
@@ -494,26 +494,17 @@ public class TypeGenerator : IIncrementalGenerator {
       );
     }
 
-    // Only compute usings, properties, attributes, and mixins of metatypes.
-    var usings = hasMetatypeAttribute
-      ? GetUsings(typeDecl)
-      : ImmutableHashSet<UsingDirective>.Empty;
-    var properties = hasMetatypeAttribute
-      ? GetProperties(typeDecl)
-      : ImmutableArray<DeclaredProperty>.Empty;
-    var attributes = hasMetatypeAttribute
-      ? GetAttributes(typeDecl.AttributeLists)
-      : ImmutableArray<DeclaredAttribute>.Empty;
-    var mixins = hasMetatypeAttribute
-      ? GetMixins(typeDecl)
-      : ImmutableArray<string>.Empty;
+    var usings = GetUsings(typeDecl);
+    var properties = GetProperties(typeDecl);
+    var attributes = GetAttributes(typeDecl.AttributeLists);
+    var mixins = GetMixins(typeDecl);
 
     return new DeclaredType(
       Reference: reference,
       Location: location,
       Usings: usings,
       Kind: kind,
-      HasIntrospectiveAttribute: hasMetatypeAttribute,
+      HasIntrospectiveAttribute: hasIntrospectiveAttribute,
       HasMixinAttribute: hasMixinAttribute,
       IsTopLevelAccessible: isTopLevelAccessible,
       Properties: properties,

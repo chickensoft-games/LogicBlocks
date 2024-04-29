@@ -1,8 +1,23 @@
 namespace Chickensoft.LogicBlocks.Example;
 
 using System.Collections.Generic;
+using Chickensoft.Introspection;
+using Chickensoft.Serialization;
 
-public partial class VendingMachine {
+[Introspective("vending_machine")]
+[LogicBlock(typeof(State), Diagram = true)]
+public partial class VendingMachine : LogicBlock<VendingMachine.State> {
+  // Data shared between states
+  [Introspective("vending_machine_data")]
+  public partial record Data {
+    [Save("type")]
+    public ItemType Type { get; set; }
+    [Save("price")]
+    public int Price { get; set; }
+    [Save("amount_received")]
+    public int AmountReceived { get; set; }
+  }
+
   // Inputs
 
   public static class Input {
@@ -33,16 +48,12 @@ public partial class VendingMachine {
     [ItemType.Water] = 2,
     [ItemType.Candy] = 6
   };
-}
 
-// Logic Block / Hierarchical State Machine
-[LogicBlock(typeof(State), Diagram = true)]
-public partial class VendingMachine : LogicBlock<VendingMachine.State> {
-  public VendingMachine(VendingMachineStock stock) {
-    Set(stock);
+  public override Transition GetInitialState() => To<Idle>();
+
+  public VendingMachine() {
+    Save(() => new Data());
   }
-
-  public override State GetInitialState() => new Idle();
 }
 
 // Just a domain layer repository that manages the stock for a vending machine.

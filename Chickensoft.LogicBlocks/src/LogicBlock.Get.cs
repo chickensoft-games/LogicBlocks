@@ -6,13 +6,13 @@ public abstract partial class LogicBlock<TState> {
   /// for each type of input they wish to handle.
   /// </summary>
   /// <typeparam name="TInputType">Type of input to handle.</typeparam>
-  public interface IGet<TInputType> {
+  public interface IGet<TInputType> where TInputType : struct {
     /// <summary>
     /// Method invoked on the state when the logic block receives an input of
     /// the corresponding type <typeparamref name="TInputType"/>.
     /// </summary>
     /// <param name="input">Input value.</param>
     /// <returns>The next state of the logic block.</returns>
-    TState On(in TInputType input);
+    Transition On(TInputType input);
   }
 }

@@ -2,7 +2,7 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 
 [LogicBlock(typeof(State), Diagram = true)]
 public class SingleState : LogicBlock<SingleState.State> {
-  public override State GetInitialState() => new();
+  public override Transition GetInitialState() => To<State>();
 
   public static class Input {
     public readonly record struct MyInput;
@@ -13,9 +13,9 @@ public class SingleState : LogicBlock<SingleState.State> {
       this.OnExit(() => Output(new Output.MyOutput()));
     }
 
-    public State On(in Input.MyInput input) {
+    public Transition On(Input.MyInput input) {
       Output(new Output.MyOutput());
-      return this;
+      return ToSelf();
     }
   }
   public static class Output {

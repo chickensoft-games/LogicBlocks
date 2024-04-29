@@ -1,57 +1,55 @@
 namespace Chickensoft.LogicBlocks.Example;
 
+using Chickensoft.Introspection;
+
 public partial class VendingMachine {
-  public abstract record TransactionActive : State,
+  [Introspective("vending_machine_transaction_active")]
+  public abstract partial record TransactionActive : SelectionEditable,
   IGet<Input.PaymentReceived>, IGet<Input.TransactionTimedOut> {
-    public ItemType Type { get; }
-    public int Price { get; }
-    public int AmountReceived { get; }
-
-    public TransactionActive(
-      ItemType type, int price, int amountReceived
-    ) {
-      Type = type;
-      Price = price;
-      AmountReceived = amountReceived;
-
+    public TransactionActive() {
       this.OnEnter(() => Output(new Output.RestartTransactionTimeOutTimer()));
+      this.OnExit(() => Get<Data>().AmountReceived = 0);
     }
 
-    public State On(in Input.PaymentReceived input) {
-      var total = AmountReceived + input.Amount;
+    public Transition On(Input.PaymentReceived input) {
+      var data = Get<Data>();
 
-      if (total < Price) {
+      data.AmountReceived += input.Amount;
+
+      if (data.AmountReceived < data.Price) {
         // Waiting on the user to insert enough cash to finish the transaction.
-        return new PaymentPending(Type, Price, total);
+        return ToSelf();
       }
 
-      if (total > Price) {
+      if (data.AmountReceived > data.Price) {
         // If we end up receiving more money than the item costs, we make
         // change and dispense it back to the user.
-        Output(new Output.MakeChange(total - Price));
+        Output(new Output.MakeChange(data.AmountReceived - data.Price));
       }
 
       Output(
         new Output.TransactionCompleted(
-          Type: Type,
-          Price: Price,
+          Type: data.Type,
+          Price: data.Price,
           Status: TransactionStatus.Success,
-          AmountPaid: total
+          AmountPaid: data.AmountReceived
         )
       );
 
-      Get<VendingMachineStock>().Vend(Type);
+      Get<VendingMachineStock>().Vend(data.Type);
 
-      return new Vending(Type, Price);
+      return To<Vending>();
     }
 
-    public State On(in Input.TransactionTimedOut input) {
-      if (AmountReceived > 0) {
+    public Transition On(Input.TransactionTimedOut input) {
+      var data = Get<Data>();
+
+      if (data.AmountReceived > 0) {
         // Give any money received back before timing out.
-        Output(new Output.MakeChange(AmountReceived));
+        Output(new Output.MakeChange(data.AmountReceived));
       }
 
-      return new Idle();
+      return To<Idle>();
     }
   }
 }

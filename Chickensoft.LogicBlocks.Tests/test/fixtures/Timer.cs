@@ -1,6 +1,7 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using System;
+using Chickensoft.Introspection;
 
 /// <summary>
 /// A service that announces the passage of time, roughly once per second.
@@ -13,9 +14,10 @@ public interface IClock {
   event Action<double> TimeElapsed;
 }
 
+[Introspective("timer")]
 [LogicBlock(typeof(State), Diagram = true)]
-public class Timer : LogicBlock<Timer.IState> {
-  public override IState GetInitialState() => Get<State.IPoweredOff>();
+public partial class Timer : LogicBlock<Timer.State> {
+  public override Transition GetInitialState() => To<State.PoweredOff>();
 
   /// <summary>Blackboard data for our hierarchical state machine.</summary>
   public sealed record Data {
@@ -31,11 +33,6 @@ public class Timer : LogicBlock<Timer.IState> {
 
     // Make sure all states can access the clock.
     Set(clock);
-
-    // Store preallocated state instances to prevent memory allocations.
-    Set<State.IPoweredOff>(new State.PoweredOff());
-    Set<State.PoweredOn.IIdle>(new State.PoweredOn.Idle());
-    Set<State.PoweredOn.IRunning>(new State.PoweredOn.Running());
   }
 
   public static class Input {
@@ -50,35 +47,32 @@ public class Timer : LogicBlock<Timer.IState> {
     public readonly record struct TimeElapsed(double Delta);
   }
 
-  public interface IState : IStateLogic<IState>;
-  public abstract record State : StateLogic<IState>, IState {
-    public interface IPoweredOff : IState;
-    public record PoweredOff :
-    State, IPoweredOff, IGet<Input.PowerButtonPressed> {
-      public IState On(in Input.PowerButtonPressed input) =>
-        Get<PoweredOn.IIdle>();
+  [Introspective("timer_state")]
+  public abstract partial record State : StateLogic<State> {
+    [Introspective("timer_state_powered_off")]
+    public partial record PoweredOff : State, IGet<Input.PowerButtonPressed> {
+      public Transition On(Input.PowerButtonPressed input) =>
+        To<PoweredOn.Idle>();
     }
 
-    public interface IPoweredOn : IState;
-    public abstract record PoweredOn :
-    State, IPoweredOn, IGet<Input.PowerButtonPressed> {
-      public IState On(in Input.PowerButtonPressed input) => Get<PoweredOff>();
+    [Introspective("timer_state_powered_on")]
+    public abstract partial record PoweredOn : State, IGet<Input.PowerButtonPressed> {
+      public Transition On(Input.PowerButtonPressed input) => To<PoweredOff>();
 
-      public interface IIdle : IPoweredOn;
-      public record Idle :
-      PoweredOn, IIdle, IGet<Input.StartStopButtonPressed> {
-        public IState On(in Input.ChangeDuration input) {
+      [Introspective("timer_state_powered_on_idle")]
+      public partial record Idle : PoweredOn, IGet<Input.StartStopButtonPressed> {
+        public Transition On(Input.ChangeDuration input) {
           Get<Data>().Duration = input.Duration;
-          return this;
+          return ToSelf();
         }
 
-        public IState On(in Input.StartStopButtonPressed input) =>
-          Get<Running>();
+        public Transition On(Input.StartStopButtonPressed input) =>
+          To<Running>();
       }
 
-      public interface IRunning : IPoweredOn;
-      public record Running : PoweredOn, IRunning,
-      IGet<Input.TimeElapsed>, IGet<Input.StartStopButtonPressed> {
+      [Introspective("timer_state_powered_on_running")]
+      public partial record Running : PoweredOn,
+          IGet<Input.TimeElapsed>, IGet<Input.StartStopButtonPressed> {
         public Running() {
           OnAttach(() => Get<IClock>().TimeElapsed += OnTimeElapsed);
           OnDetach(() => Get<IClock>().TimeElapsed -= OnTimeElapsed);
@@ -87,17 +81,17 @@ public class Timer : LogicBlock<Timer.IState> {
         private void OnTimeElapsed(double delta) =>
           Input(new Input.TimeElapsed(delta));
 
-        public IState On(in Input.TimeElapsed input) {
+        public Transition On(Input.TimeElapsed input) {
           var data = Get<Data>();
           data.TimeRemaining -= input.Delta;
-          return data.TimeRemaining <= 0.0d ? Get<Beeping>() : this;
+          return data.TimeRemaining <= 0.0d ? To<Beeping>() : ToSelf();
         }
 
-        public IState On(in Input.StartStopButtonPressed input) => Get<Idle>();
+        public Transition On(Input.StartStopButtonPressed input) => To<Idle>();
       }
 
-      public interface IBeeping : IPoweredOn;
-      public record Beeping : PoweredOn {
+      [Introspective("timer_state_powered_on_beeping")]
+      public partial record Beeping : PoweredOn {
         public Beeping() {
           this.OnEnter(() => Output(new Output.PlayBeepingSound()));
           this.OnExit(() => Output(new Output.StopBeepingSound()));

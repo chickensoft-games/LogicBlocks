@@ -14,6 +14,8 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
   public CancellationToken Token { get; }
   public ICodeService CodeService { get; }
   public INamedTypeSymbol StateBaseType { get; }
+  /// <summary>Type of the current state.</summary>
+  public INamedTypeSymbol StateType { get; }
   private readonly HashSet<string> _returnTypes = new();
 
   public ImmutableHashSet<string> ReturnTypes => _returnTypes.ToImmutableHashSet();
@@ -22,20 +24,15 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
     SemanticModel model,
     CancellationToken token,
     ICodeService codeService,
-    INamedTypeSymbol stateBaseType
+    INamedTypeSymbol stateBaseType,
+    INamedTypeSymbol stateType
   ) {
     Model = model;
     Token = token;
     CodeService = codeService;
     StateBaseType = stateBaseType;
+    StateType = stateType;
   }
-
-  public override void VisitThisExpression(ThisExpressionSyntax node) =>
-    AddExpressionToReturnTypes(node);
-
-  public override void VisitObjectCreationExpression(
-    ObjectCreationExpressionSyntax node
-  ) => AddExpressionToReturnTypes(node);
 
   public override void VisitReturnStatement(ReturnStatementSyntax node)
     => AddExpressionToReturnTypes(node.Expression);
@@ -45,11 +42,10 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
   ) => AddExpressionToReturnTypes(node.Expression);
 
   private void AddExpressionToReturnTypes(ExpressionSyntax? expression) {
+    // Recurse into other expressions, looking for return types.
     if (expression is not ExpressionSyntax expressionSyntax) {
       return;
     }
-
-    var type = GetModel(expression).GetTypeInfo(expression, Token).Type;
 
     if (expression is ConditionalExpressionSyntax conditional) {
       AddExpressionToReturnTypes(conditional.WhenTrue);
@@ -71,6 +67,41 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
       return;
     }
 
+    if (expression is MemberAccessExpressionSyntax memberAccess) {
+      AddExpressionToReturnTypes(memberAccess.Expression);
+      return;
+    }
+
+    // Recursive base case.
+    // Look for To<State>() and ToSelf() method calls and glean type information
+    // based on that.
+
+    ITypeSymbol? type = default;
+
+    if (
+      expression is InvocationExpressionSyntax invocation
+    ) {
+      if (
+        invocation.Expression is GenericNameSyntax generic &&
+        generic.Identifier.Text == "To" &&
+        generic.TypeArgumentList.Arguments.Count == 1
+      ) {
+        var genericType = generic.TypeArgumentList.Arguments[0];
+        type = GetModel(genericType).GetTypeInfo(genericType, Token).Type;
+      }
+      else if (
+        invocation.Expression is IdentifierNameSyntax id &&
+        id.Identifier.Text == "ToSelf"
+      ) {
+        type = StateType;
+      }
+      else {
+        AddExpressionToReturnTypes(invocation.Expression);
+        return;
+      }
+    }
+
+    // Make sure type is provided.
     if (type is not ITypeSymbol typeSymbol) {
       return;
     }

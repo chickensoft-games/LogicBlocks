@@ -2,7 +2,8 @@ namespace Chickensoft.LogicBlocks.Generator.Tests;
 
 [LogicBlock(typeof(State), Diagram = true)]
 public class ToasterOven : LogicBlock<ToasterOven.State> {
-  public override State GetInitialState() => new State.Toasting(0);
+  public override Transition GetInitialState() => To<State.Toasting>()
+    .With(toasting => ((State.Toasting)toasting).ToastColor = 0);
 
   public static class Input {
     public readonly record struct OpenDoor;
@@ -18,11 +19,11 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         this.OnExit(() => Output(new Output.TurnHeaterOff()));
       }
 
-      public State On(in Input.OpenDoor input) => new DoorOpen();
+      public Transition On(Input.OpenDoor input) => To<DoorOpen>();
     }
 
     public record Toasting : Heating, IGet<Input.StartBaking> {
-      public int ToastColor { get; }
+      public int ToastColor { get; set; }
 
       public Toasting(int toastColor) {
         ToastColor = toastColor;
@@ -31,11 +32,12 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         this.OnExit(() => Output(new Output.ResetTimer()));
       }
 
-      public State On(in Input.StartBaking input) => new Baking(input.Temperature);
+      public Transition On(Input.StartBaking input) => To<Baking>()
+        .With(baking => ((Baking)baking).Temperature = input.Temperature);
     }
 
     public record Baking : Heating, IGet<Input.StartToasting> {
-      public int Temperature { get; }
+      public int Temperature { get; set; }
 
       public Baking(int temperature) {
         Temperature = temperature;
@@ -48,9 +50,8 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         );
       }
 
-      public State On(in Input.StartToasting input) => new Toasting(
-        input.ToastColor
-      );
+      public Transition On(Input.StartToasting input) => To<Toasting>()
+        .With(toasting => ((Toasting)toasting).ToastColor = input.ToastColor);
     }
 
     public record DoorOpen : State, IGet<Input.CloseDoor> {
@@ -59,9 +60,8 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         this.OnExit(() => Output(new Output.TurnLampOff()));
       }
 
-      public State On(in Input.CloseDoor input) => new Toasting(
-        input.ToastColor
-      );
+      public Transition On(Input.CloseDoor input) => To<Toasting>()
+        .With(toasting => ((Toasting)toasting).ToastColor = input.ToastColor);
     }
   }
 

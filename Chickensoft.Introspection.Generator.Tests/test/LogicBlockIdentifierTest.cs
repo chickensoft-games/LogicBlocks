@@ -5,11 +5,11 @@ using Shouldly;
 using Xunit;
 
 public class LogicBlockIdentifierTest {
-  [LogicBlock(typeof(TestState), Diagram = true)]
-  public class TestLogicBlock : LogicBlock<TestLogicBlock.TestState> {
-    public override TestState GetInitialState() => new();
+  [LogicBlock(typeof(State), Diagram = true)]
+  public class TestLogicBlock : LogicBlock<TestLogicBlock.State> {
+    public override Transition GetInitialState() => To<State>();
 
-    public record TestState : StateLogic<TestState>;
+    public record State : StateLogic<State>;
   }
 
   [Fact]

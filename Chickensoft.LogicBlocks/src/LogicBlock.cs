@@ -22,7 +22,7 @@ using Chickensoft.Serialization;
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
 public interface ILogicBlock<TState> : ISerializableBlackboard
-where TState : class, IStateLogic<TState> {
+where TState : StateLogic<TState> {
   /// <summary>
   /// Logic block execution context.
   /// </summary>
@@ -47,7 +47,7 @@ where TState : class, IStateLogic<TState> {
   /// override this to provide a valid initial state.
   /// </summary>
   /// <returns>Initial logic block state.</returns>
-  TState GetInitialState();
+  LogicBlock<TState>.Transition GetInitialState();
 
   /// <summary>
   /// Adds an input value to the logic block's internal input queue.
@@ -130,7 +130,7 @@ where TState : class, IStateLogic<TState> {
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
 public abstract partial class LogicBlock<TState> : LogicBlockBase,
-ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
+ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
   // We do want static members on generic types here since it makes for a
   // really ergonomic API.
   /// <summary>
@@ -190,11 +190,11 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   protected LogicBlock() {
     _inputs = new(this);
     Context = new DefaultContext(this);
-    PreallocateStatesIfPossible();
+    PreallocateStates();
   }
 
   /// <inheritdoc />
-  public abstract TState GetInitialState();
+  public abstract Transition GetInitialState();
 
   /// <inheritdoc />
   public virtual IBinding Bind() => new Binding(this);
@@ -213,8 +213,6 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   /// <inheritdoc />
   public void Start() {
     if (IsProcessing || _value is not null) { return; }
-
-    _blackboard.InstantiateAnyMissingSavedData();
 
     Flush();
   }
@@ -272,8 +270,8 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   /// otherwise.</returns>
   protected virtual bool CanChangeState(TState state) {
     if (
-      ReferenceEquals(Value, state) ||
-      EqualityComparer<TState>.Default.Equals(state, Value)
+      ReferenceEquals(_value, state) ||
+      EqualityComparer<TState>.Default.Equals(state, _value!)
     ) {
       // A state may always transition to itself or an equivalent state.
       return false;
@@ -281,7 +279,7 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
     return true;
   }
 
-  internal void PreallocateStatesIfPossible() {
+  internal void PreallocateStates() {
     var type = GetType();
     // If we're not an introspective type, we can't examine our state hierarchy.
     if (!Graph.IsIntrospectiveType(type)) {
@@ -315,13 +313,25 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
       stateTypesThatAreNotIntrospective.Add(baseStateType);
     }
 
-    foreach (var stateType in subtypes) {
+    if (Graph.IsConcrete(baseStateType)) {
       _blackboard.SaveObject(
-        stateType, () => Activator.CreateInstance(stateType)
+        baseStateType, () => Activator.CreateInstance(baseStateType)
       );
+    }
 
+    foreach (var stateType in subtypes) {
       if (!Graph.IsIntrospectiveType(stateType)) {
         stateTypesThatAreNotIntrospective.Add(stateType);
+        continue;
+      }
+
+      if (Graph.IsConcrete(stateType)) {
+        // Mark the state as persisted and add a factory for it to the
+        // blackboard that will be used if we do not end up deserializing
+        // the state later.
+        _blackboard.SaveObject(
+          stateType, () => Activator.CreateInstance(stateType)
+        );
       }
     }
 
@@ -366,6 +376,13 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   /// </summary>
   /// <param name="e">Exception that occurred.</param>
   protected virtual void HandleError(Exception e) { }
+
+  /// <summary>
+  /// Defines a transition to a state stored on the logic block's blackboard.
+  /// </summary>
+  /// <typeparam name="TStateType">Type of state to transition to.</typeparam>
+  protected Transition To<TStateType>()
+    where TStateType : TState => new(Context.Get<TStateType>());
 
   #region IReadOnlyBlackboard
   /// <inheritdoc />
@@ -431,7 +448,7 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
 
     if (_value is null) {
       // No state yet. Let's get the first state going!
-      _value = _restoredState ?? GetInitialState();
+      _value = _restoredState ?? GetInitialState().State;
       _restoredState = null;
       _value.Attach(Context);
       _value.Enter(null);
@@ -526,8 +543,8 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
     IGet<TInputType> inputHandler,
     in TInputType input,
     TState fallback
-  ) {
-    try { return inputHandler.On(input); }
+  ) where TInputType : struct {
+    try { return inputHandler.On(input).State; }
     catch (Exception e) { AddError(e); }
     return fallback;
   }
@@ -537,5 +554,11 @@ ILogicBlock<TState>, IInputHandler where TState : class, IStateLogic<TState> {
   /// </summary>
   /// <returns>The resting state.</returns>
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private TState Flush() => ProcessInputs<int>();
+  private TState Flush() {
+    if (_value is null) {
+      _blackboard.InstantiateAnyMissingSavedData();
+    }
+
+    return ProcessInputs<int>();
+  }
 }

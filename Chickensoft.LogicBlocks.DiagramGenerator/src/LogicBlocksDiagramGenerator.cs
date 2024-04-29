@@ -279,7 +279,7 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator {
     ) {
       foreach (var initialStateMethodSyntax in initialStateMethodSyntaxes) {
         var initialStateVisitor = new ReturnTypeVisitor(
-          model, token, CodeService, concreteState
+          model, token, CodeService, concreteState, symbol
         );
         initialStateVisitor.Visit(initialStateMethodSyntax);
         initialStateIds.UnionWith(initialStateVisitor.ReturnTypes);
@@ -574,7 +574,7 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator {
         var modelForSyntax =
           model.Compilation.GetSemanticModel(methodSyntax.SyntaxTree);
         var returnTypeVisitor = new ReturnTypeVisitor(
-          modelForSyntax, token, CodeService, stateBaseType
+          modelForSyntax, token, CodeService, stateBaseType, type
         );
         outputVisitor = new OutputVisitor(
           modelForSyntax, token, CodeService, outputContext

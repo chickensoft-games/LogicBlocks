@@ -8,7 +8,8 @@ public class HeaterTest {
   [Fact]
   public void Runs() {
     var tempSensor = new TemperatureSensor();
-    var heater = new Heater(tempSensor);
+    var heater = new Heater();
+    heater.Set<ITemperatureSensor>(tempSensor);
 
     heater.Value.ShouldBeOfType<Heater.State.Off>();
 
@@ -38,7 +39,8 @@ public class HeaterTest {
   [Fact]
   public static void BindingsRespondToHeater() {
     var tempSensor = new TemperatureSensor();
-    var heater = new Heater(tempSensor);
+    var heater = new Heater();
+    heater.Set<ITemperatureSensor>(tempSensor);
 
     using var binding = heater.Bind();
 
