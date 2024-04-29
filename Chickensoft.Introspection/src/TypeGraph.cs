@@ -1,6 +1,7 @@
 namespace Chickensoft.Introspection;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -16,19 +17,19 @@ internal class TypeGraph : ITypeGraph {
   #endregion ITypeRegistry
 
   #region Caches
-  private readonly Dictionary<Type, string> _visibleTypes = new();
-  private readonly Dictionary<Type, Func<object>>
+  private readonly ConcurrentDictionary<Type, string> _visibleTypes = new();
+  private readonly ConcurrentDictionary<Type, Func<object>>
     _concreteVisibleTypes = new();
-  private readonly Dictionary<Type, IMetatype> _metatypes = new();
-  private readonly Dictionary<Type, HashSet<Type>> _typesByBaseType =
+  private readonly ConcurrentDictionary<Type, IMetatype> _metatypes = new();
+  private readonly ConcurrentDictionary<Type, HashSet<Type>> _typesByBaseType =
     new();
-  private readonly Dictionary<Type, HashSet<Type>> _typesByAncestor =
+  private readonly ConcurrentDictionary<Type, HashSet<Type>> _typesByAncestor =
     new();
-  private readonly Dictionary<Type, List<PropertyMetadata>>
+  private readonly ConcurrentDictionary<Type, List<PropertyMetadata>>
     _allPropertiesByType = new();
-  private readonly Dictionary<Type, List<Attribute>> _allAttributesByType =
+  private readonly ConcurrentDictionary<Type, List<Attribute>> _allAttributesByType =
     new();
-  private readonly Dictionary<string, Type> _introspectiveTypesById =
+  private readonly ConcurrentDictionary<string, Type> _introspectiveTypesById =
     new();
   #endregion Caches
 
@@ -106,9 +107,10 @@ internal class TypeGraph : ITypeGraph {
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   private void CacheDescendants(Type type) {
-    if (_typesByAncestor.ContainsKey(type)) { return; }
-
-    _typesByAncestor.Add(type, FindDescendants(type));
+    if (_typesByAncestor.ContainsKey(type)) {
+      return;
+    }
+    _typesByAncestor[type] = FindDescendants(type);
   }
 
   private HashSet<Type> FindDescendants(Type type) {
@@ -138,7 +140,7 @@ internal class TypeGraph : ITypeGraph {
     // Why do this? We want to allow multiple assemblies to use this system to
     // find types by their base type or ancestor.
     foreach (var type in registry.VisibleTypes.Keys) {
-      _visibleTypes.Add(type, registry.VisibleTypes[type]);
+      _visibleTypes[type] = registry.VisibleTypes[type];
 
       if (registry.ConcreteVisibleTypes.ContainsKey(type)) {
         _concreteVisibleTypes[type] =
@@ -170,7 +172,7 @@ internal class TypeGraph : ITypeGraph {
       while (baseType != null) {
         if (!_typesByBaseType.TryGetValue(baseType, out var existingSet)) {
           existingSet = new HashSet<Type>();
-          _typesByBaseType.Add(baseType, existingSet);
+          _typesByBaseType[baseType] = existingSet;
         }
         existingSet.Add(lastType);
 
