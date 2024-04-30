@@ -13,6 +13,9 @@
     <!-- To show generated files -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>.generated</CompilerGeneratedFilesOutputPath>
+
+    <!-- Tracks generator performance when dotnet build /binaryLogger -->
+    <ReportAnalyzer>true</ReportAnalyzer>
   </PropertyGroup>
 
   <ItemGroup>

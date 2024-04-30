@@ -1,6 +1,7 @@
 namespace Chickensoft.LogicBlocks;
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 public abstract partial class LogicBlock<TState> {
   /// <summary>Represents a transition to a new state.</summary>
@@ -9,6 +10,7 @@ public abstract partial class LogicBlock<TState> {
     public TState State { get; }
 
     /// <summary>Don't use.</summary>
+    [ExcludeFromCodeCoverage]
     [Obsolete("Do not instantiate transitions yourself.", true)]
     public Transition() {
       throw new NotSupportedException(

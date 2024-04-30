@@ -14,6 +14,8 @@ public partial class VendingMachine {
     public Transition On(Input.PaymentReceived input) {
       var data = Get<Data>();
 
+      Output(new Output.RestartTransactionTimeOutTimer());
+
       data.AmountReceived += input.Amount;
 
       if (data.AmountReceived < data.Price) {

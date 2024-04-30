@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Generator;
+namespace Chickensoft.LogicBlocks.DiagramGenerator;
 
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 [Generator]
-public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator {
+public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
   public static Log Log { get; } = new Log();
   public ICodeService CodeService { get; } = new CodeService();
 
@@ -26,7 +26,7 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator {
     var options = context.AnalyzerConfigOptionsProvider
       .Select((options, _) => {
         var disabled = options.GlobalOptions.TryGetValue(
-          "build_property.LogicBlocksDiagramGeneratorDisabled", out var value
+          $"build_property.{Constants.DISABLE_CSPROJ_PROP}", out var value
         ) && value.ToLower() is "true";
 
         return new GenerationOptions(
@@ -205,8 +205,11 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator {
 
     var concreteState = (INamedTypeSymbol)symbol
       .GetAttributes()
-      .First()
-      .ConstructorArguments[0]
+      .FirstOrDefault(
+        attr => attr.AttributeClass?.Name ==
+          Constants.LOGIC_BLOCK_ATTRIBUTE_NAME_FULL
+      )
+      ?.ConstructorArguments[0]
       .Value!;
 
     // Search the logic block for all state subtypes, found recursively

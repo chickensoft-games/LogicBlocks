@@ -9,7 +9,7 @@ public interface IIntrospective {
   /// Arbitrary data that is shared between mixins. Mixins are free to store
   /// additional instance state in this blackboard.
   /// </summary>
-  DataTable MixinState { get; }
+  MixinBlackboard MixinState { get; }
 
   /// <summary>
   /// Generated metatype information.

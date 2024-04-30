@@ -17,9 +17,7 @@ public partial class LogicBlockConverterTest {
     """
     {
       "$type": "serializable_logic_block",
-      "state": {
-        "$type": "serializable_logic_block_state"
-      },
+      "state": "serializable_logic_block_state",
       "blackboard": {
         "a": {
           "a_value": "a"
@@ -90,44 +88,20 @@ public partial class LogicBlockConverterTest {
       """
       {
         "$type": "serializable_parallel_logic_block",
-        "state": {
-          "state_a": {
-            "$type": "serializable_logic_block",
-            "state": {
-              "$type": "serializable_logic_block_state"
-            },
-            "blackboard": {
-              "serializable_logic_block_state": {}
-            }
-          },
-          "state_b": {
-            "$type": "serializable_logic_block",
-            "state": {
-              "$type": "serializable_logic_block_state"
-            },
-            "blackboard": {
-              "serializable_logic_block_state": {}
-            }
-          },
-          "$type": "serializable_parallel_logic_block_state_parallel"
-        },
+        "state": "serializable_parallel_logic_block_state_parallel",
         "blackboard": {
           "serializable_parallel_logic_block_state_not_parallel": {},
           "serializable_parallel_logic_block_state_parallel": {
             "state_a": {
               "$type": "serializable_logic_block",
-              "state": {
-                "$type": "serializable_logic_block_state"
-              },
+              "state": "serializable_logic_block_state",
               "blackboard": {
                 "serializable_logic_block_state": {}
               }
             },
             "state_b": {
               "$type": "serializable_logic_block",
-              "state": {
-                "$type": "serializable_logic_block_state"
-              },
+              "state": "serializable_logic_block_state",
               "blackboard": {
                 "serializable_logic_block_state": {}
               }
@@ -149,6 +123,9 @@ public partial class LogicBlockConverterTest {
 
     var parallelState = deserializedLogic
       .Value.ShouldBeOfType<SerializableParallelLogicBlock.ParallelState>();
+
+    parallelState.StateA.ShouldNotBeNull();
+    parallelState.StateB.ShouldNotBeNull();
   }
 
   [Fact]
@@ -223,9 +200,7 @@ public partial class LogicBlockConverterTest {
         """
         {
           "$type": "serializable_logic_block",
-          "state": {
-            "$type": "serializable_logic_block_state"
-          }
+          "state": "serializable_logic_block_state"
         }
         """,
         options
@@ -243,9 +218,7 @@ public partial class LogicBlockConverterTest {
         """
         {
           "$type": "unknown_logic_block",
-          "state": {
-            "$type": "serializable_logic_block_state"
-          },
+          "state": "serializable_logic_block_state",
           "blackboard": {}
         }
         """,
@@ -264,9 +237,7 @@ public partial class LogicBlockConverterTest {
         """
         {
           "$type": "serializable_logic_block",
-          "state": {
-            "$type": "unknown_logic_block_state"
-          },
+          "state": "unknown_logic_block_state",
           "blackboard": {}
         }
         """,
@@ -285,9 +256,7 @@ public partial class LogicBlockConverterTest {
         """
         {
           "$type": "serializable_logic_block",
-          "state": {
-            "$type": "serializable_logic_block_state"
-          },
+          "state": "serializable_logic_block_state",
           "blackboard": {
             "unknown": {}
           }
@@ -304,9 +273,7 @@ public partial class LogicBlockConverterTest {
     """
     {
       "$type": "serializable_logic_block",
-      "state": {
-        "$type": "serializable_logic_block_state"
-      },
+      "state": "serializable_logic_block_state",
       "blackboard": {
         "a": {
           "a_value": "a"
@@ -343,9 +310,7 @@ public partial class LogicBlockConverterTest {
         """
         {
           "$type": "serializable_logic_block",
-          "state": {
-            "$type": "serializable_logic_block_state"
-          },
+          "state": "serializable_logic_block_state",
           "blackboard": {
             "a": null
           }

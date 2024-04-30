@@ -80,6 +80,8 @@ public class SerializableBlackboard : Blackboard, ISerializableBlackboard {
         "since it would conflict with existing data added to the blackboard."
       );
     }
+    // Overwrite any previously registered save factories for this type if they
+    // have never been used to create an instance.
     _saveTypes[type] = factory;
   }
 

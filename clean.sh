@@ -10,4 +10,5 @@ find . -name ".generated" -type d | xargs rm -rf
 
 dotnet nuget locals all --clear
 dotnet restore --no-cache --force
-dotnet build --no-incremental
+dotnet build-server shutdown
+dotnet build --no-incremental /binaryLogger

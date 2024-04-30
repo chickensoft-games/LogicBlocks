@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using Chickensoft.Introspection;
 using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Shouldly;
 using Xunit;
@@ -30,7 +31,13 @@ where TState : StateLogic<TState> {
     OnError?.Invoke(e);
 }
 
-public class LogicBlockTest {
+// Don't run in parallel with other LogicBlock tests.
+// Global introspection state is shared.
+[Collection("LogicBlock")]
+public partial class LogicBlockTest {
+  [Introspective("test_obj")]
+  public partial class TestObject;
+
   public static TestListener<TStateType> Listen<TStateType>(
     LogicBlock<TStateType> logicBlock
   ) where TStateType : StateLogic<TStateType> => new(logicBlock);
@@ -43,8 +50,9 @@ public class LogicBlockTest {
 
   [Fact]
   public void GetsAndSetsBlackboardData() {
-    var block = new FakeLogicBlock();
+    var block = new EmptyLogicBlock();
     var context = new FakeContext();
+    var obj = new TestObject();
     block.Has<string>().ShouldBeFalse();
     block.HasObject(typeof(string)).ShouldBeFalse();
     block.Set("data");
@@ -58,17 +66,18 @@ public class LogicBlockTest {
     block.GetObject(typeof(string)).ShouldBe("overwritten");
     block.SetObject(typeof(int), 5);
     block.GetObject(typeof(int)).ShouldBe(5);
+    block.SaveObject(typeof(TestObject), () => obj);
 
     block.Types.ShouldContain(typeof(string));
     block.Types.ShouldContain(typeof(int));
-    block.SavedTypes.ShouldNotBeEmpty();
+    block.SavedTypes.ShouldBe(
+      [typeof(EmptyLogicBlock.State), typeof(TestObject)], ignoreOrder: true
+    );
 
     // Can't change values once set.
     Should.Throw<DuplicateNameException>(() => block.Set("other"));
     Should.Throw<KeyNotFoundException>(() => block.Get<string[]>());
     Should.Throw<KeyNotFoundException>(() => block.GetObject(typeof(string[])));
-    block.Input(new FakeLogicBlock.Input.GetString());
-    block.Value.ShouldBe(new FakeLogicBlock.State.StateC() { Value = "overwritten" });
   }
 
   [Fact]
@@ -482,6 +491,15 @@ public class LogicBlockTest {
     state.Enter();
 
     context.Errors.ShouldBe([e]);
+  }
+
+  [Fact]
+  public void DefaultContextAddsError() {
+    var logic = new FakeLogicBlock();
+
+    Should.NotThrow(
+      () => logic.Context.AddError(new InvalidOperationException())
+    );
   }
 
   [Fact]

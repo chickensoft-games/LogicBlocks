@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Generator.Tests;
+namespace Chickensoft.LogicBlocks.DiagramGenerator.Tests.TestCases;
 
 using System;
 using Chickensoft.Introspection;

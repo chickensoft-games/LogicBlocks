@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Generator.Types.Models;
+namespace Chickensoft.Introspection.Generator.Types.Models;
 
 /// <summary>
 /// Using directive. In C# 12, a using can be global, static, and an alias all

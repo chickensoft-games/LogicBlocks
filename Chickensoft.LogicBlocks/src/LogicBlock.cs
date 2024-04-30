@@ -140,10 +140,6 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
   /// <returns>Fake binding.</returns>
   public static IFakeBinding CreateFakeBinding() => new FakeBinding();
 
-  internal static ITypeGraph DefaultGraph => Introspection.Types.Graph;
-  // Graph to use for introspection. Allows it to be shimmed for testing.
-  internal static ITypeGraph Graph { get; set; } = DefaultGraph;
-
   /// <inheritdoc />
   public IContext Context { get; }
 
@@ -190,7 +186,7 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
   protected LogicBlock() {
     _inputs = new(this);
     Context = new DefaultContext(this);
-    PreallocateStates();
+    PreallocateStates(this);
   }
 
   /// <inheritdoc />
@@ -277,74 +273,6 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
       return false;
     }
     return true;
-  }
-
-  internal void PreallocateStates() {
-    var type = GetType();
-    // If we're not an introspective type, we can't examine our state hierarchy.
-    if (!Graph.IsIntrospectiveType(type)) {
-      return;
-    }
-
-    var metatype = Graph.GetMetatype(type);
-
-    var logicBlockAttributes =
-      metatype.Attributes.ContainsKey(typeof(LogicBlockAttribute))
-        ? metatype.Attributes[typeof(LogicBlockAttribute)]
-        : null;
-
-    // Identify the logic block attribute, if any.
-    if (
-      logicBlockAttributes is not { } attributes ||
-      attributes.Length < 1 ||
-      attributes[0] is not LogicBlockAttribute logicBlockAttribute
-    ) {
-      return;
-    }
-
-    var baseStateType = logicBlockAttribute.StateType;
-
-    var subtypes = Graph.GetDescendantSubtypes(baseStateType);
-
-    var stateTypesThatAreNotIntrospective =
-      new HashSet<Type>(subtypes.Count + 1);
-
-    if (!Graph.IsIntrospectiveType(baseStateType)) {
-      stateTypesThatAreNotIntrospective.Add(baseStateType);
-    }
-
-    if (Graph.IsConcrete(baseStateType)) {
-      _blackboard.SaveObject(
-        baseStateType, () => Activator.CreateInstance(baseStateType)
-      );
-    }
-
-    foreach (var stateType in subtypes) {
-      if (!Graph.IsIntrospectiveType(stateType)) {
-        stateTypesThatAreNotIntrospective.Add(stateType);
-        continue;
-      }
-
-      if (Graph.IsConcrete(stateType)) {
-        // Mark the state as persisted and add a factory for it to the
-        // blackboard that will be used if we do not end up deserializing
-        // the state later.
-        _blackboard.SaveObject(
-          stateType, () => Activator.CreateInstance(stateType)
-        );
-      }
-    }
-
-    if (stateTypesThatAreNotIntrospective.Count == 0) { return; }
-
-    var statesNeedingAttention = string.Join(
-      ", ", stateTypesThatAreNotIntrospective
-    );
-
-    throw new LogicBlockException(
-      $"Introspective LogicBlock `{type}` has states that are missing the " +
-      $"[{nameof(IntrospectiveAttribute)}] attribute and cannot be " + $"preallocated: {statesNeedingAttention}."
-    );
   }
 
   /// <summary>

@@ -1,6 +1,8 @@
 
-namespace Chickensoft.LogicBlocks.Generator.Types.Models;
+namespace Chickensoft.Introspection.Generator.Types.Models;
 
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -10,6 +12,8 @@ using Microsoft.CodeAnalysis;
 /// </summary>
 /// <param name="Reference">Type reference, including the name, construction,
 /// type parameters, and whether or not the type is partial.</param>
+/// <param name="SyntaxLocation">Syntax node location (used for diagnostics).
+/// </param>
 /// <param name="Location">Location of the type in the source code, including
 /// namespaces and containing types.</param>
 /// <param name="Usings">Using directives that are in scope for the type.
@@ -24,10 +28,9 @@ using Microsoft.CodeAnalysis;
 /// <param name="Properties">Properties declared on the type.</param>
 /// <param name="Attributes">Attributes declared on the type.</param>
 /// <param name="Mixins">Mixins that are applied to the type.</param>
-/// <param name="Diagnostics">Diagnostics that were generated during generator
-/// transformation.</param>
 public record DeclaredType(
   TypeReference Reference,
+  Location SyntaxLocation,
   TypeLocation Location,
   ImmutableHashSet<UsingDirective> Usings,
   DeclaredTypeKind Kind,
@@ -36,8 +39,7 @@ public record DeclaredType(
   bool IsTopLevelAccessible,
   ImmutableArray<DeclaredProperty> Properties,
   ImmutableArray<DeclaredAttribute> Attributes,
-  ImmutableArray<string> Mixins,
-  ImmutableHashSet<Diagnostic> Diagnostics
+  ImmutableArray<string> Mixins
 ) {
   /// <summary>Output filename (only works for non-generic types).</summary>
   public string Filename => FullName.Replace('.', '_');
@@ -70,6 +72,41 @@ public record DeclaredType(
   public string Id => IntrospectiveAttribute?.ConstructorArgs.FirstOrDefault()
     ?? $"nameof({Reference.NameWithOpenGenerics})";
 
+  /// <summary>
+  /// Validates that the DeclaredType of this type and its containing types
+  /// satisfy the given predicate. Returns a list of types that do not satisfy
+  /// the predicate.
+  /// </summary>
+  /// <param name="allTypes">Table of type full names with open generics to
+  /// the declared type they represent.</param>
+  /// <param name="predicate">Predicate each type must satisfy.</param>
+  /// <returns>Enumerable of types that do not satisfy the predicate.</returns>
+  public IEnumerable<DeclaredType> ValidateTypeAndContainingTypes(
+    IDictionary<string, DeclaredType> allTypes,
+    Func<DeclaredType, bool> predicate
+  ) {
+    // Have to reconstruct the full names of the containing types from our
+    // type reference and location information.
+    var fullName = Location.Namespace;
+    var containingTypeFullNames = new Dictionary<TypeReference, string>();
+
+    foreach (var containingType in Location.ContainingTypes) {
+      fullName +=
+        (fullName.Length == 0 ? "" : ".") +
+        containingType.NameWithOpenGenerics;
+
+      containingTypeFullNames[containingType] = fullName;
+    }
+
+    var typesToValidate =
+      new[] { this }.Concat(Location.ContainingTypes.Select(
+        (typeRef) => allTypes[containingTypeFullNames[typeRef]]
+      )
+    );
+
+    return typesToValidate.Where((type) => !predicate(type));
+  }
+
   private DeclaredAttribute? IntrospectiveAttribute => Attributes
     .FirstOrDefault(
       (attr) => attr.Name == Constants.INTROSPECTIVE_ATTRIBUTE_NAME
@@ -86,6 +123,7 @@ public record DeclaredType(
     DeclaredType declaredType
   ) => new(
     Reference.MergePartialDefinition(declaredType.Reference),
+    HasIntrospectiveAttribute ? SyntaxLocation : declaredType.SyntaxLocation,
     Location,
     Usings.Union(declaredType.Usings),
     Kind,
@@ -97,7 +135,6 @@ public record DeclaredType(
       .Union(declaredType.Properties)
       .ToImmutableArray(),
     Attributes.Concat(declaredType.Attributes).ToImmutableArray(),
-    Mixins.Concat(declaredType.Mixins).ToImmutableArray(),
-    Diagnostics.Union(declaredType.Diagnostics)
+    Mixins.Concat(declaredType.Mixins).ToImmutableArray()
   );
 }

@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Generator;
+namespace Chickensoft.LogicBlocks.DiagramGenerator;
 
 using System.Collections.Generic;
 using System.Collections.Immutable;

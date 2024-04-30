@@ -12,10 +12,15 @@ public partial class VendingMachine : LogicBlock<VendingMachine.State> {
   public partial record Data {
     [Save("type")]
     public ItemType Type { get; set; }
+
     [Save("price")]
     public int Price { get; set; }
+
     [Save("amount_received")]
     public int AmountReceived { get; set; }
+
+    public override string ToString() =>
+      $"Data(Type: {Type}, Price: {Price}, AmountReceived: {AmountReceived})";
   }
 
   // Inputs

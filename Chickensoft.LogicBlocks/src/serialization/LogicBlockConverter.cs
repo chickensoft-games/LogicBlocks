@@ -19,9 +19,7 @@ using Chickensoft.Serialization;
 // ```json
 // {
 //   "$type": "logic_block_introspective_type_id",
-//   "state": {
-//     "$type": "state_introspective_type_id"
-//   },
+//   "state": "state_introspective_type_id",
 //   "blackboard": {
 //     "object_introspective_type_id": {}
 //   }
@@ -84,15 +82,9 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
         "property."
       );
 
-    var stateValue =
-      json[STATE_PROPERTY]?.AsObject() ?? throw new JsonException(
+    var stateId =
+      json[STATE_PROPERTY]?.ToString() ?? throw new JsonException(
         $"Logic block {typeToConvert} has an invalid `{STATE_PROPERTY}` value."
-      );
-
-    var stateId = stateValue[TypeDiscriminator]?.ToString() ??
-      throw new JsonException(
-        $"Logic block {typeToConvert}'s state is missing its " +
-        $"`{TypeDiscriminator}` property."
       );
 
     var blackboard =
@@ -160,10 +152,9 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
     // Create state
     var stateType = Introspection.Types.Graph.GetIntrospectiveType(stateId);
 
-    // We can force-unwrap state since we verified that it is a json object.
-    var state = stateValue.Deserialize(
-      stateType, options
-    )!;
+    // Load the state from the logic block's blackboard, since we just
+    // setup the blackboard and the blackboard should have all possible states.
+    var state = ((LogicBlockBase)logicBlock)._blackboard.GetObject(stateType);
 
     if (state is IOutdated) {
       // Create a temporary blackboard that merges all the values from the
@@ -212,27 +203,7 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
     var stateType = state.GetType();
     var stateId = Introspection.Types.Graph.GetMetatype(stateType).Id;
 
-    writer.WritePropertyName(STATE_PROPERTY);
-
-    // Serialize to a JsonNode instead of directly to the writer so that we can
-    // ensure the type discriminator always shows up. We can safely unwrap
-    // since we know logic block states are not null and will always be
-    // serialized to a JsonObject since there are constraints on what can be
-    // a state, forcing it to be a record or a class.
-    var stateNode = (JsonObject)JsonSerializer.SerializeToNode(
-      state,
-      state.GetType(),
-      options
-    )!;
-
-    if (!stateNode.ContainsKey(TypeDiscriminator)) {
-      // Always serialize the type discriminator, even for states that don't
-      // have any derived types (for readability).
-      stateNode.Add(TypeDiscriminator, stateId);
-    }
-
-    // Write state
-    stateNode.WriteTo(writer);
+    writer.WriteString(STATE_PROPERTY, stateId);
 
     writer.WritePropertyName(BLACKBOARD_PROPERTY);
     writer.WriteStartObject();

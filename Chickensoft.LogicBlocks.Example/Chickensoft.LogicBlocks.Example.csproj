@@ -10,12 +10,17 @@
     <!-- To show generated files -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>.generated</CompilerGeneratedFilesOutputPath>
+
+    <!-- Tracks generator performance when dotnet build /binaryLogger -->
+    <ReportAnalyzer>true</ReportAnalyzer>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
 
     <ProjectReference Include="../Chickensoft.Introspection.Generator/Chickensoft.Introspection.Generator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
+    <ProjectReference Include="../Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
+    <ProjectReference Include="../Chickensoft.LogicBlocks.Analyzers/Chickensoft.LogicBlocks.Analyzers.csproj" PrivateAssets="all" OutputItemType="analyzer" />
   </ItemGroup>
 
 </Project>

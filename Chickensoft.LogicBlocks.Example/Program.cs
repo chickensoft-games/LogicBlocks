@@ -42,7 +42,7 @@ public static class Program {
   public static readonly VendingMachineStock Stock = new(new(Totals));
 
   private static long _transactionStartedTime;
-  private const long TRANSACTION_TIMEOUT = 5_000; // 5 seconds
+  private const long TRANSACTION_TIMEOUT = 10_000; // seconds
   private static bool _isTransactionUnderway;
 
   private static bool _isVending;
@@ -82,7 +82,7 @@ public static class Program {
         ProcessOutput(output);
       }
       ShowOverview();
-      ShowState(machine.Value);
+      ShowState(machine);
       Console.WriteLine("");
       Console.Write("> ");
       ShowOutputs(_lastFewOutputs);
@@ -212,11 +212,13 @@ public static class Program {
     return 0;
   }
 
-  private static void ShowState(VendingMachine.State state) {
+  private static void ShowState(VendingMachine machine) {
     Console.WriteLine("");
     Console.WriteLine(" -- Vending Machine State --");
-    Console.WriteLine($"   :: {state}");
+    Console.WriteLine($"   :: {machine.Value.GetType().Name}");
     Console.WriteLine("");
+    Console.WriteLine(" -- Vending Machine Data --");
+    Console.WriteLine($"   :: {machine.Get<VendingMachine.Data>()}");
   }
 
   private static void ShowOverview() {

@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Generator.Types.Models;
+namespace Chickensoft.Introspection.Generator.Types.Models;
 
 public enum DeclaredTypeKind {
   StaticClass,

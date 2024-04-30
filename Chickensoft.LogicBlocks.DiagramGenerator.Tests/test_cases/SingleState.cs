@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Generator.Tests;
+namespace Chickensoft.LogicBlocks.DiagramGenerator.Tests.TestCases;
 
 [LogicBlock(typeof(State), Diagram = true)]
 public class SingleState : LogicBlock<SingleState.State> {

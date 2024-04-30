@@ -9,6 +9,8 @@ public partial class VendingMachine {
     public Transition On(Input.SelectionEntered input) {
       var data = Get<Data>();
 
+      Output(new Output.RestartTransactionTimeOutTimer());
+
       if (Get<VendingMachineStock>().HasItem(input.Type)) {
         data.Type = input.Type;
         data.Price = Prices[input.Type];

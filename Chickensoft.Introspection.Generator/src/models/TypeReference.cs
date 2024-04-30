@@ -1,5 +1,5 @@
 
-namespace Chickensoft.LogicBlocks.Generator.Types.Models;
+namespace Chickensoft.Introspection.Generator.Types.Models;
 
 using System.Collections.Immutable;
 
@@ -13,9 +13,7 @@ public record TypeReference(
   /// Open generics portion of the type name (if generic). Otherwise, blank
   /// string.
   /// </summary>
-  public string OpenGenerics => GetOpenGenerics(
-    TypeParameters.Length
-  );
+  public string OpenGenerics => GetOpenGenerics(TypeParameters.Length);
 
   /// <summary>
   /// Name of the type, including any open generics portion of the name (if the
@@ -26,11 +24,7 @@ public record TypeReference(
   /// <summary>
   /// Name of the type, including any generic type parameters.
   /// </summary>
-  public string NameWithGenerics => Name + (
-    TypeParameters.Length > 0
-      ? "<" + string.Join(", ", TypeParameters) + ">"
-      : ""
-  );
+  public string NameWithGenerics => Name + GetGenerics(TypeParameters);
 
   /// <summary>True if the type is generic.</summary>
   public bool IsGeneric => TypeParameters.Length > 0;
@@ -49,10 +43,15 @@ public record TypeReference(
     NameWithGenerics
   );
 
+  public static string GetGenerics(ImmutableArray<string> typeParameters) =>
+    typeParameters.Length > 0
+      ? $"<{string.Join(", ", typeParameters)}>"
+      : string.Empty;
+
   public static string GetOpenGenerics(int numTypeParameters) =>
-  numTypeParameters > 0
-    ? $"<{new string(',', numTypeParameters - 1)}>"
-    : string.Empty;
+    numTypeParameters > 0
+      ? $"<{new string(',', numTypeParameters - 1)}>"
+      : string.Empty;
 
   /// <summary>
   /// Returns the code needed to declare the type.

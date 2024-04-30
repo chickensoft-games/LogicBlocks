@@ -31,4 +31,10 @@ public class InternalSharedStateTest {
 
     detachCalled.ShouldBeTrue();
   }
+
+  [Fact]
+  public void EqualsAnythingElse() {
+    var state = new InternalState();
+    state.Equals(new object()).ShouldBeTrue();
+  }
 }

@@ -1,7 +1,7 @@
 
-namespace Chickensoft.LogicBlocks.Generator.Types.Models;
+namespace Chickensoft.Introspection.Generator.Types.Models;
 
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 /// <summary>
@@ -11,8 +11,8 @@ using System.Linq;
 /// <param name="Namespaces">Namespaces containing the type.</param>
 /// <param name="ContainingTypes">Containing type names.</param>
 public record TypeLocation(
-  ICollection<string> Namespaces,
-  ICollection<TypeReference> ContainingTypes
+  ImmutableArray<string> Namespaces,
+  ImmutableArray<TypeReference> ContainingTypes
 ) {
   /// <summary>Fully resolved namespace of the type's location.</summary>
   public string Namespace => string.Join(".", Namespaces);
@@ -31,10 +31,10 @@ public record TypeLocation(
   /// <summary>
   /// Full name of the type that represents this location.
   /// </summary>
-  public string FullName =>
-    string.Join(".", Namespaces.Concat(
-      ContainingTypes.Select(t => t.NameWithGenerics)
-    ));
+  public string FullName => string.Join(
+    ".",
+    Namespaces.Concat(ContainingTypes.Select(t => t.NameWithOpenGenerics))
+  );
 
   /// <summary>
   /// True if the location is within a generic type.
