@@ -466,7 +466,7 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
     in TInputType input,
     TState fallback
   ) where TInputType : struct {
-    try { return inputHandler.On(input).State; }
+    try { return inputHandler.On(in input).State; }
     catch (Exception e) { AddError(e); }
     return fallback;
   }

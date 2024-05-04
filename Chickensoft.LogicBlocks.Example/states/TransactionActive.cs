@@ -11,7 +11,7 @@ public partial class VendingMachine {
       this.OnExit(() => Get<Data>().AmountReceived = 0);
     }
 
-    public Transition On(Input.PaymentReceived input) {
+    public Transition On(in Input.PaymentReceived input) {
       var data = Get<Data>();
 
       Output(new Output.RestartTransactionTimeOutTimer());
@@ -43,7 +43,7 @@ public partial class VendingMachine {
       return To<Vending>();
     }
 
-    public Transition On(Input.TransactionTimedOut input) {
+    public Transition On(in Input.TransactionTimedOut input) {
       var data = Get<Data>();
 
       if (data.AmountReceived > 0) {

@@ -13,7 +13,7 @@ public class SingleState : LogicBlock<SingleState.State> {
       this.OnExit(() => Output(new Output.MyOutput()));
     }
 
-    public Transition On(Input.MyInput input) {
+    public Transition On(in Input.MyInput input) {
       Output(new Output.MyOutput());
       return ToSelf();
     }

@@ -9,7 +9,7 @@ public partial class VendingMachine {
       this.OnEnter(() => Output(new Output.ClearTransactionTimeOutTimer()));
     }
 
-    public Transition On(Input.PaymentReceived input) {
+    public Transition On(in Input.PaymentReceived input) {
       // Money was deposited with no selection — eject it right back.
       //
       // We could be evil and keep it, but we'd ruin our reputation as a

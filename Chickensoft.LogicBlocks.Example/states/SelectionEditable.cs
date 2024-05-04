@@ -6,7 +6,7 @@ public partial class VendingMachine {
   [Meta("vending_machine_selection_editable")]
   public abstract partial record SelectionEditable : State,
   IGet<Input.SelectionEntered> {
-    public Transition On(Input.SelectionEntered input) {
+    public Transition On(in Input.SelectionEntered input) {
       var data = Get<Data>();
 
       Output(new Output.RestartTransactionTimeOutTimer());

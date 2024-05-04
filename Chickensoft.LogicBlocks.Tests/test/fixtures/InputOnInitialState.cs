@@ -20,7 +20,7 @@ public partial class InputOnInitialState : LogicBlock<InputOnInitialState.State>
       this.OnEnter(() => Input(new Input.Initialize()));
     }
 
-    public Transition On(Input.Start input) => ToSelf();
-    public Transition On(Input.Initialize input) => ToSelf();
+    public Transition On(in Input.Start input) => ToSelf();
+    public Transition On(in Input.Initialize input) => ToSelf();
   }
 }

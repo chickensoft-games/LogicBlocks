@@ -23,8 +23,8 @@ public partial class GreedyLogic : LogicBlock<GreedyLogic.State> {
         });
       }
 
-      public Transition On(Input.GoToB input) => To<B>();
-      public Transition On(Input.GoToC input) => To<C>();
+      public Transition On(in Input.GoToB input) => To<B>();
+      public Transition On(in Input.GoToC input) => To<C>();
     }
 
     [Meta("greedy_logic_state_b")]

@@ -18,7 +18,7 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
 
   [Meta("test_machine_state")]
   public abstract partial record State : StateLogic<State>, IGet<Input.Activate> {
-    public Transition On(Input.Activate input) =>
+    public Transition On(in Input.Activate input) =>
       input.Secondary switch {
         SecondaryState.Blooped => To<Activated.Blooped>(),
         SecondaryState.Bopped => To<Activated.Bopped>(),
@@ -32,7 +32,7 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
         this.OnExit(() => Output(new Output.ActivatedCleanUp()));
       }
 
-      public Transition On(Input.Deactivate input) => To<Deactivated>();
+      public Transition On(in Input.Deactivate input) => To<Deactivated>();
 
       [Meta("test_machine_state_activated_blooped")]
       public partial record Blooped : Activated {

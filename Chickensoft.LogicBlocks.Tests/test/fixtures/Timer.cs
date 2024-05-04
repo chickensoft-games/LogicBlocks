@@ -51,22 +51,22 @@ public partial class Timer : LogicBlock<Timer.State> {
   public abstract partial record State : StateLogic<State> {
     [Meta("timer_state_powered_off")]
     public partial record PoweredOff : State, IGet<Input.PowerButtonPressed> {
-      public Transition On(Input.PowerButtonPressed input) =>
+      public Transition On(in Input.PowerButtonPressed input) =>
         To<PoweredOn.Idle>();
     }
 
     [Meta("timer_state_powered_on")]
     public abstract partial record PoweredOn : State, IGet<Input.PowerButtonPressed> {
-      public Transition On(Input.PowerButtonPressed input) => To<PoweredOff>();
+      public Transition On(in Input.PowerButtonPressed input) => To<PoweredOff>();
 
       [Meta("timer_state_powered_on_idle")]
       public partial record Idle : PoweredOn, IGet<Input.StartStopButtonPressed> {
-        public Transition On(Input.ChangeDuration input) {
+        public Transition On(in Input.ChangeDuration input) {
           Get<Data>().Duration = input.Duration;
           return ToSelf();
         }
 
-        public Transition On(Input.StartStopButtonPressed input) =>
+        public Transition On(in Input.StartStopButtonPressed input) =>
           To<Running>();
       }
 
@@ -81,13 +81,13 @@ public partial class Timer : LogicBlock<Timer.State> {
         private void OnTimeElapsed(double delta) =>
           Input(new Input.TimeElapsed(delta));
 
-        public Transition On(Input.TimeElapsed input) {
+        public Transition On(in Input.TimeElapsed input) {
           var data = Get<Data>();
           data.TimeRemaining -= input.Delta;
           return data.TimeRemaining <= 0.0d ? To<Beeping>() : ToSelf();
         }
 
-        public Transition On(Input.StartStopButtonPressed input) => To<Idle>();
+        public Transition On(in Input.StartStopButtonPressed input) => To<Idle>();
       }
 
       [Meta("timer_state_powered_on_beeping")]

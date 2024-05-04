@@ -15,7 +15,7 @@ public class LightSwitch : LogicBlock<LightSwitch.State> {
         this.OnEnter(() => Output(new Output.StatusChanged(IsOn: true)));
       }
 
-      public Transition On(Input.Toggle input) => To<Powered>();
+      public Transition On(in Input.Toggle input) => To<Powered>();
     }
 
     public record Powered : State, IGet<Input.Toggle> {
@@ -24,7 +24,7 @@ public class LightSwitch : LogicBlock<LightSwitch.State> {
         this.OnEnter(() => Output(new Output.StatusChanged(IsOn: false)));
       }
 
-      public Transition On(Input.Toggle input) => To<PoweredOn>();
+      public Transition On(in Input.Toggle input) => To<PoweredOn>();
     }
   }
 

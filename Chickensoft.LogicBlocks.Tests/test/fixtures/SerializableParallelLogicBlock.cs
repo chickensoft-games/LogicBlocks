@@ -15,7 +15,7 @@ LogicBlock<SerializableParallelLogicBlock.State> {
   [Meta("serializable_parallel_logic_block_state_not_parallel")]
   public partial record NotParallelState : State,
   IGet<Input.GoToParallelState> {
-    public Transition On(Input.GoToParallelState input) => To<ParallelState>();
+    public Transition On(in Input.GoToParallelState input) => To<ParallelState>();
   }
 
   [Meta("serializable_parallel_logic_block_state_parallel")]

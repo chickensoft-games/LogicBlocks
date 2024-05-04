@@ -22,7 +22,7 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBloc
         this.OnExit(() => Output(new Output.SomeOutput()));
       }
 
-      public Transition On(Input.SomeInput input) {
+      public Transition On(in Input.SomeInput input) {
         Output(new Output.SomeOutput());
         return To<SomeOtherState>();
       }
@@ -30,7 +30,7 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBloc
 
     [Meta("my_logic_block_state_some_other")]
     public partial record SomeOtherState : State, IGet<Input.SomeOtherInput> {
-      public Transition On(Input.SomeOtherInput input) {
+      public Transition On(in Input.SomeOtherInput input) {
         Output(new Output.SomeOtherOutput());
         return To<SomeState>();
       }

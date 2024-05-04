@@ -41,8 +41,10 @@ public partial class Heater : LogicBlock<Heater.State> {
     StateLogic<State>, IGet<Input.TargetTempChanged> {
     public double TargetTemp { get; set; }
 
-    public Transition On(Input.TargetTempChanged input) =>
-      ToSelf().With(state => state.TargetTemp = input.Temp);
+    public Transition On(in Input.TargetTempChanged input) {
+      var temp = input.Temp;
+      return ToSelf().With(state => state.TargetTemp = temp);
+    }
 
     [Meta("heater_state_powered")]
     public abstract partial record Powered : State, IGet<Input.TurnOff> {
@@ -66,7 +68,7 @@ public partial class Heater : LogicBlock<Heater.State> {
         );
       }
 
-      public Transition On(Input.TurnOff input) =>
+      public Transition On(in Input.TurnOff input) =>
         To<Off>().With(off => off.TargetTemp = TargetTemp);
 
       // Whenever our temperature sensor gives us a reading, we will just
@@ -78,7 +80,7 @@ public partial class Heater : LogicBlock<Heater.State> {
 
     [Meta("heater_state_off")]
     public partial record Off : State, IGet<Input.TurnOn> {
-      public Transition On(Input.TurnOn input) {
+      public Transition On(in Input.TurnOn input) {
         // Get the temperature sensor from the blackboard.
         var tempSensor = Get<ITemperatureSensor>();
 
@@ -94,7 +96,7 @@ public partial class Heater : LogicBlock<Heater.State> {
 
     [Meta("heater_state_powered_idle")]
     public partial record Idle : Powered, IGet<Input.AirTempSensorChanged> {
-      public Transition On(Input.AirTempSensorChanged input) {
+      public Transition On(in Input.AirTempSensorChanged input) {
         if (input.AirTemp < TargetTemp - 3.0d) {
           // Temperature has fallen too far below target temp — start heating.
           return To<Heating>()
@@ -107,7 +109,7 @@ public partial class Heater : LogicBlock<Heater.State> {
 
     [Meta("heater_state_powered_heating")]
     public partial record Heating : Powered, IGet<Input.AirTempSensorChanged> {
-      public Transition On(Input.AirTempSensorChanged input) {
+      public Transition On(in Input.AirTempSensorChanged input) {
         if (input.AirTemp >= TargetTemp) {
           // We're done heating!
           Output(new Output.FinishedHeating());

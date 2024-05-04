@@ -33,49 +33,58 @@ public partial class FakeLogicBlock {
     IGet<Input.GetString>,
     IGet<Input.SelfInput>,
     IGet<Input.Custom> {
-    public Transition On(Input.InputOne input) {
+    public Transition On(in Input.InputOne input) {
       Output(new Output.OutputOne(1));
+      var value1 = input.Value1;
+      var value2 = input.Value2;
       return To<StateA>().With(state => {
         var a = (StateA)state;
-        a.Value1 = input.Value1;
-        a.Value2 = input.Value2;
+        a.Value1 = value1;
+        a.Value2 = value2;
       });
     }
 
-    public Transition On(Input.InputTwo input) {
+    public Transition On(in Input.InputTwo input) {
       Output(new Output.OutputTwo("2"));
+      var value1 = input.Value1;
+      var value2 = input.Value2;
       return To<StateB>().With(state => {
         var b = (StateB)state;
-        b.Value1 = input.Value1;
-        b.Value2 = input.Value2;
+        b.Value1 = value1;
+        b.Value2 = value2;
       });
     }
 
-    public Transition On(Input.InputThree input) => To<StateD>().With(state => {
-      var d = (StateD)state;
-      d.Value1 = input.Value1;
-      d.Value2 = input.Value2;
-    });
+    public Transition On(in Input.InputThree input) {
+      var value1 = input.Value1;
+      var value2 = input.Value2;
 
-    public Transition On(Input.InputError input)
+      return To<StateD>().With(state => {
+        var d = (StateD)state;
+        d.Value1 = value1;
+        d.Value2 = value2;
+      });
+    }
+
+    public Transition On(in Input.InputError input)
       => throw new InvalidOperationException();
 
-    public Transition On(Input.NoNewState input) {
+    public Transition On(in Input.NoNewState input) {
       Output(new Output.OutputOne(1));
       return ToSelf();
     }
 
-    public Transition On(Input.InputCallback input) {
+    public Transition On(in Input.InputCallback input) {
       input.Callback();
       return input.Next(Context);
     }
 
-    public Transition On(Input.Custom input) => input.Next(Context);
+    public Transition On(in Input.Custom input) => input.Next(Context);
 
-    public Transition On(Input.GetString input) => To<StateC>()
+    public Transition On(in Input.GetString input) => To<StateC>()
       .With(state => ((StateC)state).Value = Get<string>());
 
-    public Transition On(Input.SelfInput input) {
+    public Transition On(in Input.SelfInput input) {
       Input(input.Input);
       return ToSelf();
     }

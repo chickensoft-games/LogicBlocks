@@ -19,7 +19,7 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         this.OnExit(() => Output(new Output.TurnHeaterOff()));
       }
 
-      public Transition On(Input.OpenDoor input) => To<DoorOpen>();
+      public Transition On(in Input.OpenDoor input) => To<DoorOpen>();
     }
 
     public record Toasting : Heating, IGet<Input.StartBaking> {
@@ -32,8 +32,11 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         this.OnExit(() => Output(new Output.ResetTimer()));
       }
 
-      public Transition On(Input.StartBaking input) => To<Baking>()
-        .With(baking => ((Baking)baking).Temperature = input.Temperature);
+      public Transition On(in Input.StartBaking input) {
+        var temp = input.Temperature;
+        return To<Baking>()
+          .With(baking => ((Baking)baking).Temperature = temp);
+      }
     }
 
     public record Baking : Heating, IGet<Input.StartToasting> {
@@ -50,8 +53,11 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         );
       }
 
-      public Transition On(Input.StartToasting input) => To<Toasting>()
-        .With(toasting => ((Toasting)toasting).ToastColor = input.ToastColor);
+      public Transition On(in Input.StartToasting input) {
+        var toastColor = input.ToastColor;
+        return To<Toasting>()
+          .With(toasting => ((Toasting)toasting).ToastColor = toastColor);
+      }
     }
 
     public record DoorOpen : State, IGet<Input.CloseDoor> {
@@ -60,8 +66,11 @@ public class ToasterOven : LogicBlock<ToasterOven.State> {
         this.OnExit(() => Output(new Output.TurnLampOff()));
       }
 
-      public Transition On(Input.CloseDoor input) => To<Toasting>()
-        .With(toasting => ((Toasting)toasting).ToastColor = input.ToastColor);
+      public Transition On(in Input.CloseDoor input) {
+        var toastColor = input.ToastColor;
+        return To<Toasting>()
+          .With(toasting => ((Toasting)toasting).ToastColor = toastColor);
+      }
     }
   }
 

@@ -9,6 +9,6 @@ public partial class VendingMachine {
       this.OnEnter(() => Output(new Output.BeginVending()));
     }
 
-    public Transition On(Input.VendingCompleted input) => To<Idle>();
+    public Transition On(in Input.VendingCompleted input) => To<Idle>();
   }
 }

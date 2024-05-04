@@ -13,7 +13,7 @@ public class Patterns : LogicBlock<Patterns.State> {
   }
 
   public abstract record State : StateLogic<State>, IGet<Input.SetMode> {
-    public Transition On(Input.SetMode input) => input.Mode switch {
+    public Transition On(in Input.SetMode input) => input.Mode switch {
       Mode.One => To<One>(),
       Mode.Two => To<Two>(),
       Mode.Three => true switch {
