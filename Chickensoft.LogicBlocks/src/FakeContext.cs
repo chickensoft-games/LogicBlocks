@@ -25,12 +25,6 @@ public interface IFakeContext : IContext {
   void Set<TDataType>(TDataType value) where TDataType : class;
 
   /// <summary>
-  /// Sets multiple fake values in the logic block's blackboard.
-  /// </summary>
-  /// <param name="values">Values to set, keyed by type.</param>
-  void Set(Dictionary<Type, object> values);
-
-  /// <summary>
   /// Clears the blackboard, the inputs, the outputs, and the errors.
   /// </summary>
   void Reset();
@@ -77,12 +71,6 @@ internal readonly struct FakeContext : IFakeContext {
 
   public void Set<TDataType>(TDataType value) where TDataType : class =>
     _blackboard[typeof(TDataType)] = value;
-
-  public void Set(Dictionary<Type, object> values) {
-    foreach (var (type, value) in values) {
-      _blackboard[type] = value;
-    }
-  }
 
   public void Input<TInputType>(in TInputType input)
     where TInputType : struct => _inputs.Add(input);

@@ -526,6 +526,8 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
     return true;
   }
 
+  // Equivalent logic blocks have different hash codes because they are
+  // different instances.
   /// <inheritdoc />
   public override int GetHashCode() => base.GetHashCode();
 }

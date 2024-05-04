@@ -16,6 +16,7 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBloc
 
   [Meta("my_logic_block_state")]
   public abstract partial record State : StateLogic<State> {
+    [Meta("my_logic_block_state_some")]
     public partial record SomeState : State, IGet<Input.SomeInput> {
       public SomeState() {
         this.OnEnter(() => Output(new Output.SomeOutput()));

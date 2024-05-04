@@ -516,4 +516,91 @@ public partial class LogicBlockTest {
 
     Should.Throw<LogicBlockException>(() => logic.RestoreState(state));
   }
+
+  public class LogicBlockEquality {
+    private sealed record TestValue(int Value);
+
+    [Fact]
+    public void NotEqualToNonLogicBlock() {
+      var logic = new FakeLogicBlock();
+      var obj = new object();
+
+      logic.Equals(obj).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void NotEqualToDifferentLogicBlock() {
+      var logic = new FakeLogicBlock();
+      var other = new MyLogicBlock();
+
+      logic.Equals(other).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void NotEqualIfBlackboardsAreDifferent() {
+      var logic = new FakeLogicBlock();
+      var other = new FakeLogicBlock();
+
+      logic.Set("data");
+      other.Set("other");
+
+      logic.Equals(other).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void NotEqualIfStatesAreDifferent() {
+      var logic = new FakeLogicBlock();
+      var other = new FakeLogicBlock();
+
+      logic.Start();
+      other.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
+
+      logic.Equals(other).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void NotEqualIfBlackboardsAreDifferentLengths() {
+      var logic = new FakeLogicBlock();
+      var other = new FakeLogicBlock();
+
+      logic.Set("data");
+      other.Set("data");
+      other.Set(new object());
+
+      logic.Equals(other).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void NotEqualIfBlackboardTypesAreDifferent() {
+      var logic = new FakeLogicBlock();
+      var other = new FakeLogicBlock();
+
+      logic.Set("data");
+      other.Set(new object());
+
+      logic.Equals(other).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void EqualIfBlackboardValuesAreEquivalent() {
+      var logic = new FakeLogicBlock();
+      var other = new FakeLogicBlock();
+
+      logic.Set(new TestValue(1));
+      logic.Set("hello");
+
+      other.Set("hello");
+      other.Set(new TestValue(1));
+
+      logic.Equals(other).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void HashCodesAreDifferentForEquivalentLogicBlocks() {
+      var logic = new FakeLogicBlock();
+      var other = new FakeLogicBlock();
+
+      logic.GetHashCode().ShouldNotBe(other.GetHashCode());
+    }
+  }
 }

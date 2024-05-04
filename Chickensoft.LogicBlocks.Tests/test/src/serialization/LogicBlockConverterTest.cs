@@ -349,6 +349,16 @@ public partial class LogicBlockConverterTest {
     deserializedLogic.Value.ShouldBeOfType<OutdatedLogicBlock.V3>();
   }
 
+  [Fact]
+  public void ThrowsIfLogicBlockIsNotStarted() {
+    var logic = new SerializableLogicBlock();
+    var options = CreateOptions();
+
+    Should.Throw<JsonException>(
+      () => JsonSerializer.Serialize(logic, options)
+    );
+  }
+
   private static JsonSerializerOptions CreateOptions(
     IReadOnlyBlackboard? deps = null
   ) {
