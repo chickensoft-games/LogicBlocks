@@ -3,6 +3,7 @@
     "**/*.*"
   ],
   "ignorePaths": [
+    "**/*.svg",
     "**/*.tscn",
     "**/*.DotSettings",
     "**/*.DotSettings.user",
