@@ -146,6 +146,14 @@ public static class Tester {
       relativePathInProject
     )
   );
+
+  public static string CurrentDir(
+    string relativePathInProject,
+    [CallerFilePath] string? callerFilePath = null
+  ) => Path.GetFullPath(Path.Join(
+    Path.GetDirectoryName(callerFilePath),
+    relativePathInProject
+  ));
 }
 
 public static class StringExtensions {

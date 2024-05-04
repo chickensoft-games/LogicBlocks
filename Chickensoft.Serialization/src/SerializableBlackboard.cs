@@ -24,7 +24,7 @@ public interface ISerializableBlackboard : IBlackboard {
   /// </summary>
   /// <typeparam name="TData">Type of data to persist.</typeparam>
   /// <param name="factory">Factory closure which creates the data.</param>
-  void Save<TData>(Func<TData> factory) where TData : class, IIntrospective;
+  void Save<TData>(Func<TData> factory) where TData : class, IIdentifiable;
 
   /// <summary>
   /// Establishes a factory that will be used for the given data type if the
@@ -51,8 +51,7 @@ public class SerializableBlackboard : Blackboard, ISerializableBlackboard {
 
   /// <inheritdoc cref="ISerializableBlackboard.Save{TData}(Func{TData})" />
   public void Save<TData>(Func<TData> factory)
-    where TData : class, IIntrospective =>
-    SaveObject(typeof(TData), factory);
+    where TData : class, IIdentifiable => SaveObject(typeof(TData), factory);
 
   /// <inheritdoc
   ///   cref="ISerializableBlackboard.SaveObject(Type, Func{object})" />

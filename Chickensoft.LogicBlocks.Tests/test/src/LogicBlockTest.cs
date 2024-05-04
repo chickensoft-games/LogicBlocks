@@ -35,7 +35,7 @@ where TState : StateLogic<TState> {
 // Global introspection state is shared.
 [Collection("LogicBlock")]
 public partial class LogicBlockTest {
-  [Introspective("test_obj")]
+  [Meta("test_obj")]
   public partial class TestObject;
 
   public static TestListener<TStateType> Listen<TStateType>(
@@ -401,15 +401,9 @@ public partial class LogicBlockTest {
       new InvalidOperationException(),
       new InvalidCastException()
     };
-    var blackboard = new Dictionary<Type, object> {
-      { typeof(string), "c" },
-      { typeof(int), 4 },
-      { typeof(bool), true }
-    };
 
     var context = new FakeContext();
 
-    context.Set(blackboard);
     context.Set(new InvalidOperationException());
 
     inputs.ForEach((i) => context.Input(i));
@@ -420,6 +414,7 @@ public partial class LogicBlockTest {
     context.Outputs.ShouldBe(outputs.Select(static t => t as object));
     context.Errors.ShouldBe(errors);
 
+    context.Set("c");
     context.Get<string>().ShouldBe("c");
     context.Get<InvalidOperationException>().ShouldNotBeNull();
 

@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Generator.Tests.TestCases {
+namespace Chickensoft.Introspection.Generator.Tests.TestCases {
   namespace TraditionalNamespace {
     public class A {
       public sealed class AA {

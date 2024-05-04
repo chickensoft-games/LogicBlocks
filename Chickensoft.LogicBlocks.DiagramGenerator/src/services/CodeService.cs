@@ -2,7 +2,6 @@ namespace Chickensoft.LogicBlocks.DiagramGenerator.Services;
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 
 /// <summary>
@@ -28,18 +27,6 @@ public interface ICodeService {
   /// <returns>The fully qualified name of the symbol.</returns>
   string GetNameFullyQualifiedWithoutGenerics(
     ITypeSymbol? symbol, string fallbackName
-  );
-
-  /// <summary>
-  /// Gets all nested types in a type that extend a given ancestor type.
-  /// </summary>
-  /// <param name="containingType">Type which contains nested types to search.
-  /// </param>
-  /// <param name="ancestorType">The ancestor the nested types must subclass
-  /// to be returned.</param>
-  IEnumerable<INamedTypeSymbol> GetNestedSubtypesExtending(
-    INamedTypeSymbol containingType,
-    INamedTypeSymbol ancestorType
   );
 
   /// <summary>
@@ -77,19 +64,6 @@ public class CodeService : ICodeService {
     SymbolDisplayFormat.FullyQualifiedFormat
       .WithGenericsOptions(SymbolDisplayGenericsOptions.None)
   ) ?? fallbackName;
-
-  public IEnumerable<INamedTypeSymbol> GetNestedSubtypesExtending(
-    INamedTypeSymbol containingType,
-    INamedTypeSymbol ancestorType
-  ) => GetAllNestedTypesRecursively(
-    containingType,
-    (type) =>
-      SymbolEqualityComparer.Default.Equals(type, ancestorType) ||
-      GetAllBaseTypes(type).Any(
-        (baseType) =>
-          SymbolEqualityComparer.Default.Equals(ancestorType, baseType)
-      )
-  );
 
   public IEnumerable<INamedTypeSymbol> GetAllNestedTypesRecursively(
     INamedTypeSymbol symbol,

@@ -8,7 +8,7 @@ using Shouldly;
 using Xunit;
 
 public partial class IntrospectiveTypeResolverTest {
-  [Introspective("person")]
+  [Meta("person")]
   public partial record Person {
     [Save("name")]
     public string Name { get; set; } = default!;
@@ -28,7 +28,7 @@ public partial class IntrospectiveTypeResolverTest {
     Cat,
   }
 
-  [Introspective("pet")]
+  [Meta("pet")]
   public abstract partial record Pet {
     [Save("name")]
     public string Name { get; set; } = "";
@@ -36,7 +36,7 @@ public partial class IntrospectiveTypeResolverTest {
     public PetType Type { get; set; }
   }
 
-  [Introspective("dog")]
+  [Meta("dog")]
   public partial record Dog : Pet {
     public Dog() {
       Type = PetType.Dog;
@@ -46,7 +46,7 @@ public partial class IntrospectiveTypeResolverTest {
     public int BarkVolume { get; set; }
   }
 
-  [Introspective("cat")]
+  [Meta("cat")]
   public partial record Cat : Pet {
     public Cat() {
       Type = PetType.Cat;

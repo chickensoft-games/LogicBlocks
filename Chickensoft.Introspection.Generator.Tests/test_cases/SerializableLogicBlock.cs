@@ -1,8 +1,9 @@
-namespace Chickensoft.LogicBlocks.Generator.Tests.TestCases;
+namespace Chickensoft.Introspection.Generator.Tests.TestCases;
 
 using Chickensoft.Introspection;
+using Chickensoft.LogicBlocks;
 
-[Introspective("serializable_logic_block")]
+[Meta("serializable_logic_block")]
 [LogicBlock(typeof(State), Diagram = true)]
 public partial class SerializableLogicBlock : LogicBlock<SerializableLogicBlock.State> {
   public override Transition GetInitialState() => To<State>();

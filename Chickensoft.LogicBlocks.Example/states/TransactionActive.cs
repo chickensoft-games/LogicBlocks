@@ -3,7 +3,7 @@ namespace Chickensoft.LogicBlocks.Example;
 using Chickensoft.Introspection;
 
 public partial class VendingMachine {
-  [Introspective("vending_machine_transaction_active")]
+  [Meta("vending_machine_transaction_active")]
   public abstract partial record TransactionActive : SelectionEditable,
   IGet<Input.PaymentReceived>, IGet<Input.TransactionTimedOut> {
     public TransactionActive() {

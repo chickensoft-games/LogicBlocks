@@ -23,16 +23,17 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
   // #pragma warning restore
 
   public void Initialize(IncrementalGeneratorInitializationContext context) {
-    var options = context.AnalyzerConfigOptionsProvider
-      .Select((options, _) => {
-        var disabled = options.GlobalOptions.TryGetValue(
-          $"build_property.{Constants.DISABLE_CSPROJ_PROP}", out var value
-        ) && value.ToLower() is "true";
-
-        return new GenerationOptions(
-          LogicBlocksDiagramGeneratorDisabled: disabled
-        );
-      });
+    // We don't output any static sources. If we did, this is how we'd do it.
+    // // Add post initialization sources
+    // // (source code that is always generated regardless)
+    // foreach (var postInitSource in Constants.PostInitializationSources) {
+    //   context.RegisterPostInitializationOutput(
+    //     (context) => context.AddSource(
+    //       hintName: $"{postInitSource.Key}.cs",
+    //       source: postInitSource.Value.Clean()
+    //     )
+    //   );
+    // }
 
     // If you need to debug the source generator, uncomment the following line
     // and use Visual Studio 2022 on Windows to attach to debugging next time
@@ -55,21 +56,22 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
 
     // --------------------------------------------------------------------- //
     // while (!System.Diagnostics.Debugger.IsAttached) {
-    //   Thread.Sleep(500);
+    //   Thread.Sleep(100);
     // }
     // System.Diagnostics.Debugger.Break();
     // --------------------------------------------------------------------- //
 
-    // Add post initialization sources
-    // (source code that is always generated regardless)
-    foreach (var postInitSource in Constants.PostInitializationSources) {
-      context.RegisterPostInitializationOutput(
-        (context) => context.AddSource(
-          hintName: $"{postInitSource.Key}.cs",
-          source: postInitSource.Value.Clean()
-        )
-      );
-    }
+    var options = context.AnalyzerConfigOptionsProvider
+
+      .Select((options, _) => {
+        var disabled = options.GlobalOptions.TryGetValue(
+          $"build_property.{Constants.DISABLE_CSPROJ_PROP}", out var value
+        ) && value.ToLower() is "true";
+
+        return new GenerationOptions(
+          LogicBlocksDiagramGeneratorDisabled: disabled
+        );
+      });
 
     var logicBlockCandidates = context.SyntaxProvider.CreateSyntaxProvider(
       predicate: static (SyntaxNode node, CancellationToken _) =>
@@ -468,33 +470,6 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
 
     if (isMultilineState) { lines.Add($"{Tab(t)}}}"); }
     return lines;
-  }
-
-  private Dictionary<string, LogicBlockSubclass> GetSubclassesById(
-    INamedTypeSymbol containerType, INamedTypeSymbol ancestorType
-  ) {
-    var subclasses = new Dictionary<string, LogicBlockSubclass>();
-    var typesToSearch = CodeService.GetNestedSubtypesExtending(
-        containerType, ancestorType
-      ).ToImmutableArray();
-    Log.Print(
-      $"Searching {typesToSearch.Length} types nested inside " +
-      $"{containerType.Name} for subclasses of {ancestorType.Name}"
-    );
-    foreach (var subtype in typesToSearch) {
-      Log.Print($"Finding subtype: {subtype.Name}");
-      var id = CodeService.GetNameFullyQualified(subtype, subtype.Name);
-      var baseType = CodeService.GetAllBaseTypes(subtype).FirstOrDefault() ??
-        ancestorType;
-      subclasses[id] = new LogicBlockSubclass(
-        Id: id,
-        Name: subtype.Name,
-        BaseId: CodeService.GetNameFullyQualifiedWithoutGenerics(
-          baseType, baseType.Name
-        )
-      );
-    }
-    return subclasses;
   }
 
   public LogicBlockGraphData GetStateGraphData(

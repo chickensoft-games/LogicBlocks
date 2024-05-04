@@ -8,36 +8,39 @@ using System;
 /// (referred to as a metatype) will be generated at compile-time by the
 /// introspection generator.
 /// </summary>
-[AttributeUsage(AttributeTargets.Class)]
-public sealed class IntrospectiveAttribute : Attribute {
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+public sealed class MetaAttribute : Attribute {
   /// <summary>
-  /// The identifier of the type. All metatypes require an identifier for
-  /// easy lookups. The identifier should be unique across all assemblies used
-  /// in your project.
+  /// Introspective type identifier string. The identifier should be unique
+  /// across all assemblies used in your project.
   /// </summary>
   public string? Id { get; }
 
   /// <summary>
-  /// Mixins applied to the type. Mixins are interfaces that are applied to the
-  /// type at build-time, allowing them to be looked up later.
+  /// Mixins applied to the type. Mixins are interfaces that extend
+  /// <see cref="IMixin{TMixin}" /> with a single handler method that are
+  /// applied to the type at build-time. Mixins and their handlers can be
+  /// looked up by the type itself at runtime, allowing mixins to be
+  /// dynamically invoked without the type having to know what mixins are
+  /// applied to it.
   /// </summary>
   public Type[] Mixins { get; }
 
   /// <summary>
-  /// <inheritdoc cref="IntrospectiveAttribute" path="/summary"/>
+  /// <inheritdoc cref="MetaAttribute" path="/summary"/>
   /// </summary>
   /// <param name="id"><inheritdoc cref="Id" path="/summary"/></param>
   /// <param name="mixins"><inheritdoc cref="Mixins" path="/summary"/></param>
-  public IntrospectiveAttribute(string id, params Type[] mixins) {
+  public MetaAttribute(string id, params Type[] mixins) {
     Id = id;
     Mixins = mixins;
   }
 
   /// <summary>
-  /// <inheritdoc cref="IntrospectiveAttribute" path="/summary"/>
+  /// <inheritdoc cref="MetaAttribute" path="/summary"/>
   /// </summary>
   /// <param name="mixins"><inheritdoc cref="Mixins" path="/summary"/></param>
-  public IntrospectiveAttribute(params Type[] mixins) {
+  public MetaAttribute(params Type[] mixins) {
     Id = null;
     Mixins = mixins;
   }

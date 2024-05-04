@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Generator.Tests.TestCases;
+namespace Chickensoft.Introspection.Generator.Tests.TestCases;
 
 using Chickensoft.Introspection;
 using Chickensoft.Serialization;
@@ -8,8 +8,13 @@ public interface IMyMixin : IMixin<IMyMixin> {
   void IMixin<IMyMixin>.Handler() { }
 }
 
+[Mixin]
+public interface IMySecondMixin : IMixin<IMySecondMixin> {
+  void IMixin<IMySecondMixin>.Handler() { }
+}
+
 public partial class MyContainerClass {
-  [Introspective("my_model", typeof(IMyMixin))]
+  [Meta("my_model", typeof(IMyMixin), typeof(IMySecondMixin))]
   public partial record MyModel {
     [Save("name")]
     public string Name { get; set; } = "";

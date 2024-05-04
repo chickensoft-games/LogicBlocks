@@ -60,11 +60,11 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
   /// <inheritdoc />
   public override bool CanConvert(Type typeToConvert) =>
     // We can only convert logic blocks that are also marked with the
-    // [Introspective] attribute to make them serializable.
+    // [Meta] attribute to make them serializable.
     Introspection.Types.Graph
       .GetDescendantSubtypes(typeof(LogicBlockBase))
       .Contains(typeToConvert) &&
-    Introspection.Types.Graph.IsIntrospectiveType(typeToConvert);
+    Introspection.Types.Graph.IsIdentifiableType(typeToConvert);
 
   /// <inheritdoc />
   public override object? Read(
@@ -199,7 +199,13 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
     writer.WriteStartObject();
     writer.WriteString(TypeDiscriminator, typeId);
 
-    var state = logicBlock.ValueAsPlainObject;
+    if (logicBlock.ValueAsObject is not { } state) {
+      throw new JsonException(
+        $"Logic block {type} has a null state because it has not been " +
+        "started. Please ensure you call `Start()` on the logic block."
+      );
+    }
+
     var stateType = state.GetType();
     var stateId = Introspection.Types.Graph.GetMetatype(stateType).Id;
 
@@ -214,9 +220,25 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
         Metatype = Introspection.Types.Graph.GetMetatype(type)
       }).OrderBy((pair) => pair.Metatype.Id);
 
+    var stateTypes = Introspection.Types.Graph
+      .GetDescendantSubtypes(type);
+
     foreach (var blackboardObjType in savedTypesWithMetatypes) {
       var blackboardObj =
         logicBlock._blackboard.GetObject(blackboardObjType.Type);
+
+      var isState = stateTypes.Contains(blackboardObjType.Type);
+
+      if (
+        LogicBlockBase.ReferenceStates.TryGetValue(
+          blackboardObjType.Type, out var referenceState
+        ) &&
+        LogicBlockBase.IsEquivalent(blackboardObj, referenceState)
+      ) {
+        // This blackboard object is a state. It has not diverged from the
+        // reference state, so we don't need to serialize it.
+        continue;
+      }
 
       writer.WritePropertyName(blackboardObjType.Metatype.Id);
 

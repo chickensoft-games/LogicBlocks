@@ -2,7 +2,7 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using Chickensoft.Introspection;
 
-[Introspective("greedy_logic")]
+[Meta("greedy_logic")]
 [LogicBlock(typeof(State))]
 public partial class GreedyLogic : LogicBlock<GreedyLogic.State> {
   public override Transition GetInitialState() => To<State.A>();
@@ -12,9 +12,9 @@ public partial class GreedyLogic : LogicBlock<GreedyLogic.State> {
     public readonly record struct GoToC;
   }
 
-  [Introspective("greedy_logic_state")]
+  [Meta("greedy_logic_state")]
   public abstract partial record State : StateLogic<State> {
-    [Introspective("greedy_logic_state_a")]
+    [Meta("greedy_logic_state_a")]
     public partial record A : State, IGet<Input.GoToB>, IGet<Input.GoToC> {
       public A() {
         OnAttach(() => {
@@ -27,9 +27,9 @@ public partial class GreedyLogic : LogicBlock<GreedyLogic.State> {
       public Transition On(Input.GoToC input) => To<C>();
     }
 
-    [Introspective("greedy_logic_state_b")]
+    [Meta("greedy_logic_state_b")]
     public partial record B : State { }
-    [Introspective("greedy_logic_state_c")]
+    [Meta("greedy_logic_state_c")]
     public partial record C : State { }
   }
 }

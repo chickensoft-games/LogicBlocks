@@ -9,7 +9,8 @@ using System.Text.Json.Serialization.Metadata;
 
 /// <summary>
 /// Introspective type resolver for use when serializing and deserializing
-/// type hierarchies that only contain types marked with the [Introspective]
+/// type hierarchies that only contain types marked with the
+/// <see cref="Introspection.MetaAttribute" />
 /// attribute.
 /// </summary>
 public interface IIntrospectiveTypeResolver : IJsonTypeInfoResolver;

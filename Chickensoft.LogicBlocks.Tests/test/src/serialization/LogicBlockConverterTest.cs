@@ -30,13 +30,13 @@ public partial class LogicBlockConverterTest {
     }
     """;
 
-  [Introspective("a")]
+  [Meta("a")]
   public partial record A {
     [Save("a_value")]
     public string AValue { get; set; } = "";
   }
 
-  [Introspective("b")]
+  [Meta("b")]
   public partial record B {
     [Save("b_value")]
     public string BValue { get; set; } = "";
@@ -45,6 +45,7 @@ public partial class LogicBlockConverterTest {
   [Fact]
   public void SerializesLogicBlock() {
     var logic = new SerializableLogicBlock();
+    logic.Start();
 
     logic.Save(() => new A { AValue = "a" });
     logic.Save(() => new B { BValue = "b" });
@@ -84,30 +85,16 @@ public partial class LogicBlockConverterTest {
 
     var json = JsonSerializer.Serialize(logic, options);
 
+    // States are only saved if they are not equivalent to the
+    // reference states cached for that logic block type. So, even
+    // though this state contains nested logic blocks, it is not serialized
+    // since logic blocks also implement equality checking.
     json.ShouldBe(/*lang=json,strict*/
       """
       {
         "$type": "serializable_parallel_logic_block",
         "state": "serializable_parallel_logic_block_state_parallel",
-        "blackboard": {
-          "serializable_parallel_logic_block_state_not_parallel": {},
-          "serializable_parallel_logic_block_state_parallel": {
-            "state_a": {
-              "$type": "serializable_logic_block",
-              "state": "serializable_logic_block_state",
-              "blackboard": {
-                "serializable_logic_block_state": {}
-              }
-            },
-            "state_b": {
-              "$type": "serializable_logic_block",
-              "state": "serializable_logic_block_state",
-              "blackboard": {
-                "serializable_logic_block_state": {}
-              }
-            }
-          }
-        }
+        "blackboard": {}
       }
       """,
       options: StringCompareShould.IgnoreLineEndings
@@ -350,6 +337,7 @@ public partial class LogicBlockConverterTest {
 
     // This logic block's start state is v1
     var logic = new OutdatedLogicBlock();
+    logic.Start();
     var json = JsonSerializer.Serialize(logic, options);
 
     var deserializedLogic =

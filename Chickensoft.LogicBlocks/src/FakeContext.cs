@@ -48,12 +48,32 @@ internal readonly struct FakeContext : IFakeContext {
 
   public FakeContext() { }
 
-  public TDataType Get<TDataType>() where TDataType : class =>
-    _blackboard.ContainsKey(typeof(TDataType))
-      ? (TDataType)_blackboard[typeof(TDataType)]
-      : throw new InvalidOperationException(
-        $"No value of type {typeof(TDataType)} exists in the blackboard."
-      );
+  public TDataType Get<TDataType>() where TDataType : class {
+    var type = typeof(TDataType);
+    if (_blackboard.TryGetValue(type, out var value)) {
+      return (TDataType)value;
+    }
+
+    // If we've been asked for a state and it happens to be an introspective
+    // type that we can make, we'll go ahead and make one since states aren't
+    // supposed to be mocked anyways (they should be treated as models when
+    // testing).
+    if (
+      Introspection.Types.Graph.IsConcrete(type) &&
+      Introspection.Types.Graph.IsIntrospectiveType(type) &&
+      Introspection.Types.Graph
+        .GetDescendantSubtypes(typeof(StateBase))
+        .Contains(type)
+    ) {
+      var state = Introspection.Types.Graph.ConcreteVisibleTypes[type]();
+      _blackboard[type] = state;
+      return (TDataType)state;
+    }
+
+    throw new InvalidOperationException(
+      $"No value of type {typeof(TDataType)} exists in the blackboard."
+    );
+  }
 
   public void Set<TDataType>(TDataType value) where TDataType : class =>
     _blackboard[typeof(TDataType)] = value;

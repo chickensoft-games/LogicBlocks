@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Generator.Tests.TestCases;
+namespace Chickensoft.Introspection.Generator.Tests.TestCases;
 
 using System;
 using System.Text;
@@ -10,7 +10,7 @@ using JSON = System.Text.Json;
 [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
 public class JunkAttribute : Attribute;
 
-[Introspective("my_type")]
+[Meta("my_type")]
 [Junk]
 [Junk]
 public partial class MyType {
@@ -40,7 +40,7 @@ public static partial class One {
   internal partial record struct Two {
     public partial interface IThree {
       public sealed partial record Four {
-        [Introspective("nested_type")]
+        [Meta("nested_type")]
         public sealed partial class NestedType {
           [Junk]
           [Junk]

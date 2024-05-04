@@ -2,6 +2,7 @@ namespace Chickensoft.LogicBlocks;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Chickensoft.Collections;
 using Chickensoft.Introspection;
@@ -154,7 +155,7 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
 
   #region LogicBlockBase
   /// <inheritdoc />
-  public override object ValueAsPlainObject => Value;
+  internal override object? ValueAsObject => _value;
 
   /// <inheritdoc />
   public override void RestoreState(object state) {
@@ -264,16 +265,9 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
   /// <param name="state">Next potential state.</param>
   /// <returns>True if the logic block can change to the given state, false
   /// otherwise.</returns>
-  protected virtual bool CanChangeState(TState state) {
-    if (
-      ReferenceEquals(_value, state) ||
-      EqualityComparer<TState>.Default.Equals(state, _value!)
-    ) {
-      // A state may always transition to itself or an equivalent state.
-      return false;
-    }
-    return true;
-  }
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  protected virtual bool CanChangeState(TState state) =>
+    !IsEquivalent(state, _value);
 
   /// <summary>
   /// Adds an error to the logic block. Call this from your states to
@@ -314,7 +308,7 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
 
   #region IReadOnlyBlackboard
   /// <inheritdoc />
-  public IEnumerable<Type> Types => _blackboard.Types;
+  public IReadOnlySet<Type> Types => _blackboard.Types;
 
   /// <inheritdoc />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -361,7 +355,7 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
 
   /// <inheritdoc cref="ISerializableBlackboard.Save{TData}(Func{TData})" />
   public void Save<TData>(Func<TData> factory)
-    where TData : class, IIntrospective => _blackboard.Save(factory);
+    where TData : class, IIdentifiable => _blackboard.Save(factory);
 
   /// <inheritdoc
   ///   cref="ISerializableBlackboard.SaveObject(Type, Func{object})" />
@@ -489,4 +483,49 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
 
     return ProcessInputs<int>();
   }
+
+  /// <summary>
+  /// Determines if two logic blocks are equivalent. Logic blocks are equivalent
+  /// if they are the same reference, or if each of their states and blackboards
+  /// are equivalent.
+  /// </summary>
+  /// <param name="obj">Other logic block.</param>
+  /// <returns>True if</returns>
+  public override bool Equals(object? obj) {
+    if (obj is not LogicBlockBase logic) { return false; }
+
+    if (GetType() != logic.GetType()) {
+      // Two different types of logic blocks are never equal.
+      return false;
+    }
+
+    // Ensure current states are equal.
+    if (!IsEquivalent(ValueAsObject, logic.ValueAsObject)) {
+      return false;
+    }
+
+    // Ensure blackboard entries are equal.
+    var types = _blackboard.Types;
+    var otherTypes = logic._blackboard.Types;
+
+    if (types.Count != otherTypes.Count) { return false; }
+
+    foreach (var type in types) {
+      if (!otherTypes.Contains(type)) { return false; }
+
+      var obj1 = _blackboard.GetObject(type);
+      var obj2 = logic._blackboard.GetObject(type);
+
+      if (IsEquivalent(obj1, obj2)) {
+        continue;
+      }
+
+      return false;
+    }
+
+    return true;
+  }
+
+  /// <inheritdoc />
+  public override int GetHashCode() => base.GetHashCode();
 }

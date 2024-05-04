@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.Serialization",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.Serialization.Tests", "Chickensoft.Serialization.Tests\Chickensoft.Serialization.Tests.csproj", "{02D21EBE-3714-471D-836A-6361C9E4B551}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.Introspection.Tests", "Chickensoft.Introspection.Tests\Chickensoft.Introspection.Tests.csproj", "{6E2EB438-9260-4FF9-84ED-F89BB1E42EF3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -84,5 +86,9 @@ Global
 		{02D21EBE-3714-471D-836A-6361C9E4B551}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{02D21EBE-3714-471D-836A-6361C9E4B551}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{02D21EBE-3714-471D-836A-6361C9E4B551}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E2EB438-9260-4FF9-84ED-F89BB1E42EF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E2EB438-9260-4FF9-84ED-F89BB1E42EF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E2EB438-9260-4FF9-84ED-F89BB1E42EF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E2EB438-9260-4FF9-84ED-F89BB1E42EF3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

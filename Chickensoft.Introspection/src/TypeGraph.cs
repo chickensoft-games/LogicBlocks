@@ -3,6 +3,7 @@ namespace Chickensoft.Introspection;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -25,10 +26,10 @@ internal class TypeGraph : ITypeGraph {
     new();
   private readonly ConcurrentDictionary<Type, HashSet<Type>> _typesByAncestor =
     new();
-  private readonly ConcurrentDictionary<Type, List<PropertyMetadata>>
-    _allPropertiesByType = new();
-  private readonly ConcurrentDictionary<Type, List<Attribute>> _allAttributesByType =
-    new();
+  private readonly ConcurrentDictionary<Type, IEnumerable<PropertyMetadata>>
+    _propertiesByType = new();
+  private readonly ConcurrentDictionary<Type, IDictionary<Type, Attribute[]>>
+    _attributesByType = new();
   private readonly ConcurrentDictionary<string, Type> _introspectiveTypesById =
     new();
   #endregion Caches
@@ -39,8 +40,8 @@ internal class TypeGraph : ITypeGraph {
     _metatypes.Clear();
     _typesByBaseType.Clear();
     _typesByAncestor.Clear();
-    _allPropertiesByType.Clear();
-    _allAttributesByType.Clear();
+    _propertiesByType.Clear();
+    _attributesByType.Clear();
     _introspectiveTypesById.Clear();
   }
 
@@ -63,6 +64,15 @@ internal class TypeGraph : ITypeGraph {
   public bool IsIntrospectiveType(Type type) => _metatypes.ContainsKey(type);
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  public bool IsIdentifiableType(Type type) =>
+    _metatypes.ContainsKey(type) &&
+    _metatypes[type].Attributes.ContainsKey(typeof(MetaAttribute)) &&
+    _metatypes[type].Attributes[typeof(MetaAttribute)].Length > 0 &&
+    _metatypes[type].Attributes[typeof(MetaAttribute)][0] is
+      MetaAttribute meta &&
+    !string.IsNullOrWhiteSpace(meta.Id);
+
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public bool HasIntrospectiveType(string id) =>
     _introspectiveTypesById.ContainsKey(id);
 
@@ -75,7 +85,7 @@ internal class TypeGraph : ITypeGraph {
     !Metatypes.TryGetValue(type, out var metatype)
       ? throw new KeyNotFoundException(
         $"Type {type} is not an introspective type. To make a type " +
-        $"introspective, add the [{nameof(IntrospectiveAttribute)}] " +
+        $"introspective, add the [{nameof(MetaAttribute)}] " +
         "to it so the introspection generator will generate a metatype " +
         "description of it."
       )
@@ -89,18 +99,29 @@ internal class TypeGraph : ITypeGraph {
     return _typesByAncestor[type];
   }
 
-  public IEnumerable<PropertyMetadata> GetProperties(Type type) =>
-    GetMetatypeAndBaseMetatypes(type)
+  public IEnumerable<PropertyMetadata> GetProperties(Type type) {
+    // Cache the properties for a type once computed.
+    if (!_propertiesByType.TryGetValue(type, out var properties)) {
+      _propertiesByType[type] = GetMetatypeAndBaseMetatypes(type)
       .SelectMany((t) => Metatypes[t].Properties)
       .Distinct();
+    }
+    return _propertiesByType[type];
+  }
 
-  public IDictionary<Type, Attribute[]> GetAttributes(Type type) =>
-    GetMetatypeAndBaseMetatypes(type)
-      .SelectMany((t) => Metatypes[t].Attributes)
-      .ToDictionary(
-        keySelector: (typeToAttr) => typeToAttr.Key,
-        elementSelector: (typeToAttr) => typeToAttr.Value
-      );
+  public IDictionary<Type, Attribute[]> GetAttributes(Type type) {
+    // Cache the attributes for a type once computed.
+    if (!_attributesByType.TryGetValue(type, out var attributes)) {
+      _attributesByType[type] = GetMetatypeAndBaseMetatypes(type)
+        .SelectMany((t) => Metatypes[t].Attributes)
+        .ToDictionary(
+          keySelector: (typeToAttr) => typeToAttr.Key,
+          elementSelector: (typeToAttr) => typeToAttr.Value
+        );
+    }
+    return _attributesByType[type];
+  }
+
   #endregion ITypeGraph
 
   #region Private Utilities
@@ -149,7 +170,18 @@ internal class TypeGraph : ITypeGraph {
 
       if (registry.Metatypes.ContainsKey(type)) {
         _metatypes[type] = registry.Metatypes[type];
-        _introspectiveTypesById[registry.Metatypes[type].Id] = type;
+
+        var id = registry.Metatypes[type].Id;
+
+        if (_introspectiveTypesById.ContainsKey(id)) {
+          throw new DuplicateNameException(
+            $"Cannot register introspective type `{type}` with id `{id}`. " +
+            "A different type with the same id has already been " +
+            $"registered: `{_introspectiveTypesById[id]}`."
+          );
+        }
+
+        _introspectiveTypesById[id] = type;
       }
     }
   }

@@ -487,3 +487,6 @@ dotnet_diagnostic.RCS1074.severity = none
 dotnet_diagnostic.RCS1238.severity = none
 # Leave me alone about equality comparers
 dotnet_diagnostic.RCS1241.severity = none
+# Leave me alone about "useless" overrides.
+dotnet_diagnostic.RCS1132.severity = none
+

@@ -8,7 +8,7 @@ public enum SecondaryState {
   Bopped
 }
 
-[Introspective("test_machine")]
+[Meta("test_machine")]
 [LogicBlock(typeof(State), Diagram = true)]
 public partial class TestMachine : LogicBlock<TestMachine.State> {
   public static class Input {
@@ -16,7 +16,7 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
     public readonly record struct Deactivate();
   }
 
-  [Introspective("test_machine_state")]
+  [Meta("test_machine_state")]
   public abstract partial record State : StateLogic<State>, IGet<Input.Activate> {
     public Transition On(Input.Activate input) =>
       input.Secondary switch {
@@ -25,7 +25,7 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
         _ => throw new ArgumentException("Unrecognized secondary state.")
       };
 
-    [Introspective("test_machine_state_activated")]
+    [Meta("test_machine_state_activated")]
     public abstract partial record Activated : State, IGet<Input.Deactivate> {
       public Activated() {
         this.OnEnter(() => Output(new Output.Activated()));
@@ -34,7 +34,7 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
 
       public Transition On(Input.Deactivate input) => To<Deactivated>();
 
-      [Introspective("test_machine_state_activated_blooped")]
+      [Meta("test_machine_state_activated_blooped")]
       public partial record Blooped : Activated {
         public Blooped() {
           this.OnEnter(() => Output(new Output.Blooped()));
@@ -42,7 +42,7 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
         }
       }
 
-      [Introspective("test_machine_state_activated_bopped")]
+      [Meta("test_machine_state_activated_bopped")]
       public partial record Bopped : Activated {
         public Bopped() {
           this.OnEnter(() => Output(new Output.Bopped()));
@@ -51,7 +51,7 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
       }
     }
 
-    [Introspective("test_machine_state_deactivated")]
+    [Meta("test_machine_state_deactivated")]
     public partial record Deactivated : State {
       public Deactivated() {
         this.OnEnter(() => Output(new Output.Deactivated()));

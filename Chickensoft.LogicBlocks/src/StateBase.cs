@@ -25,6 +25,7 @@ public abstract record StateBase {
   /// <returns>Fake logic block context.</returns>
   public IFakeContext CreateFakeContext() {
     if (InternalState.ContextAdapter.Context is FakeContext fakeContext) {
+      fakeContext.Reset();
       return fakeContext;
     }
 

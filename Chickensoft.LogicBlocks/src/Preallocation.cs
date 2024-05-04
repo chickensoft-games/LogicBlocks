@@ -45,11 +45,11 @@ public abstract partial class LogicBlock<TState> {
 
     var subtypes = Graph.GetDescendantSubtypes(baseStateType);
 
-    var stateTypesThatAreNotIntrospective =
+    var stateTypesNeedingAttention =
       new HashSet<Type>(subtypes.Count + 1);
 
     if (!Graph.IsIntrospectiveType(baseStateType)) {
-      stateTypesThatAreNotIntrospective.Add(baseStateType);
+      stateTypesNeedingAttention.Add(baseStateType);
     }
 
     if (Graph.IsConcrete(baseStateType)) {
@@ -62,7 +62,7 @@ public abstract partial class LogicBlock<TState> {
 
     foreach (var stateType in subtypes) {
       if (!Graph.IsIntrospectiveType(stateType)) {
-        stateTypesThatAreNotIntrospective.Add(stateType);
+        stateTypesNeedingAttention.Add(stateType);
         continue;
       }
 
@@ -82,6 +82,12 @@ public abstract partial class LogicBlock<TState> {
         );
       }
 
+      if (!ReferenceStates.ContainsKey(stateType)) {
+        ReferenceStates.TryAdd(
+          stateType, Activator.CreateInstance(stateType)
+        );
+      }
+
       logic.SaveObject(
         stateType, () => Activator.CreateInstance(stateType)
       );
@@ -90,16 +96,17 @@ public abstract partial class LogicBlock<TState> {
       logic.GetObject(stateType);
     }
 
-    if (stateTypesThatAreNotIntrospective.Count == 0) { return; }
+    if (stateTypesNeedingAttention.Count == 0) { return; }
 
     var statesNeedingAttention = string.Join(
-      ", ", stateTypesThatAreNotIntrospective
+      ", ", stateTypesNeedingAttention
     );
 
     throw new LogicBlockException(
-      $"Introspective LogicBlock `{type}` has states that are missing the " +
-      $"[{nameof(IntrospectiveAttribute)}] attribute and cannot be " +
-      $"preallocated: {statesNeedingAttention}."
+      $"Introspective LogicBlock `{type}` has states that are missing an " +
+      "explicit identifier. Please ensure the following types have the " +
+      $"[{nameof(MetaAttribute)}] and supply an explicit string id as the " +
+      $"first argument to the attribute: {statesNeedingAttention}."
     );
   }
 }

@@ -1,5 +1,9 @@
 namespace Chickensoft.LogicBlocks;
 
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Chickensoft.Serialization;
 
 /// <summary>
@@ -10,10 +14,18 @@ using Chickensoft.Serialization;
 /// </summary>
 public abstract class LogicBlockBase {
   /// <summary>
-  /// Current state of the logic block, if any. Logic blocks that haven't been
-  /// started yet will not have a state.
+  /// Current state of the logic block, if any. Reading this will not start
+  /// the logic block and can return null.
   /// </summary>
-  public abstract object ValueAsPlainObject { get; }
+  internal abstract object? ValueAsObject { get; }
+
+  /// <summary>
+  /// Used by the logic blocks serializer to see if a given logic block state
+  /// has diverged from an unaltered copy of the state that's stored here —
+  /// one reference state for every logic block state.
+  /// </summary>
+  internal static ConcurrentDictionary<Type, object> ReferenceStates { get; } =
+    new();
 
   /// <summary>
   /// Restore the state from a given object. Only works if the current
@@ -25,4 +37,23 @@ public abstract class LogicBlockBase {
 
   /// <summary>Internal blackboard of the logic block.</summary>
   internal readonly SerializableBlackboard _blackboard = new();
+
+  /// <summary>
+  /// Determines if two logic block states are equivalent. Logic block states
+  /// are equivalent if they are the same reference or are equal according to
+  /// the default equality comparer.
+  /// </summary>
+  /// <param name="a">First state.</param>
+  /// <param name="b">Second state.</param>
+  /// <returns>True if the states are equivalent.</returns>
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  public static bool IsEquivalent(object? a, object? b) =>
+    ReferenceEquals(a, b) || (
+      a is null &&
+      b is null
+    ) || (
+      a is not null &&
+      b is not null &&
+      EqualityComparer<object>.Default.Equals(a, b)
+    );
 }

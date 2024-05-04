@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Tests.Types;
+namespace Chickensoft.Introspection.Generator.Tests.Types;
 
 using System;
 using System.Collections.Generic;

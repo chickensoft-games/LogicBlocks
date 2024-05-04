@@ -49,9 +49,19 @@ public interface ITypeGraph : ITypeRegistry {
   bool IsIntrospectiveType(Type type);
 
   /// <summary>
+  /// Check if a type is an introspective type that has a generated metatype
+  /// class associated with it that has been given an explicit, user-defined
+  /// id. Use <see cref="GetMetatype(Type)" /> to get the
+  /// associated metatype information if this returns true.
+  /// </summary>
+  /// <param name="type">Type to examine.</param>
+  /// <returns>True if the type is an identifiable type.</returns>
+  bool IsIdentifiableType(Type type);
+
+  /// <summary>
   /// Check if an introspective type exists for the given id. The id for an
   /// introspective type is supplied to the introspection generator via the
-  /// <see cref="IntrospectiveAttribute" />.
+  /// <see cref="MetaAttribute" />.
   /// </summary>
   /// <param name="id">Potential introspective type id.</param>
   /// <returns>True if an introspective type exists with this id.</returns>

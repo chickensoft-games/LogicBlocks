@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using Chickensoft.Introspection;
 using Chickensoft.Serialization;
 
-[Introspective("vending_machine")]
+[Meta("vending_machine")]
 [LogicBlock(typeof(State), Diagram = true)]
 public partial class VendingMachine : LogicBlock<VendingMachine.State> {
   // Data shared between states
-  [Introspective("vending_machine_data")]
+  [Meta("vending_machine_data")]
   public partial record Data {
     [Save("type")]
     public ItemType Type { get; set; }

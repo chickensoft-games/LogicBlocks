@@ -1,6 +1,6 @@
-namespace Chickensoft.LogicBlocks.Generator.Tests;
+namespace Chickensoft.Introspection.Generator.Tests;
 
-using Chickensoft.Introspection;
+using Chickensoft.LogicBlocks;
 using Shouldly;
 using Xunit;
 
@@ -14,7 +14,7 @@ public class LogicBlockIdentifierTest {
 
   [Fact]
   public void IdentifiesLogicBlock() {
-    var descendants = Types.Graph.GetDescendantSubtypes(typeof(LogicBlockBase));
+    var descendants = Introspection.Types.Graph.GetDescendantSubtypes(typeof(LogicBlockBase));
 
     // Make sure our logic block is identified as a descendant of the base type
     // for all logic blocks.

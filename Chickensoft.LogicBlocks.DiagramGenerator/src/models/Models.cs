@@ -137,5 +137,3 @@ public static class OutputContexts {
   public static IOutputContext Method(string displayName) =>
     new OutputMethodContext(displayName);
 }
-
-public record OutputEntry(IOutputContext OutputContext, string OutputId);

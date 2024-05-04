@@ -3,7 +3,7 @@ namespace Chickensoft.LogicBlocks.Example;
 using Chickensoft.Introspection;
 
 public partial class VendingMachine {
-  [Introspective("vending_machine_idle")]
+  [Meta("vending_machine_idle")]
   public partial record Idle : SelectionEditable, IGet<Input.PaymentReceived> {
     public Idle() {
       this.OnEnter(() => Output(new Output.ClearTransactionTimeOutTimer()));
