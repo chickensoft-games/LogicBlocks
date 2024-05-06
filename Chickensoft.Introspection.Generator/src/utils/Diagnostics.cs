@@ -2,7 +2,7 @@ namespace Chickensoft.Introspection.Generator.Utils;
 
 using System.Collections.Generic;
 using System.Linq;
-using Chickensoft.Introspection.Generator.Types.Models;
+using Chickensoft.Introspection.Generator.Models;
 using Microsoft.CodeAnalysis;
 
 public static class Diagnostics {

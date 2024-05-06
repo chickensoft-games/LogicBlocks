@@ -11,6 +11,9 @@
     <LangVersion>preview</LangVersion>
     <DebugType>portable</DebugType>
 
+    <!-- Disable JSON Reflection. We don't want any help. -->
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+
     <!-- To show generated files -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>.generated</CompilerGeneratedFilesOutputPath>

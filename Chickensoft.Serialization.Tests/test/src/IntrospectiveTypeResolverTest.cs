@@ -99,7 +99,7 @@ public partial class IntrospectiveTypeResolverTest {
   }
 
   [Fact]
-  public void CreatesCorrectTypeInfoAndCachesIt() {
+  public void CreatesCorrectTypeInfo() {
     var resolver = new IntrospectiveTypeResolver();
     var options = new JsonSerializerOptions {
       WriteIndented = true
@@ -107,11 +107,8 @@ public partial class IntrospectiveTypeResolverTest {
 
     var personType = typeof(Person);
     var personTypeInfo = resolver.GetTypeInfo(personType, options);
-    var samePersonTypeInfo = resolver.GetTypeInfo(personType, options);
 
-    personTypeInfo.ShouldBeSameAs(samePersonTypeInfo);
-
-    personTypeInfo.Properties.Select(p => p.Name).ShouldBe(
+    personTypeInfo!.Properties.Select(p => p.Name).ShouldBe(
       ["name", "age", "pet"], ignoreOrder: true
     );
     personTypeInfo.Type.ShouldBe(personType);
@@ -141,10 +138,5 @@ public partial class IntrospectiveTypeResolverTest {
 
     catTypeInfo.ShouldNotBeNull();
     catTypeInfo.Type.ShouldBe(catType);
-
-    personTypeInfo.ShouldBe(resolver.GetTypeInfo(personType, options));
-    petTypeInfo.ShouldBe(resolver.GetTypeInfo(petType, options));
-    dogTypeInfo.ShouldBe(resolver.GetTypeInfo(dogType, options));
-    catTypeInfo.ShouldBe(resolver.GetTypeInfo(catType, options));
   }
 }

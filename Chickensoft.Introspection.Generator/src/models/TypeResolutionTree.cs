@@ -1,4 +1,4 @@
-namespace Chickensoft.Introspection.Generator.Types.Models;
+namespace Chickensoft.Introspection.Generator.Models;
 
 using System;
 using System.Collections.Generic;

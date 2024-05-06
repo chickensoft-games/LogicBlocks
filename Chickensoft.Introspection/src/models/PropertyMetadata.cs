@@ -7,18 +7,18 @@ using System.Collections.Generic;
 /// Represents property metadata on an introspective type.
 /// </summary>
 /// <param name="Name">Property name.</param>
-/// <param name="Type">Property type.</param>
 /// <param name="Getter">Getter function.</param>
 /// <param name="Setter">Setter function.</param>
-/// <param name="GenericTypeGetter">Function which invokes the provided
-/// <see cref="ITypeReceiver" /> with the generic type of the property.</param>
-/// <param name="AttributesByType">Map of attribute types to attribute
+/// <param name="GenericType">If the property's type is a closed constructed
+/// generic type, this will be the root node of a generic node tree that
+/// provides access to the individual types comprising the closed constructed
+/// type.</param>
+/// <param name="Attributes">Map of attribute types to attribute
 /// instances.</param>
 public sealed record PropertyMetadata(
   string Name,
-  Type Type,
   Func<object, object?> Getter,
   Action<object, object?>? Setter,
-  Action<ITypeReceiver> GenericTypeGetter,
-  Dictionary<Type, Attribute[]> AttributesByType
+  GenericType GenericType,
+  Dictionary<Type, Attribute[]> Attributes
 );

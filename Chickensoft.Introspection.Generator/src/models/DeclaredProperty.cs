@@ -1,4 +1,4 @@
-namespace Chickensoft.Introspection.Generator.Types.Models;
+namespace Chickensoft.Introspection.Generator.Models;
 
 using System.Collections.Immutable;
 
@@ -6,14 +6,14 @@ using System.Collections.Immutable;
 /// Represents a property on a metatype. Properties are opt-in and persisted.
 /// </summary>
 /// <param name="Name">Name of the property.</param>
-/// <param name="Type">Type of the property.</param>
 /// <param name="HasSetter">True if the property has a setter.</param>
 /// <param name="IsNullable">True if the property is nullable.</param>
+/// <param name="GenericType">Type of the property.</param>
 /// <param name="Attributes">Attributes applied to the property.</param>
 public record DeclaredProperty(
   string Name,
-  string Type,
   bool HasSetter,
   bool IsNullable,
+  GenericTypeNode GenericType,
   ImmutableArray<DeclaredAttribute> Attributes
 );

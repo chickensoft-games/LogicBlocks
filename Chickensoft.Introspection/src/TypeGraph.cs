@@ -27,9 +27,9 @@ internal class TypeGraph : ITypeGraph {
   private readonly ConcurrentDictionary<Type, HashSet<Type>> _typesByAncestor =
     new();
   private readonly ConcurrentDictionary<Type, IEnumerable<PropertyMetadata>>
-    _propertiesByType = new();
+    _properties = new();
   private readonly ConcurrentDictionary<Type, IDictionary<Type, Attribute[]>>
-    _attributesByType = new();
+    _attributes = new();
   private readonly ConcurrentDictionary<string, Type> _introspectiveTypesById =
     new();
   #endregion Caches
@@ -40,8 +40,8 @@ internal class TypeGraph : ITypeGraph {
     _metatypes.Clear();
     _typesByBaseType.Clear();
     _typesByAncestor.Clear();
-    _propertiesByType.Clear();
-    _attributesByType.Clear();
+    _properties.Clear();
+    _attributes.Clear();
     _introspectiveTypesById.Clear();
   }
 
@@ -101,25 +101,25 @@ internal class TypeGraph : ITypeGraph {
 
   public IEnumerable<PropertyMetadata> GetProperties(Type type) {
     // Cache the properties for a type once computed.
-    if (!_propertiesByType.TryGetValue(type, out var properties)) {
-      _propertiesByType[type] = GetMetatypeAndBaseMetatypes(type)
+    if (!_properties.TryGetValue(type, out var properties)) {
+      _properties[type] = GetMetatypeAndBaseMetatypes(type)
       .SelectMany((t) => Metatypes[t].Properties)
       .Distinct();
     }
-    return _propertiesByType[type];
+    return _properties[type];
   }
 
   public IDictionary<Type, Attribute[]> GetAttributes(Type type) {
     // Cache the attributes for a type once computed.
-    if (!_attributesByType.TryGetValue(type, out var attributes)) {
-      _attributesByType[type] = GetMetatypeAndBaseMetatypes(type)
+    if (!_attributes.TryGetValue(type, out var attributes)) {
+      _attributes[type] = GetMetatypeAndBaseMetatypes(type)
         .SelectMany((t) => Metatypes[t].Attributes)
         .ToDictionary(
           keySelector: (typeToAttr) => typeToAttr.Key,
           elementSelector: (typeToAttr) => typeToAttr.Value
         );
     }
-    return _attributesByType[type];
+    return _attributes[type];
   }
 
   #endregion ITypeGraph

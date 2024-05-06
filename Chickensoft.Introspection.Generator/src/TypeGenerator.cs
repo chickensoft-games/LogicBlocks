@@ -7,7 +7,7 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using Chickensoft.Introspection.Generator.Types.Models;
+using Chickensoft.Introspection.Generator.Models;
 using Chickensoft.Introspection.Generator.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -418,15 +418,16 @@ public class TypeGenerator : IIncrementalGenerator {
 
     var setter = property.HasSetter
       ? $"(object obj, object? value) => (({type.Reference.Name})obj)" +
-        $".{property.Name} = ({property.Type}){propertyValue}"
+        $".{property.Name} = ({property.GenericType.ClosedType}){propertyValue}"
       : "(object obj, object? _) => { }";
 
     code.WriteLine($"Name: \"{property.Name}\",");
-    code.WriteLine($"Type: typeof({property.Type}),");
     code.WriteLine($"Getter: (object obj) => (({type.Reference.Name})obj).{property.Name},");
     code.WriteLine($"Setter: {setter},");
-    code.WriteLine($"GenericTypeGetter: (ITypeReceiver receiver) => receiver.Receive<{property.Type}>(),");
-    code.WriteLine("AttributesByType: new System.Collections.Generic.Dictionary<System.Type, System.Attribute[]>() {");
+    code.Write("GenericType: ");
+    property.GenericType.Write(code);
+    code.WriteLine(",");
+    code.WriteLine("Attributes: new System.Collections.Generic.Dictionary<System.Type, System.Attribute[]>() {");
 
     GenerateAttributeMapping(property.Attributes, code);
 
@@ -853,14 +854,24 @@ public class TypeGenerator : IIncrementalGenerator {
 
       var isNullable =
         property.Type is NullableTypeSyntax ||
-        (property.Type is GenericNameSyntax generic && generic.Identifier.ValueText == "Nullable");
+        (
+          property.Type is GenericNameSyntax generic &&
+          generic.Identifier.ValueText == "Nullable"
+        );
+
+      var genericType = property.Type is GenericNameSyntax genericSyntax
+        ? GenericTypeNode.Create(genericSyntax)
+        : new GenericTypeNode(
+          Type: property.Type.NormalizeWhitespace().ToString(),
+          Children: ImmutableArray<GenericTypeNode>.Empty
+        );
 
       properties.Add(
         new DeclaredProperty(
           Name: property.Identifier.ValueText,
-          Type: property.Type.NormalizeWhitespace().ToString(),
           HasSetter: hasSetter,
           IsNullable: isNullable,
+          GenericType: genericType,
           Attributes: propertyAttributes
         )
       );

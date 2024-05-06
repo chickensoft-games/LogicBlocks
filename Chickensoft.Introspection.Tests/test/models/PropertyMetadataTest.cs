@@ -10,11 +10,10 @@ public class PropertyMetadataTest {
   public void Initializes() {
     var property = new PropertyMetadata(
       Name: "Name",
-      Type: typeof(string),
       Getter: _ => "Value",
       Setter: (_, _) => { },
-      GenericTypeGetter: _ => { },
-      AttributesByType: new Dictionary<Type, Attribute[]>()
+      GenericType: new GenericType(typeof(string), typeof(string), [], _ => { }, _ => { }),
+      Attributes: new Dictionary<Type, Attribute[]>()
     );
 
     property.ShouldBeOfType<PropertyMetadata>();
