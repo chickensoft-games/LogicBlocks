@@ -210,7 +210,7 @@ public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
     if (genericType.OpenType == typeof(List<>)) {
       _collections[genericType.ClosedType] = (options) => {
         var listInfoCreator = new ListInfoCreator(options);
-        genericType.GenericTypeGetter(listInfoCreator);
+        genericType.Arguments[0].GenericTypeGetter(listInfoCreator);
         var typeInfo = listInfoCreator.TypeInfo;
         typeInfo.OriginatingResolver = resolver;
         return typeInfo;
@@ -221,7 +221,7 @@ public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
     else if (genericType.OpenType == typeof(HashSet<>)) {
       _collections[genericType.ClosedType] = (options) => {
         var hashSetInfoCreator = new HashSetInfoCreator(options);
-        genericType.GenericTypeGetter(hashSetInfoCreator);
+        genericType.Arguments[0].GenericTypeGetter(hashSetInfoCreator);
         var typeInfo = hashSetInfoCreator.TypeInfo;
         typeInfo.OriginatingResolver = resolver;
         return typeInfo;
