@@ -34,4 +34,11 @@ public interface IMetatype {
   /// Map of mixin handler invocation functions by mixin type.
   /// </summary>
   IReadOnlyDictionary<Type, Action<object>> MixinHandlers { get; }
+
+  /// <summary>
+  /// Calls the type receiver's <see cref="ITypeReceiver.Receive{T}"/> method
+  /// with the generic type as the argument.
+  /// </summary>
+  /// <param name="receiver">Generic type argument receiver.</param>
+  void GetGenericType(ITypeReceiver receiver);
 }

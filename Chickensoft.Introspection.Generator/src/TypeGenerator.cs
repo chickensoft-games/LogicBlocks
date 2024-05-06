@@ -331,6 +331,8 @@ public class TypeGenerator : IIncrementalGenerator {
     GenerateMixins(type, code);
     code.WriteLine();
     GenerateMixinHandlers(type, code);
+    code.WriteLine();
+    GenerateGetGenericType(type, code);
   }
 
   public static void GenerateMixins(
@@ -367,6 +369,15 @@ public class TypeGenerator : IIncrementalGenerator {
     code.WriteLine("};");
     code.WriteLine();
   }
+
+  public static void GenerateGetGenericType(
+    DeclaredType type, IndentedTextWriter code
+  ) => code.WriteLine(
+      "public void GetGenericType(Chickensoft.Introspection.ITypeReceiver receiver) => " +
+      "receiver.Receive<" +
+      $"{type.Reference.NameWithGenerics}" +
+      ">();"
+    );
 
   public static void GenerateMetatypeId(string id, IndentedTextWriter code) =>
     code.WriteLine($"public string Id => {id};");
