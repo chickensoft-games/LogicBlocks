@@ -26,12 +26,14 @@ public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
   public const string TYPE_DISCRIMINATOR = "$type";
 
   // Stores type info factories for introspective types as they are requested.
-  private readonly Dictionary<Type, Func<JsonSerializerOptions, JsonTypeInfo>>
-    _introspectiveTypes = new();
+  private static readonly Dictionary<
+    Type, Func<JsonSerializerOptions, JsonTypeInfo>
+  > _introspectiveTypes = new();
 
   // Stores collection type info factories as they are requested.
-  private readonly Dictionary<Type, Func<JsonSerializerOptions, JsonTypeInfo>>
-    _collections = new();
+  private static readonly Dictionary<
+    Type, Func<JsonSerializerOptions, JsonTypeInfo>
+  > _collections = new();
 
   private static readonly Dictionary<
     Type, Func<JsonSerializerOptions, JsonTypeInfo>> _builtInTypes = new() {
@@ -157,13 +159,6 @@ public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
         )
     };
 
-  [ThreadStatic]
-  private static readonly ListInfoCreator _listInfoCreator = new();
-  [ThreadStatic]
-  private static readonly HashSetInfoCreator _hashSetInfoCreator = new();
-  [ThreadStatic]
-  private static readonly DictionaryInfoCreator _dictionaryInfoCreator = new();
-
   /// <inheritdoc />
   public JsonTypeInfo? GetTypeInfo(Type type, JsonSerializerOptions options) {
     if (!Types.Graph.IsIntrospectiveType(type)) {
@@ -184,14 +179,131 @@ public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
     }
 
     typeInfoFactory = (JsonSerializerOptions options) => {
+      var introspectiveTypeInfoCreator = new IntrospectiveTypeInfoCreator(
+        options, this, type
+      );
+
       var metatype = Types.Graph.GetMetatype(type);
 
-      var typeInfo = JsonTypeInfo.CreateJsonTypeInfo(type, options);
-      var derivedTypes = Types.Graph.GetSubtypes(type);
+      metatype.GetGenericType(introspectiveTypeInfoCreator);
+
+      return introspectiveTypeInfoCreator.TypeInfo;
+    };
+
+    // Cache type info for future use.
+    _introspectiveTypes[type] = typeInfoFactory;
+
+    return typeInfoFactory(options);
+  }
+
+  // Recursively identify collection types described by the introspection data
+  // for a generic member type.
+  private static void IdentifyCollectionTypes(
+    IJsonTypeInfoResolver resolver,
+    GenericType genericType,
+    JsonSerializerOptions options
+  ) {
+    if (_collections.ContainsKey(genericType.ClosedType)) {
+      return;
+    }
+
+    if (genericType.OpenType == typeof(List<>)) {
+      _collections[genericType.ClosedType] = (options) => {
+        var listInfoCreator = new ListInfoCreator(options);
+        genericType.GenericTypeGetter(listInfoCreator);
+        var typeInfo = listInfoCreator.TypeInfo;
+        typeInfo.OriginatingResolver = resolver;
+        return typeInfo;
+      };
+
+      IdentifyCollectionTypes(resolver, genericType.Arguments[0], options);
+    }
+    else if (genericType.OpenType == typeof(HashSet<>)) {
+      _collections[genericType.ClosedType] = (options) => {
+        var hashSetInfoCreator = new HashSetInfoCreator(options);
+        genericType.GenericTypeGetter(hashSetInfoCreator);
+        var typeInfo = hashSetInfoCreator.TypeInfo;
+        typeInfo.OriginatingResolver = resolver;
+        return typeInfo;
+      };
+
+      IdentifyCollectionTypes(resolver, genericType.Arguments[0], options);
+    }
+    else if (genericType.OpenType == typeof(Dictionary<,>)) {
+      _collections[genericType.ClosedType] = (options) => {
+        var dictionaryInfoCreator = new DictionaryInfoCreator(options);
+        genericType.GenericTypeGetter2!(dictionaryInfoCreator);
+        var typeInfo = dictionaryInfoCreator.TypeInfo;
+        typeInfo.OriginatingResolver = resolver;
+        return typeInfo;
+      };
+
+      IdentifyCollectionTypes(resolver, genericType.Arguments[0], options);
+      IdentifyCollectionTypes(resolver, genericType.Arguments[1], options);
+    }
+  }
+
+  private class IntrospectiveTypeInfoCreator : ITypeReceiver {
+    public JsonSerializerOptions Options { get; }
+    public IJsonTypeInfoResolver Resolver { get; }
+    public Type Type { get; }
+    public JsonTypeInfo TypeInfo { get; private set; } = default!;
+
+    public IntrospectiveTypeInfoCreator(
+      JsonSerializerOptions options,
+      IJsonTypeInfoResolver resolver,
+      Type type
+    ) {
+      Options = options;
+      Resolver = resolver;
+      Type = type;
+    }
+
+    public void Receive<T>() {
+      // Converters handle object creation, so we will only register a factory
+      // if there are no converters that can handle the type.
+      var possibleConverter = Options.Converters.FirstOrDefault(
+        c => c.CanConvert(Type)
+      );
+
+      if (possibleConverter is { } converter) {
+        TypeInfo = JsonMetadataServices.CreateValueInfo<T>(Options, converter);
+        return;
+      }
+
+      var objectInfo = new JsonObjectInfoValues<T>() {
+        ObjectCreator = null,
+        ObjectWithParameterizedConstructorCreator = null,
+        ConstructorParameterMetadataInitializer = null,
+        SerializeHandler = null,
+        PropertyMetadataInitializer = _ => Types.Graph
+          .GetProperties(Type)
+          .Select(property => {
+            var propertyInfoCreator = new PropertyInfoCreator(
+              Options, Resolver, Type, property
+            );
+
+            property.GenericType.GenericTypeGetter(propertyInfoCreator);
+
+            return propertyInfoCreator.PropertyInfo;
+          })
+          .ToArray()
+      };
+
+#pragma warning disable CS8714 // non-applicable nullability warnings
+      TypeInfo = JsonMetadataServices.CreateObjectInfo(
+        Options, objectInfo
+      );
+#pragma warning restore CS8714
+
+      TypeInfo.NumberHandling = null;
+      TypeInfo.OriginatingResolver = Resolver;
+
+      var derivedTypes = Types.Graph.GetSubtypes(Type);
 
       if (derivedTypes.Count > 0) {
         // Automatically register the derived types for polymorphic serialization.
-        var polymorphismOptions = typeInfo.PolymorphismOptions ??= new();
+        var polymorphismOptions = TypeInfo.PolymorphismOptions ??= new();
 
         polymorphismOptions.UnknownDerivedTypeHandling =
           JsonUnknownDerivedTypeHandling.FailSerialization;
@@ -207,113 +319,79 @@ public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
         }
       }
 
-      // Converters handle object creation, so we will only register a factory
-      // if there are no converters that can handle the type.
-      var hasConverter = options.Converters.Any(
-        c => c.CanConvert(type)
-      );
-
-      // If the type is concrete and doesn't have a converter, we need to
-      // register a factory so that the type can be created during
-      // deserialization.
-      if (!hasConverter && Types.Graph.IsConcrete(type)) {
-        typeInfo.CreateObject =
-          Types.Graph.ConcreteVisibleTypes[type];
+      if (Types.Graph.IsConcrete(Type)) {
+        // If the type is concrete and doesn't have a converter, we need to
+        // register a factory so that the type can be created during
+        // deserialization.
+        TypeInfo.CreateObject =
+          () => (T)Types.Graph.ConcreteVisibleTypes[Type]();
       }
-
-      // Add properties with the [Save] attribute.
-      AddProperties(typeInfo, options);
-
-      return typeInfo;
-    };
-
-    // Cache type info for future use.
-    _introspectiveTypes[type] = typeInfoFactory;
-
-    return typeInfoFactory(options);
+    }
   }
 
-  private void AddProperties(
-    JsonTypeInfo typeInfo,
-    JsonSerializerOptions options
-  ) {
-    foreach (
-      var property in Types.Graph.GetProperties(typeInfo.Type)
+  private class PropertyInfoCreator : ITypeReceiver {
+    public JsonSerializerOptions Options { get; }
+    public IJsonTypeInfoResolver Resolver { get; }
+    public Type DeclaringType { get; }
+    public PropertyMetadata Property { get; }
+    public JsonPropertyInfo PropertyInfo { get; private set; } = default!;
+
+    public PropertyInfoCreator(
+      JsonSerializerOptions options,
+      IJsonTypeInfoResolver resolver,
+      Type declaringType,
+      PropertyMetadata property
     ) {
+      Options = options;
+      Resolver = resolver;
+      DeclaringType = declaringType;
+      Property = property;
+    }
+
+    public void Receive<T>() {
       if (
-        !property.Attributes.TryGetValue(
+        !Property.Attributes.TryGetValue(
           typeof(SaveAttribute), out var saveAttributes
         ) ||
         saveAttributes.FirstOrDefault() is not SaveAttribute saveAttribute
       ) {
-        continue;
+        return;
       }
 
-      var name = saveAttribute.Id ?? property.Name;
+      IdentifyCollectionTypes(Resolver, Property.GenericType, Options);
 
-      var jsonProp = typeInfo.CreateJsonPropertyInfo(
-        property.GenericType.ClosedType, name
-      );
-      jsonProp.IsRequired = false;
-      jsonProp.Get = property.Getter;
-      jsonProp.Set = property.Setter;
-
-      typeInfo.Properties.Add(jsonProp);
-
-      IdentifyCollectionTypes(property.GenericType, options);
-    }
-  }
-
-  // Recursively identify collection types described by the introspection data
-  // for a generic member type.
-  private void IdentifyCollectionTypes(
-    GenericType genericType,
-    JsonSerializerOptions options
-  ) {
-    if (_collections.ContainsKey(genericType.ClosedType)) {
-      return;
-    }
-
-    if (genericType.OpenType == typeof(List<>)) {
-      _collections[genericType.ClosedType] = (options) => {
-        _listInfoCreator.Options = options;
-        genericType.GenericTypeGetter(_listInfoCreator);
-        var typeInfo = _listInfoCreator.TypeInfo;
-        typeInfo.OriginatingResolver = this;
-        return typeInfo;
+      var info = new JsonPropertyInfoValues<T>() {
+        IsProperty = true,
+        IsPublic = true,
+        IsVirtual = false,
+        DeclaringType = DeclaringType,
+        Converter = null,
+#pragma warning disable CS8600, CS8602 // non-applicable nullability warnings
+        Getter = obj => (T)Property.Getter(obj),
+        Setter = (obj, value) => Property.Setter(obj, value),
+#pragma warning restore CS8600, CS8602
+        IgnoreCondition = null,
+        HasJsonInclude = false,
+        IsExtensionData = false,
+        NumberHandling = null,
+        PropertyName = Property.Name,
+        JsonPropertyName = saveAttribute.Id
       };
 
-      IdentifyCollectionTypes(genericType.Arguments[0], options);
-    }
-    else if (genericType.OpenType == typeof(HashSet<>)) {
-      _collections[genericType.ClosedType] = (options) => {
-        _hashSetInfoCreator.Options = options;
-        genericType.GenericTypeGetter(_hashSetInfoCreator);
-        var typeInfo = _hashSetInfoCreator.TypeInfo;
-        typeInfo.OriginatingResolver = this;
-        return typeInfo;
-      };
-
-      IdentifyCollectionTypes(genericType.Arguments[0], options);
-    }
-    else if (genericType.OpenType == typeof(Dictionary<,>)) {
-      _collections[genericType.ClosedType] = (options) => {
-        _dictionaryInfoCreator.Options = options;
-        genericType.GenericTypeGetter2!(_dictionaryInfoCreator);
-        var typeInfo = _dictionaryInfoCreator.TypeInfo;
-        typeInfo.OriginatingResolver = this;
-        return typeInfo;
-      };
-
-      IdentifyCollectionTypes(genericType.Arguments[0], options);
-      IdentifyCollectionTypes(genericType.Arguments[1], options);
+      PropertyInfo = JsonMetadataServices.CreatePropertyInfo(Options, info);
+      PropertyInfo.IsRequired = false;
     }
   }
 
   // Call with list element type
   private class ListInfoCreator : ITypeReceiver {
-    public JsonSerializerOptions Options { get; set; } = default!;
+    public JsonSerializerOptions Options { get; }
     public JsonTypeInfo TypeInfo { get; private set; } = default!;
+
+    public ListInfoCreator(JsonSerializerOptions options) {
+      Options = options;
+    }
+
     public void Receive<T>() {
       var info = new JsonCollectionInfoValues<List<T>>() {
         ObjectCreator = () => new List<T>(),
@@ -326,8 +404,13 @@ public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
 
   // Call with hash set element type
   private class HashSetInfoCreator : ITypeReceiver {
-    public JsonSerializerOptions Options { get; set; } = default!;
+    public JsonSerializerOptions Options { get; }
     public JsonTypeInfo TypeInfo { get; private set; } = default!;
+
+    public HashSetInfoCreator(JsonSerializerOptions options) {
+      Options = options;
+    }
+
     public void Receive<T>() {
       var info = new JsonCollectionInfoValues<HashSet<T>>() {
         ObjectCreator = () => new HashSet<T>(),
@@ -341,8 +424,13 @@ public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
   }
 
   private class DictionaryInfoCreator : ITypeReceiver2 {
-    public JsonSerializerOptions Options { get; set; } = default!;
+    public JsonSerializerOptions Options { get; }
     public JsonTypeInfo TypeInfo { get; private set; } = default!;
+
+    public DictionaryInfoCreator(JsonSerializerOptions options) {
+      Options = options;
+    }
+
     public void Receive<TA, TB>() {
       var info = new JsonCollectionInfoValues<Dictionary<TA, TB>>() {
         ObjectCreator = () => new Dictionary<TA, TB>(),
