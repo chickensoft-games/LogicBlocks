@@ -148,7 +148,7 @@ public partial class LogicBlockTest {
     called.ShouldBe(0);
 
     block.Input(new FakeLogicBlock.Input.InputOne(2, 3));
-    called.ShouldBe(1);
+    called.ShouldBe(2); // Start state -> second state = 2 states visited
 
     listener.OnState -= handler;
   }

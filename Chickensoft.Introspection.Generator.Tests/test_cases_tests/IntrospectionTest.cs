@@ -24,7 +24,6 @@ public class LogicBlockTypeUtilsTest {
     [typeof(ParentCousin)] = nameof(ParentCousin),
     [typeof(ChildCousin)] = nameof(ChildCousin),
   };
-
   private readonly Mock<ITypeRegistry> _registry;
 
   public LogicBlockTypeUtilsTest() {
@@ -35,7 +34,7 @@ public class LogicBlockTypeUtilsTest {
   public void GetDescendantSubtypes() {
     _registry.Setup(reg => reg.VisibleTypes).Returns(_visibleTypes);
     _registry.Setup(reg => reg.ConcreteVisibleTypes)
-      .Returns(new Dictionary<Type, Func<object>>());
+      .Returns(new Dictionary<Type, TypeMetadata>());
     _registry.Setup(reg => reg.Metatypes)
       .Returns(new Dictionary<Type, IMetatype>());
 
@@ -89,7 +88,7 @@ public class LogicBlockTypeUtilsTest {
         [typeof(LogicBlockTypeUtilsTest)] = nameof(LogicBlockTypeUtilsTest)
       });
     _registry.Setup(reg => reg.ConcreteVisibleTypes)
-      .Returns(new Dictionary<Type, Func<object>>());
+      .Returns(new Dictionary<Type, TypeMetadata>());
     _registry.Setup(reg => reg.Metatypes)
       .Returns(new Dictionary<Type, IMetatype>());
 

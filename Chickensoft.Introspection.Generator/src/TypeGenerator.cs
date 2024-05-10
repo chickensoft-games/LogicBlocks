@@ -570,6 +570,7 @@ public class TypeGenerator : IIncrementalGenerator {
 
     var location = GetLocation(typeDecl);
     var kind = GetKind(typeDecl);
+    var isStatic = construction == Construction.StaticClass;
     var hasIntrospectiveAttribute = HasIntrospectiveAttribute(typeDecl);
     var hasMixinAttribute = HasMixinAttribute(typeDecl);
     var isTopLevelAccessible = IsTopLevelAccessible(typeDecl);
@@ -587,6 +588,7 @@ public class TypeGenerator : IIncrementalGenerator {
       Location: location,
       Usings: usings,
       Kind: kind,
+      IsStatic: isStatic,
       HasIntrospectiveAttribute: hasIntrospectiveAttribute,
       HasMixinAttribute: hasMixinAttribute,
       IsTopLevelAccessible: isTopLevelAccessible,
@@ -610,7 +612,7 @@ public class TypeGenerator : IIncrementalGenerator {
   private static void CreateConcreteVisibleTypesProperty(
     ImmutableDictionary<string, DeclaredType> types, IndentedTextWriter code
   ) {
-    code.WriteLine("public System.Collections.Generic.IReadOnlyDictionary<System.Type, System.Func<object>> ConcreteVisibleTypes { get; } = new System.Collections.Generic.Dictionary<System.Type, System.Func<object>>() {");
+    code.WriteLine("public System.Collections.Generic.IReadOnlyDictionary<System.Type, Chickensoft.Introspection.TypeMetadata> ConcreteVisibleTypes { get; } = new System.Collections.Generic.Dictionary<System.Type, Chickensoft.Introspection.TypeMetadata>() {");
     code.Indent++;
     AddConcreteTypeEntries(types, code);
     code.Indent--;
@@ -654,10 +656,15 @@ public class TypeGenerator : IIncrementalGenerator {
 
     foreach (var type in types.Values) {
       var typeName = type.FullName;
+      var simpleName = type.Reference.NameWithOpenGenerics;
       var isLast = i == types.Count - 1;
+
+      var generic = $"(r) => r.Receive<{typeName}>()";
+      var factory = $"() => System.Activator.CreateInstance<{typeName}>()";
+
       code.WriteLine(
-        $"[typeof({typeName})] = () => " +
-        $"System.Activator.CreateInstance<{typeName}>(){(isLast ? "" : ",")}"
+        $"[typeof({typeName})] = new Chickensoft.Introspection.TypeMetadata(" +
+        $"\"{simpleName}\", {generic}, {factory}){(isLast ? "" : ",")}"
       );
       i++;
     }

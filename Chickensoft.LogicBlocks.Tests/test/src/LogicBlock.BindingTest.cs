@@ -20,7 +20,7 @@ public class BindingTest {
 
     block.Input(new FakeLogicBlock.Input.InputTwo("d", "e"));
 
-    called.ShouldBe(1);
+    called.ShouldBe(2);
   }
 
   [Fact]
@@ -40,7 +40,7 @@ public class BindingTest {
 
     block.Input(new FakeLogicBlock.Input.InputThree("c", "d"));
 
-    count.ShouldBe(2);
+    count.ShouldBe(3);
   }
 
   [Fact]

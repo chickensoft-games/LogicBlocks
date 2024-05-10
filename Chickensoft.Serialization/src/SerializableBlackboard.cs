@@ -72,17 +72,8 @@ public class SerializableBlackboard : Blackboard, ISerializableBlackboard {
 
   /// <inheritdoc
   ///   cref="ISerializableBlackboard.SaveObject(Type, Func{object})" />
-  protected virtual void SaveObjectData(Type type, Func<object> factory) {
-    if (_blackboard.ContainsKey(type)) {
-      throw new DuplicateNameException(
-        $"Cannot mark blackboard data `{type}` to be persisted " +
-        "since it would conflict with existing data added to the blackboard."
-      );
-    }
-    // Overwrite any previously registered save factories for this type if they
-    // have never been used to create an instance.
+  protected virtual void SaveObjectData(Type type, Func<object> factory) =>
     _saveTypes[type] = factory;
-  }
 
   /// <inheritdoc />
   protected override object GetBlackboardData(Type type) {

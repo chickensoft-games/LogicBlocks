@@ -101,6 +101,12 @@ where TState : StateLogic<TState> {
   TState ForceReset(TState state);
 
   /// <summary>
+  /// Restores the logic block from a deserialized logic block.
+  /// </summary>
+  /// <param name="logic">Other logic block.</param>
+  void RestoreFrom(LogicBlockBase logic);
+
+  /// <summary>
   /// Adds a binding to the logic block. This is used internally by the standard
   /// bindings implementation. Prefer using <see cref="Bind" /> to create an
   /// instance of the standard bindings which allow you to easily observe a
@@ -169,7 +175,6 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
   }
   #endregion LogicBlockBase
 
-  private TState? _restoredState;
   private TState? _value;
   private int _isProcessing;
   private readonly InputQueue _inputs;
@@ -266,7 +271,7 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
   /// <returns>True if the logic block can change to the given state, false
   /// otherwise.</returns>
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  protected virtual bool CanChangeState(TState state) =>
+  protected virtual bool CanChangeState(TState? state) =>
     !IsEquivalent(state, _value);
 
   /// <summary>
@@ -370,10 +375,8 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
 
     if (_value is null) {
       // No state yet. Let's get the first state going!
-      _value = _restoredState ?? GetInitialState().State;
+      ChangeState(_restoredState as TState ?? GetInitialState().State);
       _restoredState = null;
-      _value.Attach(Context);
-      _value.Enter(null);
     }
 
     // We can always process the first input directly.
@@ -388,7 +391,7 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
 
     _isProcessing--;
 
-    return _value;
+    return _value!;
   }
 
   void IInputHandler.HandleInput<TInputType>(in TInputType input)
@@ -422,10 +425,14 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
 
     _value = state;
 
+    var stateIsDifferent = CanChangeState(previous);
+
     if (state is not null) {
       state.Attach(Context);
       state.Enter(previous);
-      AnnounceState(state);
+      if (stateIsDifferent) {
+        AnnounceState(state);
+      }
     }
     _isProcessing--;
   }
@@ -530,4 +537,23 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
   // different instances.
   /// <inheritdoc />
   public override int GetHashCode() => base.GetHashCode();
+
+  /// <inheritdoc />
+  public void RestoreFrom(LogicBlockBase logic) {
+    Stop();
+
+    foreach (var type in logic._blackboard.Types) {
+      _blackboard.OverwriteObject(type, logic._blackboard.GetObject(type));
+    }
+
+    Stop();
+
+    if ((logic.ValueAsObject ?? logic._restoredState) is not TState state) {
+      throw new LogicBlockException($"Cannot restore from logic block {logic}");
+    }
+
+    var stateType = state.GetType();
+    OverwriteObject(stateType, state);
+    RestoreState(state);
+  }
 }

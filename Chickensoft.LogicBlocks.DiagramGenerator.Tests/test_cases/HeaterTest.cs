@@ -72,6 +72,7 @@ public class HeaterTest {
     heater.Value.ShouldBeOfType<Heater.State.Idle>();
 
     messages.ShouldBe([
+      "Heater turned off",
       "Heater is powered",
       "Heater is idling",
       "Heater is powered",

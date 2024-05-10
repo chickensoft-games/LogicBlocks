@@ -67,9 +67,7 @@ public class PreallocationTest : IDisposable {
     // metadata like this, but we still need to test the code path for
     // null safety.
     var attributes = new Dictionary<Type, Attribute[]>() {
-      [typeof(LogicBlockAttribute)] = new[] {
-        new ObsoleteAttribute()
-      }
+      [typeof(LogicBlockAttribute)] = [new ObsoleteAttribute()]
     };
 
     metatype
@@ -99,9 +97,9 @@ public class PreallocationTest : IDisposable {
     // metadata like this, but we still need to test the code path for
     // null safety.
     var attributes = new Dictionary<Type, Attribute[]>() {
-      [typeof(LogicBlockAttribute)] = new[] {
+      [typeof(LogicBlockAttribute)] = [
         new LogicBlockAttribute(typeof(EmptyLogicBlock.State))
-      }
+      ]
     };
 
     metatype
@@ -154,9 +152,9 @@ public class PreallocationTest : IDisposable {
     // metadata like this, but we still need to test the code path for
     // null safety.
     var attributes = new Dictionary<Type, Attribute[]>() {
-      [typeof(LogicBlockAttribute)] = new[] {
+      [typeof(LogicBlockAttribute)] = [
         new LogicBlockAttribute(typeof(EmptyLogicBlock.State))
-      }
+      ]
     };
 
     metatype
@@ -212,9 +210,9 @@ public class PreallocationTest : IDisposable {
     // metadata like this, but we still need to test the code path for
     // null safety.
     var attributes = new Dictionary<Type, Attribute[]>() {
-      [typeof(LogicBlockAttribute)] = new[] {
+      [typeof(LogicBlockAttribute)] = [
         new LogicBlockAttribute(typeof(EmptyLogicBlock.State))
-      }
+      ]
     };
 
     metatype

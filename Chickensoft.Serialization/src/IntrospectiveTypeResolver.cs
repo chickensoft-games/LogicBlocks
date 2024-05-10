@@ -2,6 +2,7 @@ namespace Chickensoft.Serialization;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -15,7 +16,14 @@ using Chickensoft.Introspection;
 /// <see cref="MetaAttribute" />
 /// attribute.
 /// </summary>
-public interface IIntrospectiveTypeResolver : IJsonTypeInfoResolver;
+public interface IIntrospectiveTypeResolver : IJsonTypeInfoResolver {
+  /// <summary>
+  /// Adds a custom converter for the specified type.
+  /// </summary>
+  /// <param name="converter">Custom converter.</param>
+  /// <typeparam name="T">Type of value to convert.</typeparam>
+  void AddConverter<T>(JsonConverter<T> converter);
+}
 
 /// <inheritdoc cref="IIntrospectiveTypeResolver" />
 public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
@@ -36,141 +44,181 @@ public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
   > _collections = new();
 
   private static readonly Dictionary<
-    Type, Func<JsonSerializerOptions, JsonTypeInfo>> _builtInTypes = new() {
-      [typeof(bool)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<bool>(
-          options, JsonMetadataServices.BooleanConverter
-        ),
-      [typeof(byte[])] = (options) =>
-        JsonMetadataServices.CreateValueInfo<byte[]>(
-          options, JsonMetadataServices.ByteArrayConverter
-        ),
-      [typeof(byte)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<byte>(
-          options, JsonMetadataServices.ByteConverter
-        ),
-      [typeof(char)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<char>(
-          options, JsonMetadataServices.CharConverter
-        ),
-      [typeof(DateTime)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<DateTime>(
-          options, JsonMetadataServices.DateTimeConverter
-        ),
-      [typeof(DateTimeOffset)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<DateTimeOffset>(
-          options, JsonMetadataServices.DateTimeOffsetConverter
-        ),
-      [typeof(decimal)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<decimal>(
-          options, JsonMetadataServices.DecimalConverter
-        ),
-      [typeof(double)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<double>(
-          options, JsonMetadataServices.DoubleConverter
-        ),
-      [typeof(Guid)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<Guid>(
-          options, JsonMetadataServices.GuidConverter
-        ),
-      [typeof(short)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<short>(
-          options, JsonMetadataServices.Int16Converter
-        ),
-      [typeof(int)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<int>(
-          options, JsonMetadataServices.Int32Converter
-        ),
-      [typeof(long)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<long>(
-          options, JsonMetadataServices.Int64Converter
-        ),
-      [typeof(JsonArray)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<JsonArray>(
-          options, JsonMetadataServices.JsonArrayConverter
-        ),
-      [typeof(JsonDocument)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<JsonDocument>(
-          options, JsonMetadataServices.JsonDocumentConverter
-        ),
-      [typeof(JsonElement)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<JsonElement>(
-          options, JsonMetadataServices.JsonElementConverter
-        ),
-      [typeof(JsonNode)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<JsonNode>(
-          options, JsonMetadataServices.JsonNodeConverter
-        ),
-      [typeof(JsonObject)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<JsonObject>(
-          options, JsonMetadataServices.JsonObjectConverter
-        ),
-      [typeof(JsonValue)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<JsonValue>(
-          options, JsonMetadataServices.JsonValueConverter
-        ),
-      [typeof(Memory<byte>)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<Memory<byte>>(
-          options, JsonMetadataServices.MemoryByteConverter
-        ),
-      [typeof(object)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<object>(
-          options, JsonMetadataServices.ObjectConverter
-        ),
-      [typeof(ReadOnlyMemory<byte>)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<ReadOnlyMemory<byte>>(
-          options, JsonMetadataServices.ReadOnlyMemoryByteConverter
-        ),
-      [typeof(sbyte)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<sbyte>(
-          options, JsonMetadataServices.SByteConverter
-        ),
-      [typeof(float)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<float>(
-          options, JsonMetadataServices.SingleConverter
-        ),
-      [typeof(string)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<string>(
-          options, JsonMetadataServices.StringConverter
-        ),
-      [typeof(TimeSpan)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<TimeSpan>(
-          options, JsonMetadataServices.TimeSpanConverter
-        ),
-      [typeof(ushort)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<ushort>(
-          options, JsonMetadataServices.UInt16Converter
-        ),
-      [typeof(uint)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<uint>(
-          options, JsonMetadataServices.UInt32Converter
-        ),
-      [typeof(ulong)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<ulong>(
-          options, JsonMetadataServices.UInt64Converter
-        ),
-      [typeof(Uri)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<Uri>(
-          options, JsonMetadataServices.UriConverter
-        ),
-      [typeof(Version)] = (options) =>
-        JsonMetadataServices.CreateValueInfo<Version>(
-          options, JsonMetadataServices.VersionConverter
-        )
+    Type, Func<JsonSerializerOptions, JsonTypeInfo>
+  > _customConverters = new();
+
+  private static readonly Dictionary<
+    Type, Func<JsonSerializerOptions, JsonTypeInfo>
+  > _builtInTypes = new() {
+    [typeof(bool)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<bool>(
+        options, JsonMetadataServices.BooleanConverter
+      ),
+    [typeof(byte[])] = (options) =>
+      JsonMetadataServices.CreateValueInfo<byte[]>(
+        options, JsonMetadataServices.ByteArrayConverter
+      ),
+    [typeof(byte)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<byte>(
+        options, JsonMetadataServices.ByteConverter
+      ),
+    [typeof(char)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<char>(
+        options, JsonMetadataServices.CharConverter
+      ),
+    [typeof(DateTime)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<DateTime>(
+        options, JsonMetadataServices.DateTimeConverter
+      ),
+    [typeof(DateTimeOffset)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<DateTimeOffset>(
+        options, JsonMetadataServices.DateTimeOffsetConverter
+      ),
+    [typeof(decimal)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<decimal>(
+        options, JsonMetadataServices.DecimalConverter
+      ),
+    [typeof(double)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<double>(
+        options, JsonMetadataServices.DoubleConverter
+      ),
+    [typeof(Guid)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<Guid>(
+        options, JsonMetadataServices.GuidConverter
+      ),
+    [typeof(short)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<short>(
+        options, JsonMetadataServices.Int16Converter
+      ),
+    [typeof(int)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<int>(
+        options, JsonMetadataServices.Int32Converter
+      ),
+    [typeof(long)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<long>(
+        options, JsonMetadataServices.Int64Converter
+      ),
+    [typeof(JsonArray)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<JsonArray>(
+        options, JsonMetadataServices.JsonArrayConverter
+      ),
+    [typeof(JsonDocument)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<JsonDocument>(
+        options, JsonMetadataServices.JsonDocumentConverter
+      ),
+    [typeof(JsonElement)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<JsonElement>(
+        options, JsonMetadataServices.JsonElementConverter
+      ),
+    [typeof(JsonNode)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<JsonNode>(
+        options, JsonMetadataServices.JsonNodeConverter
+      ),
+    [typeof(JsonObject)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<JsonObject>(
+        options, JsonMetadataServices.JsonObjectConverter
+      ),
+    [typeof(JsonValue)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<JsonValue>(
+        options, JsonMetadataServices.JsonValueConverter
+      ),
+    [typeof(Memory<byte>)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<Memory<byte>>(
+        options, JsonMetadataServices.MemoryByteConverter
+      ),
+    [typeof(object)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<object>(
+        options, JsonMetadataServices.ObjectConverter
+      ),
+    [typeof(ReadOnlyMemory<byte>)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<ReadOnlyMemory<byte>>(
+        options, JsonMetadataServices.ReadOnlyMemoryByteConverter
+      ),
+    [typeof(sbyte)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<sbyte>(
+        options, JsonMetadataServices.SByteConverter
+      ),
+    [typeof(float)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<float>(
+        options, JsonMetadataServices.SingleConverter
+      ),
+    [typeof(string)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<string>(
+        options, JsonMetadataServices.StringConverter
+      ),
+    [typeof(TimeSpan)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<TimeSpan>(
+        options, JsonMetadataServices.TimeSpanConverter
+      ),
+    [typeof(ushort)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<ushort>(
+        options, JsonMetadataServices.UInt16Converter
+      ),
+    [typeof(uint)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<uint>(
+        options, JsonMetadataServices.UInt32Converter
+      ),
+    [typeof(ulong)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<ulong>(
+        options, JsonMetadataServices.UInt64Converter
+      ),
+    [typeof(Uri)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<Uri>(
+        options, JsonMetadataServices.UriConverter
+      ),
+    [typeof(Version)] = (options) =>
+      JsonMetadataServices.CreateValueInfo<Version>(
+        options, JsonMetadataServices.VersionConverter
+      )
+  };
+
+  /// <inheritdoc />
+  public void AddConverter<T>(JsonConverter<T> converter) =>
+    _customConverters[typeof(T)] = (options) => {
+      var expandedConverter = ExpandConverter(typeof(T), converter, options);
+
+      return JsonMetadataServices.CreateValueInfo<T>(
+        options, expandedConverter
+      );
     };
 
   /// <inheritdoc />
   public JsonTypeInfo? GetTypeInfo(Type type, JsonSerializerOptions options) {
+    if (_customConverters.TryGetValue(type, out var customConverterFactory)) {
+      return customConverterFactory(options);
+    }
+
+    if (Types.Graph.IsConcrete(type)) {
+      // If the type can be created, we should check for custom converters.
+      var customConverterTypeInfoCreator = new CustomConverterTypeInfoCreator(
+        options
+      );
+
+      Types.Graph.ConcreteVisibleTypes[type].GenericTypeGetter(
+        customConverterTypeInfoCreator
+      );
+
+      if (customConverterTypeInfoCreator.TypeInfo is { } typeInfo) {
+        // Defer to any custom converter for this type.
+        return typeInfo;
+      }
+    }
+
+    // Type doesn't have a custom converter.
+
     if (!Types.Graph.IsIntrospectiveType(type)) {
+      // See if it's a supported collection type (List, HashSet, Dictionary)
       if (_collections.TryGetValue(type, out var collectionInfo)) {
         return collectionInfo(options);
       }
 
+      // See if it's a type with a built-in converter.
       if (_builtInTypes.TryGetValue(type, out var builtInFactory)) {
         return builtInFactory(options);
       }
 
-      // Not an introspective type, collection we have seen, or built-in type.
+      // Not an introspective type, collection, or built-in type. Maybe another
+      // type resolver down the chain can handle it.
       return null;
     }
 
@@ -260,17 +308,6 @@ public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
     }
 
     public void Receive<T>() {
-      // Converters handle object creation, so we will only register a factory
-      // if there are no converters that can handle the type.
-      var possibleConverter = Options.Converters.FirstOrDefault(
-        c => c.CanConvert(Type)
-      );
-
-      if (possibleConverter is { } converter) {
-        TypeInfo = JsonMetadataServices.CreateValueInfo<T>(Options, converter);
-        return;
-      }
-
       var objectInfo = new JsonObjectInfoValues<T>() {
         ObjectCreator = null,
         ObjectWithParameterizedConstructorCreator = null,
@@ -324,7 +361,7 @@ public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
         // register a factory so that the type can be created during
         // deserialization.
         TypeInfo.CreateObject =
-          () => (T)Types.Graph.ConcreteVisibleTypes[Type]();
+          () => (T)Types.Graph.ConcreteVisibleTypes[Type].Factory();
       }
     }
   }
@@ -443,5 +480,61 @@ public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
 #pragma warning restore CS8714
       TypeInfo.NumberHandling = null;
     }
+  }
+
+  private class CustomConverterTypeInfoCreator : ITypeReceiver {
+    public JsonSerializerOptions Options { get; }
+    public JsonTypeInfo? TypeInfo { get; private set; }
+
+    public CustomConverterTypeInfoCreator(
+      JsonSerializerOptions options
+    ) {
+      Options = options;
+    }
+
+    public void Receive<T>() {
+      TypeInfo = null;
+
+      var converter = GetRuntimeConverterForType(typeof(T), Options);
+
+      if (converter is null) {
+        return;
+      }
+
+      TypeInfo = JsonMetadataServices.CreateValueInfo<T>(Options, converter);
+    }
+  }
+
+  private static JsonConverter? GetRuntimeConverterForType(
+    Type type, JsonSerializerOptions options
+  ) {
+    for (var i = 0; i < options.Converters.Count; i++) {
+      var converter = options.Converters[i];
+      if (converter?.CanConvert(type) == true) {
+        return ExpandConverter(type, converter, options);
+      }
+    }
+
+    return null;
+  }
+
+  [return: NotNullIfNotNull(nameof(converter))]
+  private static JsonConverter? ExpandConverter(
+    Type type,
+    JsonConverter? converter,
+    JsonSerializerOptions options
+  ) {
+    if (converter is JsonConverterFactory factory) {
+      converter = factory.CreateConverter(type, options);
+      if (converter is null or JsonConverterFactory) {
+        throw new InvalidOperationException(string.Format(
+          "The converter '{0}' cannot return null or a " +
+          "JsonConverterFactory instance.",
+          factory.GetType()
+        ));
+      }
+    }
+
+    return converter;
   }
 }

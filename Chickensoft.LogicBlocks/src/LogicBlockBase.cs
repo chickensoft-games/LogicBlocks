@@ -38,6 +38,8 @@ public abstract class LogicBlockBase {
   /// <summary>Internal blackboard of the logic block.</summary>
   internal readonly SerializableBlackboard _blackboard = new();
 
+  internal object? _restoredState;
+
   /// <summary>
   /// Determines if two logic block states are equivalent. Logic block states
   /// are equivalent if they are the same reference or are equal according to

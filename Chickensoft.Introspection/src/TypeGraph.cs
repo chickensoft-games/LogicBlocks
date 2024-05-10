@@ -11,15 +11,16 @@ internal class TypeGraph : ITypeGraph {
   #region ITypeRegistry
   public IReadOnlyDictionary<Type, string> VisibleTypes => _visibleTypes;
 
-  public IReadOnlyDictionary<Type, Func<object>> ConcreteVisibleTypes =>
+  public IReadOnlyDictionary<Type, TypeMetadata> ConcreteVisibleTypes =>
     _concreteVisibleTypes;
 
   public IReadOnlyDictionary<Type, IMetatype> Metatypes => _metatypes;
   #endregion ITypeRegistry
 
   #region Caches
-  private readonly ConcurrentDictionary<Type, string> _visibleTypes = new();
-  private readonly ConcurrentDictionary<Type, Func<object>>
+  private readonly ConcurrentDictionary<Type, string> _visibleTypes =
+    new();
+  private readonly ConcurrentDictionary<Type, TypeMetadata>
     _concreteVisibleTypes = new();
   private readonly ConcurrentDictionary<Type, IMetatype> _metatypes = new();
   private readonly ConcurrentDictionary<Type, HashSet<Type>> _typesByBaseType =

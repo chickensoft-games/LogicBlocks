@@ -59,7 +59,8 @@ internal readonly struct FakeContext : IFakeContext {
         .GetDescendantSubtypes(typeof(StateBase))
         .Contains(type)
     ) {
-      var state = Introspection.Types.Graph.ConcreteVisibleTypes[type]();
+      var state =
+        Introspection.Types.Graph.ConcreteVisibleTypes[type].Factory();
       _blackboard[type] = state;
       return (TDataType)state;
     }

@@ -19,6 +19,8 @@ using Microsoft.CodeAnalysis;
 /// <param name="Usings">Using directives that are in scope for the type.
 /// </param>
 /// <param name="Kind">Kind of the type.</param>
+/// <param name="IsStatic">True if the type is static. Static types can't
+/// provide generic type retrieval.</param>
 /// <param name="HasIntrospectiveAttribute">True if the type was tagged with the
 /// MetatypeAttribute.</param>
 /// <param name="HasMixinAttribute">True if the type is tagged with the mixin
@@ -34,6 +36,7 @@ public record DeclaredType(
   TypeLocation Location,
   ImmutableHashSet<UsingDirective> Usings,
   DeclaredTypeKind Kind,
+  bool IsStatic,
   bool HasIntrospectiveAttribute,
   bool HasMixinAttribute,
   bool IsTopLevelAccessible,
@@ -139,6 +142,7 @@ public record DeclaredType(
     Location,
     Usings.Union(declaredType.Usings),
     Kind,
+    IsStatic || declaredType.IsStatic,
     HasIntrospectiveAttribute || declaredType.HasIntrospectiveAttribute,
     HasMixinAttribute || declaredType.HasMixinAttribute,
     IsTopLevelAccessible || declaredType.IsTopLevelAccessible,

@@ -140,7 +140,8 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
 
     // Create logic block
     var type = Introspection.Types.Graph.GetIntrospectiveType(typeId);
-    var logicBlock = Introspection.Types.Graph.ConcreteVisibleTypes[type]();
+    var logicBlock =
+      Introspection.Types.Graph.ConcreteVisibleTypes[type].Factory();
 
     // Set blackboard values
     foreach (var blackboardObj in blackboardObjects) {

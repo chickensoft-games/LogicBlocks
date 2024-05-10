@@ -14,10 +14,10 @@ public interface ITypeRegistry {
   /// </summary>
   IReadOnlyDictionary<Type, string> VisibleTypes { get; }
   /// <summary>
-  /// Map of non-generic reference types that are visible from the assembly's
-  /// global scope that are not abstract (or interfaces).
+  /// Map of non-generic, non-abstract, reference types that are visible from
+  /// the assembly's global scope.
   /// </summary>
-  IReadOnlyDictionary<Type, Func<object>> ConcreteVisibleTypes { get; }
+  IReadOnlyDictionary<Type, TypeMetadata> ConcreteVisibleTypes { get; }
 
   /// <summary>
   /// Map of metatype instances by the system type of their associated

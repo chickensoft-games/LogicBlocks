@@ -55,8 +55,8 @@ public record GenericTypeNode(
 
     writer.WriteLine("new GenericType(");
     writer.Indent++;
-    writer.WriteLine($"OpenType: typeof({openType}),");
-    writer.WriteLine($"ClosedType: typeof({closedType}),");
+    writer.WriteLine($"OpenType: typeof({openType.TrimEnd('?')}),");
+    writer.WriteLine($"ClosedType: typeof({closedType.TrimEnd('?')}),");
 
     if (Children.Length > 0) {
       writer.WriteLine("Arguments: new GenericType[] {");
@@ -79,7 +79,6 @@ public record GenericTypeNode(
       "GenericTypeGetter: receiver => " +
       $"receiver.Receive<{closedType}>(),"
     );
-    // TODO: Pass child types
     if (Children.Length >= 2) {
       writer.WriteLine(
         "GenericTypeGetter2: receiver => " +
