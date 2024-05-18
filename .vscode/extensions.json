@@ -1,10 +1,13 @@
 {
   "recommendations": [
     "ms-dotnettools.csharp",
-    "selcukermaya.se-csproj-extensions",
     "josefpihrt-vscode.roslynator",
     "streetsidesoftware.code-spell-checker",
-    "VisualStudioExptTeam.vscodeintellicode",
-    "DavidAnson.vscode-markdownlint"
+    "DavidAnson.vscode-markdownlint",
+    "jebbs.plantuml"
+    // Someday, when we switch to mermaid:
+    // "bierner.markdown-mermaid",
+    // "tomoyukim.vscode-mermaid-editor",
+    // "bpruitt-goddard.mermaid-markdown-syntax-highlighting"
   ]
 }

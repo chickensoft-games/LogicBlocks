@@ -39,4 +39,10 @@ public record TypeLocation(
   /// True if the location is within a generic type.
   /// </summary>
   public bool IsInGenericType => ContainingTypes.Any(t => t.IsGeneric);
+
+  /// <summary>
+  /// True if the location is top-level, or nested only within partial types.
+  /// </summary>
+  public bool IsFullyPartialOrTopLevel =>
+    ContainingTypes.Length == 0 || ContainingTypes.All(t => t.IsPartial);
 }

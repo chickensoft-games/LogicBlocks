@@ -120,11 +120,11 @@ public class TypeGenerator : IIncrementalGenerator {
       }
 
       return new GenerationData(
-        AllTypes: uniqueTypes.ToImmutableDictionary(),
-        Metatypes: metatypesBuilder.ToImmutable(),
-        VisibleTypes: visibleTypesBuilder.ToImmutable(),
-        ConcreteVisibleTypes: concreteVisibleTypesBuilder.ToImmutable(),
-        Mixins: mixinsBuilder.ToImmutable()
+        allTypes: uniqueTypes.ToImmutableDictionary(),
+        metatypes: metatypesBuilder.ToImmutable(),
+        visibleTypes: visibleTypesBuilder.ToImmutable(),
+        concreteVisibleTypes: concreteVisibleTypesBuilder.ToImmutable(),
+        mixins: mixinsBuilder.ToImmutable()
       );
     });
 
@@ -381,7 +381,6 @@ public class TypeGenerator : IIncrementalGenerator {
 
   public static void GenerateMetatypeId(string id, IndentedTextWriter code) =>
     code.WriteLine($"public string Id => {id};");
-
   public static void GenerateMetatypeAttributes(
     ImmutableArray<DeclaredAttribute> attributes, IndentedTextWriter code
   ) {
@@ -946,7 +945,9 @@ public class TypeGenerator : IIncrementalGenerator {
             : argValue;
 
           if (argExpr.NameEquals is { } nameEquals) {
-            initializerArgs.Add($"{nameEquals.Name.NormalizeWhitespace()} = {argValue}");
+            initializerArgs.Add(
+              $"{nameEquals.Name.NormalizeWhitespace()} = {argValue}"
+            );
           }
           else {
             constructorArgs.Add(argValue);
@@ -963,23 +964,6 @@ public class TypeGenerator : IIncrementalGenerator {
 
     return attributes.ToImmutable();
   }
-
-  // public static ImmutableArray<AttributeUsage> GetAttributes(
-  //   SyntaxList<AttributeListSyntax> attributeLists
-  // ) => attributeLists
-  //   .SelectMany(list => list.Attributes)
-  //   .Select(attr => new AttributeUsage(
-  //     Name: attr.Name.NormalizeWhitespace().ToString(),
-  //     ArgExpressions: attr.ArgumentList?.Arguments
-  //       .Select(
-  //         arg => arg.NameEquals is { } nameEquals
-  //           ? $"{nameEquals.Name.NormalizeWhitespace()}: {arg.Expression.NormalizeWhitespace()}"
-  //           : arg.NormalizeWhitespace().ToString()
-  //       )
-  //       .ToImmutableArray()
-  //       ?? ImmutableArray<string>.Empty
-  //   ))
-  //   .ToImmutableArray();
 
   public static IndentedTextWriter CreateCodeWriter() =>
     new(new StringWriter(), "  ");

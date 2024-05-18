@@ -1,10 +1,10 @@
 namespace Chickensoft.LogicBlocks.Tests;
 
-using Chickensoft.LogicBlocks.Tests.Fixtures;
+using Chickensoft.LogicBlocks.Tests.Examples;
 using Moq;
 using Shouldly;
 using Xunit;
-using static Chickensoft.LogicBlocks.Tests.Fixtures.Timer;
+using static Chickensoft.LogicBlocks.Tests.Examples.Timer;
 
 public class TimerTest {
   [Fact]

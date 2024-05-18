@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Tests.Fixtures;
+namespace Chickensoft.LogicBlocks.Tests.Examples;
 
 using System;
 using Chickensoft.Introspection;

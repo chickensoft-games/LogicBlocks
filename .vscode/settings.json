@@ -1,6 +1,4 @@
 {
-  // TODO: until https://github.com/dotnet/vscode-csharp/issues/3970 is solved.
-  "omnisharp.sdkVersion": "7.0.404",
   "[csharp]": {
     "editor.codeActionsOnSave": {
       "source.addMissingImports": "explicit",
@@ -11,7 +9,18 @@
     "editor.formatOnSave": true,
     "editor.formatOnType": false
   },
+  "[markdown]": {
+    "editor.codeActionsOnSave": {
+      // Stop markdownlint from destructively removing unused links.
+      "source.fixAll.markdownlint": "never"
+    },
+    "editor.formatOnPaste": false,
+    "editor.formatOnSave": false,
+    "editor.formatOnType": false
+  },
   "csharp.semanticHighlighting.enabled": true,
+  "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
+  "dotnet.defaultSolution": "Chickensoft.LogicBlocks.sln",
   "editor.semanticHighlighting.enabled": true,
   // C# doc comment colorization gets lost with semantic highlighting, but we
   // need semantic highlighting for proper syntax highlighting with record
@@ -20,6 +29,45 @@
   // Here's a workaround for doc comment highlighting from
   // https://github.com/OmniSharp/omnisharp-vscode/issues/3816
   "editor.tokenColorCustomizations": {
+    "[*]": {
+      // Themes that don't include the word "Dark" or "Light" in them.
+      // These are some bold colors that show up well against most dark and
+      // light themes.
+      //
+      // Change them to something that goes well with your preferred theme :)
+      "textMateRules": [
+        {
+          "scope": "comment.documentation",
+          "settings": {
+            "foreground": "#0091ff"
+          }
+        },
+        {
+          "scope": "comment.documentation.attribute",
+          "settings": {
+            "foreground": "#8480ff"
+          }
+        },
+        {
+          "scope": "comment.documentation.cdata",
+          "settings": {
+            "foreground": "#0091ff"
+          }
+        },
+        {
+          "scope": "comment.documentation.delimiter",
+          "settings": {
+            "foreground": "#aa00ff"
+          }
+        },
+        {
+          "scope": "comment.documentation.name",
+          "settings": {
+            "foreground": "#ef0074"
+          }
+        }
+      ]
+    },
     "[*Dark*]": {
       // Themes that include the word "Dark" in them.
       "textMateRules": [
@@ -89,59 +137,22 @@
           }
         }
       ]
-    },
-    "[*]": {
-      // Themes that don't include the word "Dark" or "Light" in them.
-      // These are some bold colors that show up well against most dark and
-      // light themes.
-      //
-      // Change them to something that goes well with your preferred theme :)
-      "textMateRules": [
-        {
-          "scope": "comment.documentation",
-          "settings": {
-            "foreground": "#0091ff"
-          }
-        },
-        {
-          "scope": "comment.documentation.attribute",
-          "settings": {
-            "foreground": "#8480ff"
-          }
-        },
-        {
-          "scope": "comment.documentation.cdata",
-          "settings": {
-            "foreground": "#0091ff"
-          }
-        },
-        {
-          "scope": "comment.documentation.delimiter",
-          "settings": {
-            "foreground": "#aa00ff"
-          }
-        },
-        {
-          "scope": "comment.documentation.name",
-          "settings": {
-            "foreground": "#ef0074"
-          }
-        }
-      ]
     }
   },
   "markdownlint.config": {
-    // Allow html in markdown.
-    "MD033": false,
     // Allow non-unique heading names so we don't break the changelog.
-    "MD024": false
+    "MD024": false,
+    // Allow html in markdown.
+    "MD033": false
   },
-  "markdownlint.ignore": [
-    "**/LICENSE"
+  "markdownlint.lintWorkspaceGlobs": [
+    "!**/LICENSE"
   ],
+  "markdownlint.run": "onSave",
   "omnisharp.enableEditorConfigSupport": true,
-  "omnisharp.enableRoslynAnalyzers": true,
   "omnisharp.organizeImportsOnFormat": true,
+  // TODO: until https://github.com/dotnet/vscode-csharp/issues/3970 is solved.
+  "omnisharp.sdkVersion": "7.0.404",
   "omnisharp.useModernNet": true,
   // Remove these if you're happy with your terminal profiles.
   "terminal.integrated.defaultProfile.windows": "Git Bash",
@@ -161,7 +172,5 @@
       "icon": "terminal-powershell",
       "source": "PowerShell"
     }
-  },
-  "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
-  "dotnet.defaultSolution": "Chickensoft.LogicBlocks.sln"
+  }
 }

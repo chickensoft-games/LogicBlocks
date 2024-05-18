@@ -22,7 +22,7 @@ public abstract class LogicBlockBase {
   /// <summary>
   /// Used by the logic blocks serializer to see if a given logic block state
   /// has diverged from an unaltered copy of the state that's stored here —
-  /// one reference state for every logic block state.
+  /// one reference state for every type (not instance) of a logic block state.
   /// </summary>
   internal static ConcurrentDictionary<Type, object> ReferenceStates { get; } =
     new();

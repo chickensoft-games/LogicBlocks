@@ -540,16 +540,14 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
 
   /// <inheritdoc />
   public void RestoreFrom(LogicBlockBase logic) {
-    Stop();
-
-    foreach (var type in logic._blackboard.Types) {
-      _blackboard.OverwriteObject(type, logic._blackboard.GetObject(type));
+    if ((logic.ValueAsObject ?? logic._restoredState) is not TState state) {
+      throw new LogicBlockException($"Cannot restore from logic block {logic}");
     }
 
     Stop();
 
-    if ((logic.ValueAsObject ?? logic._restoredState) is not TState state) {
-      throw new LogicBlockException($"Cannot restore from logic block {logic}");
+    foreach (var type in logic._blackboard.Types) {
+      _blackboard.OverwriteObject(type, logic._blackboard.GetObject(type));
     }
 
     var stateType = state.GetType();

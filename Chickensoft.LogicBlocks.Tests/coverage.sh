@@ -10,7 +10,7 @@ dotnet test \
 reportgenerator \
   -reports:"./coverage/coverage.opencover.xml" \
   -targetdir:"./coverage/report" \
-  "-assemblyfilters:-*Chickensoft.Introspection*;-*Chickensoft.Serialization*" \
+  "-assemblyfilters:-*Chickensoft.Introspection*;-*Chickensoft.Serialization*;-*Chickensoft.LogicBlocks.DiagramGenerator*" \
   -reporttypes:"Html;Badges"
 
 # Copy badges into their own folder. The badges folder should be included in

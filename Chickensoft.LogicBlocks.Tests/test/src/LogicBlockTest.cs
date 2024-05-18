@@ -602,5 +602,30 @@ public partial class LogicBlockTest {
 
       logic.GetHashCode().ShouldNotBe(other.GetHashCode());
     }
+
+    [Fact]
+    public void RestoreFromThrowsIfNotSameTypeOfLogicBlock() {
+      var logic = new MyLogicBlock();
+      var other = new FakeLogicBlock();
+
+      Should.Throw<LogicBlockException>(() => logic.RestoreFrom(other));
+    }
+
+    [Fact]
+    public void RestoreFromCopiesStateAndBlackboard() {
+      var logic = new FakeLogicBlock();
+
+      var data = "data";
+
+      logic.Set(data);
+      logic.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
+
+      var other = new FakeLogicBlock();
+
+      other.RestoreFrom(logic);
+
+      other.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
+      other.Get<string>().ShouldBe(data);
+    }
   }
 }

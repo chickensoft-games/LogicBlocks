@@ -53,10 +53,12 @@ public abstract partial class LogicBlock<TState> {
     }
 
     if (Graph.IsConcrete(baseStateType)) {
-      logic.SaveObject(
-        baseStateType, () => Activator.CreateInstance(baseStateType)
-      );
+      var factory =
+        Introspection.Types.Graph.ConcreteVisibleTypes[baseStateType].Factory;
+      logic.SaveObject(baseStateType, factory);
       // Force type to be created and added to the blackboard.
+      // Reasoning: do as much heap allocation as possible during setup
+      // instead of during execution.
       logic.GetObject(baseStateType);
     }
 
@@ -74,25 +76,22 @@ public abstract partial class LogicBlock<TState> {
       // blackboard that will be used if we do not end up deserializing
       // the state later.
       if (logic.HasObject(stateType)) {
-        throw new LogicBlockException(
-          $"LogicBlock `{type}` has a conflicting blackboard value for " +
-          $"`{stateType}`. Please avoid adding blackboard values for " +
-          "states that are part of a LogicBlock's state hierarchy to " +
-          "enable state preallocation to work correctly."
-        );
+        // Don't preallocate states that have been manually added.
+        continue;
       }
+
+      var factory =
+        Introspection.Types.Graph.ConcreteVisibleTypes[stateType].Factory;
 
       if (!ReferenceStates.ContainsKey(stateType)) {
-        ReferenceStates.TryAdd(
-          stateType, Activator.CreateInstance(stateType)
-        );
+        ReferenceStates.TryAdd(stateType, factory());
       }
 
-      logic.SaveObject(
-        stateType, () => Activator.CreateInstance(stateType)
-      );
+      logic.SaveObject(stateType, factory);
 
       // Force type to be created and added to the blackboard.
+      // Reasoning: do as much heap allocation as possible during setup
+      // instead of during execution.
       logic.GetObject(stateType);
     }
 

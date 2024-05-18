@@ -82,11 +82,15 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
         )
     )
     .Where(logicBlockImplementation => logicBlockImplementation is not null)
-    .Select((logicBlockImplementation, token) => ConvertStateGraphToUml(
-      logicBlockImplementation!, token
-    ))
     .Combine(options)
-    .Select((result, _) => new GenerationData(result.Left, result.Right));
+    .Select(
+      (value, token) => new GenerationData(
+        Options: value.Right,
+        Result: ConvertStateGraphToUml(
+          value.Right, value.Left!, token
+        )
+      )
+    );
 
     context.RegisterImplementationSourceOutput(
       source: logicBlockCandidates,
@@ -104,8 +108,6 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
         // Since we need to output non-C# files, we have to write files to
         // the disk ourselves. This also allows us to output files that are
         // in the same directory as the source file.
-        //
-        // For best results, add `*.g.puml` to your `.gitignore` file.
 
         var destFile = result.FilePath;
         var content = result.Content;
@@ -350,6 +352,7 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
   }
 
   public ILogicBlockResult ConvertStateGraphToUml(
+    GenerationOptions options,
     LogicBlockImplementation implementation,
     CancellationToken token
   ) {

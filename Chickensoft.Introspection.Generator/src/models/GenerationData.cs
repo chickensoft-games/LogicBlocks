@@ -1,6 +1,8 @@
 namespace Chickensoft.Introspection.Generator.Models;
 
 using System.Collections.Immutable;
+using System;
+using System.Linq;
 
 /// <summary>
 /// Data used to generate source output. Represents the finished work of the
@@ -16,10 +18,36 @@ using System.Collections.Immutable;
 /// classes, or abstract types.</param>
 /// <param name="Mixins">Map of declared types that are marked with the mixin
 /// attribute by their type name.</param>
-public record GenerationData(
-  ImmutableDictionary<string, DeclaredType> AllTypes,
-  ImmutableDictionary<string, DeclaredType> Metatypes,
-  ImmutableDictionary<string, DeclaredType> VisibleTypes,
-  ImmutableDictionary<string, DeclaredType> ConcreteVisibleTypes,
-  ImmutableDictionary<string, DeclaredType> Mixins
-);
+public class GenerationData {
+  public ImmutableDictionary<string, DeclaredType> AllTypes { get; init; }
+  public ImmutableDictionary<string, DeclaredType> Metatypes { get; init; }
+  public ImmutableDictionary<string, DeclaredType> VisibleTypes { get; init; }
+  public ImmutableDictionary<string, DeclaredType> ConcreteVisibleTypes { get; init; }
+  public ImmutableDictionary<string, DeclaredType> Mixins { get; init; }
+
+  public GenerationData(
+    ImmutableDictionary<string, DeclaredType> allTypes,
+    ImmutableDictionary<string, DeclaredType> metatypes,
+    ImmutableDictionary<string, DeclaredType> visibleTypes,
+    ImmutableDictionary<string, DeclaredType> concreteVisibleTypes,
+    ImmutableDictionary<string, DeclaredType> mixins
+  ) {
+    AllTypes = allTypes;
+    Metatypes = metatypes;
+    VisibleTypes = visibleTypes;
+    ConcreteVisibleTypes = concreteVisibleTypes;
+    Mixins = mixins;
+  }
+
+  public override int GetHashCode() => HashCode.Combine(
+    AllTypes, Metatypes, VisibleTypes, ConcreteVisibleTypes, Mixins
+  );
+
+  public override bool Equals(object? obj) =>
+    obj is GenerationData data &&
+    AllTypes.SequenceEqual(data.AllTypes) &&
+    Metatypes.SequenceEqual(data.Metatypes) &&
+    VisibleTypes.SequenceEqual(data.VisibleTypes) &&
+    ConcreteVisibleTypes.SequenceEqual(data.ConcreteVisibleTypes) &&
+    Mixins.SequenceEqual(data.Mixins);
+}

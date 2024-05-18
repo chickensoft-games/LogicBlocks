@@ -57,7 +57,9 @@ public record DeclaredType(
   /// True if the metatype information can be generated for this type.
   /// </summary>
   public bool CanGenerateMetatypeInfo =>
-    HasIntrospectiveAttribute && Reference.IsPartial && !IsGeneric;
+    HasIntrospectiveAttribute &&
+    Location.IsFullyPartialOrTopLevel &&
+    !IsGeneric;
 
   /// <summary>
   /// True if the type is generic. A type is generic if it has type parameters
