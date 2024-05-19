@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using Chickensoft.Introspection;
 
-[Meta("fake_logic_block")]
+[Meta, Id("fake_logic_block")]
 public partial class FakeLogicBlock {
   public static class Input {
     public readonly record struct InputOne(int Value1, int Value2);
@@ -22,7 +22,7 @@ public partial class FakeLogicBlock {
     public readonly record struct Custom(Func<IContext, Transition> Next);
   }
 
-  [Meta("fake_logic_block_state")]
+  [Meta, Id("fake_logic_block_state")]
   public abstract partial record State : StateLogic<State>,
     IGet<Input.InputOne>,
     IGet<Input.InputTwo>,
@@ -89,36 +89,36 @@ public partial class FakeLogicBlock {
       return ToSelf();
     }
 
-    [Meta("fake_logic_block_state_start")]
+    [Meta, Id("fake_logic_block_state_start")]
     public partial record StartState : State;
 
-    [Meta("fake_logic_block_state_a")]
+    [Meta, Id("fake_logic_block_state_a")]
     public partial record StateA : State {
       public int Value1 { get; set; }
       public int Value2 { get; set; }
     }
 
-    [Meta("fake_logic_block_state_b")]
+    [Meta, Id("fake_logic_block_state_b")]
     public partial record StateB : State {
       public string Value1 { get; set; } = default!;
       public string Value2 { get; set; } = default!;
     }
 
-    [Meta("fake_logic_block_state_c")]
+    [Meta, Id("fake_logic_block_state_c")]
     public partial record StateC : State {
       public string Value { get; set; } = default!;
     }
 
-    [Meta("fake_logic_block_state_d")]
+    [Meta, Id("fake_logic_block_state_d")]
     public partial record StateD : State {
       public string Value1 { get; set; } = default!;
       public string Value2 { get; set; } = default!;
     }
 
-    [Meta("fake_logic_block_state_nothing")]
+    [Meta, Id("fake_logic_block_state_nothing")]
     public partial record NothingState : State;
 
-    [Meta("fake_logic_block_state_on_enter")]
+    [Meta, Id("fake_logic_block_state_on_enter")]
     public partial record OnEnterState : State {
       public Action<State?> Callback { get; set; } = default!;
 
@@ -127,7 +127,7 @@ public partial class FakeLogicBlock {
       }
     }
 
-    [Meta("fake_logic_block_state_on_exit")]
+    [Meta, Id("fake_logic_block_state_on_exit")]
     public partial record OnExitState : State {
       public Action<State?> Callback { get; set; } = default!;
 
@@ -136,7 +136,7 @@ public partial class FakeLogicBlock {
       }
     }
 
-    [Meta("fake_logic_block_state_add_error")]
+    [Meta, Id("fake_logic_block_state_add_error")]
     public partial record AddErrorOnEnterState : State {
       public Exception E { get; set; } = default!;
 

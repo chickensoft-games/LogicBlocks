@@ -48,13 +48,13 @@ internal readonly struct FakeContext : IFakeContext {
       return (TDataType)value;
     }
 
-    // If we've been asked for a state and it happens to be an introspective
-    // type that we can make, we'll go ahead and make one since states aren't
+    // If we've been asked for a state and it happens to be a concrete type
+    // that we can construct, we'll go ahead and make one since states aren't
     // supposed to be mocked anyways (they should be treated as models when
-    // testing).
+    // testing). This is done as a convenience to the developer and can be
+    // easily bypassed by adding a state to the blackboard manually.
     if (
       Introspection.Types.Graph.IsConcrete(type) &&
-      Introspection.Types.Graph.IsIntrospectiveType(type) &&
       Introspection.Types.Graph
         .GetDescendantSubtypes(typeof(StateBase))
         .Contains(type)

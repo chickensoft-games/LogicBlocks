@@ -82,12 +82,14 @@ public class PreallocationTest : IDisposable {
   }
 
   [Fact]
-  public void ThrowsWhenBaseStateOrSubstatesAreNotIntrospective() {
+  public void
+  ThrowsWhenSerializableLogicBlockBaseStateOrSubstatesAreNotSerializable() {
     Graph
       .Setup(g => g.IsIntrospectiveType(Logic.Object.GetType()))
       .Returns(true);
 
     var metatype = new Mock<IMetatype>();
+    metatype.Setup(m => m.Id).Returns("valid_id");
 
     Graph
       .Setup(g => g.GetMetatype(Logic.Object.GetType()))
@@ -107,11 +109,20 @@ public class PreallocationTest : IDisposable {
       .Returns(attributes);
 
     Graph
-      .Setup(g => g.IsIntrospectiveType(typeof(EmptyLogicBlock.State)))
+      .Setup(g => g.IsIdentifiableType(typeof(EmptyLogicBlock.State)))
       .Returns(false);
 
     Graph.Setup(g => g.IsConcrete(typeof(EmptyLogicBlock.State)))
       .Returns(true);
+
+    Graph.Setup(g => g.ConcreteVisibleTypes)
+      .Returns(new Dictionary<Type, TypeMetadata>() {
+        [typeof(EmptyLogicBlock.State)] = new TypeMetadata(
+          Name: "State",
+          GenericTypeGetter: (r) => r.Receive<EmptyLogicBlock.State>(),
+          Factory: () => new EmptyLogicBlock.State()
+        )
+      });
 
     Logic.Setup(logic => logic.SaveObject(
       typeof(EmptyLogicBlock.State),
@@ -125,7 +136,7 @@ public class PreallocationTest : IDisposable {
     Graph.Setup(g => g.GetDescendantSubtypes(typeof(EmptyLogicBlock.State)))
       .Returns(new HashSet<Type>() { typeof(object) });
 
-    Graph.Setup(g => g.IsIntrospectiveType(typeof(object)))
+    Graph.Setup(g => g.IsIdentifiableType(typeof(object)))
       .Returns(false);
 
     Graph.Setup(g => g.IsConcrete(typeof(object)))
@@ -137,7 +148,7 @@ public class PreallocationTest : IDisposable {
   }
 
   [Fact]
-  public void ThrowsWhenLogicBlockAlreadyHasStateTypeOnBlackboard() {
+  public void DoesNotThrowsWhenLogicBlockAlreadyHasStateTypeOnBlackboard() {
     Graph
       .Setup(g => g.IsIntrospectiveType(Logic.Object.GetType()))
       .Returns(true);
@@ -162,11 +173,20 @@ public class PreallocationTest : IDisposable {
       .Returns(attributes);
 
     Graph
-      .Setup(g => g.IsIntrospectiveType(typeof(EmptyLogicBlock.State)))
+      .Setup(g => g.IsIdentifiableType(typeof(EmptyLogicBlock.State)))
       .Returns(false);
 
     Graph.Setup(g => g.IsConcrete(typeof(EmptyLogicBlock.State)))
       .Returns(true);
+
+    Graph.Setup(g => g.ConcreteVisibleTypes)
+      .Returns(new Dictionary<Type, TypeMetadata>() {
+        [typeof(EmptyLogicBlock.State)] = new TypeMetadata(
+          Name: "State",
+          GenericTypeGetter: (r) => r.Receive<EmptyLogicBlock.State>(),
+          Factory: () => new EmptyLogicBlock.State()
+        )
+      });
 
     Logic.Setup(logic => logic.SaveObject(
       typeof(EmptyLogicBlock.State),
@@ -180,7 +200,7 @@ public class PreallocationTest : IDisposable {
     Graph.Setup(g => g.GetDescendantSubtypes(typeof(EmptyLogicBlock.State)))
       .Returns(new HashSet<Type>() { typeof(object) });
 
-    Graph.Setup(g => g.IsIntrospectiveType(typeof(object)))
+    Graph.Setup(g => g.IsIdentifiableType(typeof(object)))
       .Returns(true);
 
     Graph.Setup(g => g.IsConcrete(typeof(object)))
@@ -189,9 +209,7 @@ public class PreallocationTest : IDisposable {
     Logic.Setup(logic => logic.HasObject(typeof(object)))
       .Returns(true);
 
-    Should.Throw<LogicBlockException>(
-      () => EmptyLogicBlock.PreallocateStates(Logic.Object)
-    );
+    Should.NotThrow(() => EmptyLogicBlock.PreallocateStates(Logic.Object));
   }
 
   [Fact]
@@ -220,11 +238,20 @@ public class PreallocationTest : IDisposable {
       .Returns(attributes);
 
     Graph
-      .Setup(g => g.IsIntrospectiveType(typeof(EmptyLogicBlock.State)))
+      .Setup(g => g.IsIdentifiableType(typeof(EmptyLogicBlock.State)))
       .Returns(true);
 
     Graph.Setup(g => g.IsConcrete(typeof(EmptyLogicBlock.State)))
       .Returns(true);
+
+    Graph.Setup(g => g.ConcreteVisibleTypes)
+      .Returns(new Dictionary<Type, TypeMetadata>() {
+        [typeof(EmptyLogicBlock.State)] = new TypeMetadata(
+          Name: "State",
+          GenericTypeGetter: (r) => r.Receive<EmptyLogicBlock.State>(),
+          Factory: () => new EmptyLogicBlock.State()
+        )
+      });
 
     Logic.Setup(logic => logic.SaveObject(
       typeof(EmptyLogicBlock.State),

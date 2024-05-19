@@ -51,6 +51,7 @@ internal class TypeGraph : ITypeGraph {
   public void Register(ITypeRegistry registry) {
     RegisterTypes(registry);
     ComputeTypesByBaseType(registry);
+    ValidateDerivedTypesOfIdentifiableTypesAreAlsoIdentifiable();
   }
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -66,12 +67,7 @@ internal class TypeGraph : ITypeGraph {
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public bool IsIdentifiableType(Type type) =>
-    _metatypes.ContainsKey(type) &&
-    _metatypes[type].Attributes.ContainsKey(typeof(MetaAttribute)) &&
-    _metatypes[type].Attributes[typeof(MetaAttribute)].Length > 0 &&
-    _metatypes[type].Attributes[typeof(MetaAttribute)][0] is
-      MetaAttribute meta &&
-    !string.IsNullOrWhiteSpace(meta.Id);
+    _metatypes.ContainsKey(type) && _metatypes[type].Id is not null;
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public bool HasIntrospectiveType(string id) =>
@@ -174,6 +170,8 @@ internal class TypeGraph : ITypeGraph {
 
         var id = registry.Metatypes[type].Id;
 
+        if (id is null) { continue; }
+
         if (_introspectiveTypesById.ContainsKey(id)) {
           throw new DuplicateNameException(
             $"Cannot register introspective type `{type}` with id `{id}`. " +
@@ -233,6 +231,36 @@ internal class TypeGraph : ITypeGraph {
 
       currentType = currentType.BaseType;
     } while (currentType != null);
+  }
+
+  private void ValidateDerivedTypesOfIdentifiableTypesAreAlsoIdentifiable() {
+    var nonIdTypes = new HashSet<string>();
+
+    foreach (var type in _introspectiveTypesById.Values) {
+      nonIdTypes.Clear();
+
+      if (_metatypes[type].Id is null) {
+        continue;
+      }
+
+      // Validate concrete types derived from an identifiable type are also
+      // identifiable.
+      foreach (var descendant in GetDescendantSubtypes(type)) {
+        if (IsConcrete(type) && _metatypes[descendant].Id is null) {
+          nonIdTypes.Add(ConcreteVisibleTypes[descendant].Name);
+        }
+      }
+
+      if (nonIdTypes.Count == 0) { continue; }
+
+      throw new InvalidOperationException(
+        $"The identifiable type `{type}` has derived types which are not " +
+        "identifiable. Please ensure they are identifiable, introspective " +
+        $"types by adding the `[{nameof(MetaAttribute)}]` and " +
+        $"`[{nameof(IdAttribute)}]` attributes to them: " +
+        $"{string.Join(", ", nonIdTypes)}."
+      );
+    }
   }
 
   #endregion Private Utilities

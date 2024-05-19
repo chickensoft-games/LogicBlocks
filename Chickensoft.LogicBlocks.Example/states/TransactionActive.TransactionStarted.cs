@@ -1,9 +1,6 @@
 namespace Chickensoft.LogicBlocks.Example;
 
-using Chickensoft.Introspection;
-
 public partial class VendingMachine {
-  [Meta("vending_machine_transaction_started")]
   public partial record TransactionStarted : TransactionActive,
   IGet<Input.SelectionEntered> {
     public TransactionStarted() {

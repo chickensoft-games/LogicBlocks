@@ -2,8 +2,7 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using Chickensoft.Introspection;
 
-[Meta("input_on_initial_state")]
-[LogicBlock(typeof(State))]
+[LogicBlock(typeof(State)), Meta]
 public partial class InputOnInitialState : LogicBlock<InputOnInitialState.State> {
   public override Transition GetInitialState() => To<State>();
 
@@ -12,7 +11,6 @@ public partial class InputOnInitialState : LogicBlock<InputOnInitialState.State>
     public readonly record struct Initialize();
   }
 
-  [Meta("input_on_initial_state_state")]
   public partial record State : StateLogic<State>,
     IGet<Input.Start>,
     IGet<Input.Initialize> {

@@ -35,7 +35,7 @@ where TState : StateLogic<TState> {
 // Global introspection state is shared.
 [Collection("LogicBlock")]
 public partial class LogicBlockTest {
-  [Meta("test_obj")]
+  [Meta, Id("test_obj")]
   public partial class TestObject;
 
   public static TestListener<TStateType> Listen<TStateType>(

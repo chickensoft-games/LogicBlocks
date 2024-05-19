@@ -1,4 +1,4 @@
 namespace Chickensoft.Introspection.Generator.Tests.TestCases;
 
-[Meta(nameof(NameOfId))]
+[Meta, Id(nameof(NameOfId))]
 public partial record NameOfId;

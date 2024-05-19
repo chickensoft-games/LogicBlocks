@@ -4,8 +4,7 @@ using Chickensoft.Introspection;
 
 public interface IMyLogicBlock : ILogicBlock<MyLogicBlock.State>;
 
-[Meta("my_logic_block")]
-[LogicBlock(typeof(State), Diagram = true)]
+[LogicBlock(typeof(State), Diagram = true), Meta]
 public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBlock {
   public override Transition GetInitialState() => To<State.SomeState>();
 
@@ -14,9 +13,7 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBloc
     public readonly record struct SomeOtherInput;
   }
 
-  [Meta("my_logic_block_state")]
   public abstract partial record State : StateLogic<State> {
-    [Meta("my_logic_block_state_some")]
     public partial record SomeState : State, IGet<Input.SomeInput> {
       public SomeState() {
         this.OnEnter(() => Output(new Output.SomeOutput()));
@@ -29,7 +26,6 @@ public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBloc
       }
     }
 
-    [Meta("my_logic_block_state_some_other")]
     public partial record SomeOtherState : State, IGet<Input.SomeOtherInput> {
       public Transition On(in Input.SomeOtherInput input) {
         Output(new Output.SomeOtherOutput());

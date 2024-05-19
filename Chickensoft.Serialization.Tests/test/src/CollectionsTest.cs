@@ -8,7 +8,7 @@ using Shouldly;
 using Xunit;
 
 public partial class CollectionsTest {
-  [Meta("book")]
+  [Meta, Id("book")]
   public partial record Book {
     [Save("title")]
     public string Title { get; set; } = default!;

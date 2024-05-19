@@ -19,7 +19,7 @@ public record CampCounselor {
   public Activity Activity { get; set; } = default!;
 }
 
-[Meta("camp_instructor")]
+[Meta, Id("camp_instructor")]
 public partial record CampInstructor {
   [Save("person")]
   public Person Person { get; set; } = default!;

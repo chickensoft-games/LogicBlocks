@@ -241,7 +241,7 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
         continue;
       }
 
-      writer.WritePropertyName(blackboardObjType.Metatype.Id);
+      writer.WritePropertyName(blackboardObjType.Metatype.Id!);
 
       JsonSerializer.Serialize(
         writer,

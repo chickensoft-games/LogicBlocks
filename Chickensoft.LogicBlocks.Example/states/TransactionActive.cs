@@ -1,9 +1,6 @@
 namespace Chickensoft.LogicBlocks.Example;
 
-using Chickensoft.Introspection;
-
 public partial class VendingMachine {
-  [Meta("vending_machine_transaction_active")]
   public abstract partial record TransactionActive : SelectionEditable,
   IGet<Input.PaymentReceived>, IGet<Input.TransactionTimedOut> {
     public TransactionActive() {

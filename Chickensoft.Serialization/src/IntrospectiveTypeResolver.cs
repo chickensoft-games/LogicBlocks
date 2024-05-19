@@ -348,10 +348,18 @@ public class IntrospectiveTypeResolver : IIntrospectiveTypeResolver {
         polymorphismOptions.TypeDiscriminatorPropertyName = TYPE_DISCRIMINATOR;
 
         foreach (var derivedType in derivedTypes) {
+          // Don't register derived types for abstract types.
+          if (!Types.Graph.IsConcrete(derivedType)) { continue; }
+
           var derivedTypeMetatype =
             Types.Graph.GetMetatype(derivedType);
+
+          // We know the derived type must have an id because the introspection
+          // type graph validates that descendant types of an identifiable type
+          // are also identifiable types when types are registered in the
+          // module initializer. :)
           polymorphismOptions.DerivedTypes.Add(
-            new JsonDerivedType(derivedType, derivedTypeMetatype.Id)
+            new JsonDerivedType(derivedType, derivedTypeMetatype.Id!)
           );
         }
       }

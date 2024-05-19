@@ -30,13 +30,13 @@ public partial class LogicBlockConverterTest {
     }
     """;
 
-  [Meta("a")]
+  [Meta, Id("a")]
   public partial record A {
     [Save("a_value")]
     public string AValue { get; set; } = "";
   }
 
-  [Meta("b")]
+  [Meta, Id("b")]
   public partial record B {
     [Save("b_value")]
     public string BValue { get; set; } = "";

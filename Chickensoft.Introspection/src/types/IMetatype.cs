@@ -8,11 +8,10 @@ using System.Collections.Generic;
 /// </summary>
 public interface IMetatype {
   /// <summary>
-  /// Metatype identifier. This will be used as the type discriminator for
-  /// serialization and deserialization if used with LogicBlock's serialization
-  /// utilities.
+  /// Introspective type identifier as specified by the
+  /// <see cref="IdAttribute" />, if any.
   /// </summary>
-  string Id { get; }
+  string? Id { get; }
 
   /// <summary>
   /// Properties on the type. Only non-partial properties marked with

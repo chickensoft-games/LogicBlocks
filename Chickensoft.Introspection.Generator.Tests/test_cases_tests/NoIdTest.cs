@@ -8,6 +8,6 @@ public class NoIdTest {
   [Fact]
   public void ModelWithoutExplicitIdIsAllowed() {
     var metatype = TypeRegistry.Instance.Metatypes[typeof(NoId)];
-    metatype.Id.ShouldBe("chickensoft_introspection_generator_tests_test_cases_no_id");
+    metatype.Id.ShouldBeNull();
   }
 }

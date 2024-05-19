@@ -3,10 +3,8 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 using System;
 using Chickensoft.Introspection;
 
-[Meta("internals_logic")]
-[LogicBlock(typeof(State))]
+[LogicBlock(typeof(State)), Meta]
 public partial class InternalsLogic : LogicBlock<InternalsLogic.State> {
-  [Meta("internals_logic_state")]
   public partial record State : StateLogic<State> {
     public Action? OnAttachAction { get; init; }
     public Action? OnDetachAction { get; init; }

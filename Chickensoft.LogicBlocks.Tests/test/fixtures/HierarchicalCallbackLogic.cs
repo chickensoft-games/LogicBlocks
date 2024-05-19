@@ -3,8 +3,7 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 using System;
 using Chickensoft.Introspection;
 
-[Meta("hierarchical_callback_logic")]
-[LogicBlock(typeof(State), Diagram = true)]
+[LogicBlock(typeof(State), Diagram = true), Meta]
 public partial class HierarchicalCallbackLogic :
   LogicBlock<HierarchicalCallbackLogic.State> {
   public Func<Transition> InitialState { get; init; } =
@@ -16,14 +15,12 @@ public partial class HierarchicalCallbackLogic :
     public readonly record struct Log(string Message);
   }
 
-  [Meta("hierarchical_callback_logic_state")]
   public partial record State : StateLogic<State> {
     public State() {
       this.OnEnter(() => Output(new Output.Log("state")));
       this.OnExit(() => Output(new Output.Log("state")));
     }
 
-    [Meta("hierarchical_callback_logic_substate")]
     public partial record Substate : State {
       public Substate() {
         this.OnEnter(() => Output(new Output.Log("substate")));

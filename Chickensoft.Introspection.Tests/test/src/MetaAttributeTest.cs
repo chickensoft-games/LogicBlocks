@@ -8,13 +8,6 @@ public class MetaAttributeTest {
   public interface ITestMixin : IMixin<ITestMixin>;
 
   [Fact]
-  public void InitializesWithId() {
-    const string id = "id";
-    var meta = new MetaAttribute(id);
-    meta.Id.ShouldBe(id);
-  }
-
-  [Fact]
   public void InitializesWithMixins() {
     var meta = new MetaAttribute(typeof(ITestMixin));
     meta.Mixins.ShouldContain(typeof(ITestMixin));

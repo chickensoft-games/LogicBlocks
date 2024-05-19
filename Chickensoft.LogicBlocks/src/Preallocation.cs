@@ -41,20 +41,33 @@ public abstract partial class LogicBlock<TState> {
       return;
     }
 
+    // See if logic block is an identifiable, introspective type (serializable).
+    // If it is, we will throw if any of its states are not also identifiable,
+    // introspective types. If we're not an identifiable, introspective type,
+    // we don't need to perform additional validation for serialization —
+    // just do enough to preallocate states and be done.
+    var isIdentifiable = metatype.Id is not null;
+
+    bool isValidStateType(Type type) {
+      // All states are valid if we're not a serializable logic block.
+      if (!isIdentifiable) { return true; }
+      // Serializable logic blocks require all states to also be serializable.
+      return Graph.IsIdentifiableType(type);
+    }
+
     var baseStateType = logicBlockAttribute.StateType;
 
     var subtypes = Graph.GetDescendantSubtypes(baseStateType);
 
-    var stateTypesNeedingAttention =
-      new HashSet<Type>(subtypes.Count + 1);
+    var stateTypesNeedingAttention = new HashSet<Type>(subtypes.Count + 1);
 
-    if (!Graph.IsIntrospectiveType(baseStateType)) {
+    if (!isValidStateType(baseStateType)) {
       stateTypesNeedingAttention.Add(baseStateType);
     }
 
     if (Graph.IsConcrete(baseStateType)) {
       var factory =
-        Introspection.Types.Graph.ConcreteVisibleTypes[baseStateType].Factory;
+        Graph.ConcreteVisibleTypes[baseStateType].Factory;
       logic.SaveObject(baseStateType, factory);
       // Force type to be created and added to the blackboard.
       // Reasoning: do as much heap allocation as possible during setup
@@ -63,7 +76,7 @@ public abstract partial class LogicBlock<TState> {
     }
 
     foreach (var stateType in subtypes) {
-      if (!Graph.IsIntrospectiveType(stateType)) {
+      if (!isValidStateType(stateType)) {
         stateTypesNeedingAttention.Add(stateType);
         continue;
       }
@@ -80,8 +93,7 @@ public abstract partial class LogicBlock<TState> {
         continue;
       }
 
-      var factory =
-        Introspection.Types.Graph.ConcreteVisibleTypes[stateType].Factory;
+      var factory = Graph.ConcreteVisibleTypes[stateType].Factory;
 
       if (!ReferenceStates.ContainsKey(stateType)) {
         ReferenceStates.TryAdd(stateType, factory());
@@ -102,10 +114,10 @@ public abstract partial class LogicBlock<TState> {
     );
 
     throw new LogicBlockException(
-      $"Introspective LogicBlock `{type}` has states that are missing an " +
-      "explicit identifier. Please ensure the following types have the " +
-      $"[{nameof(MetaAttribute)}] and supply an explicit string id as the " +
-      $"first argument to the attribute: {statesNeedingAttention}."
+      $"Serializable LogicBlock `{type}` has states that are not " +
+      $"serializable. Please ensure the following types have the " +
+      $"[{nameof(MetaAttribute)}] and [{nameof(IdAttribute)}] attributes: " +
+      $"{statesNeedingAttention}."
     );
   }
 }

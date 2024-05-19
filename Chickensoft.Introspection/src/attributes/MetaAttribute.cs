@@ -10,11 +10,6 @@ using System;
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
 public sealed class MetaAttribute : Attribute {
-  /// <summary>
-  /// Introspective type identifier string. The identifier should be unique
-  /// across all assemblies used in your project.
-  /// </summary>
-  public string? Id { get; }
 
   /// <summary>
   /// Mixins applied to the type. Mixins are interfaces that extend
@@ -29,19 +24,8 @@ public sealed class MetaAttribute : Attribute {
   /// <summary>
   /// <inheritdoc cref="MetaAttribute" path="/summary"/>
   /// </summary>
-  /// <param name="id"><inheritdoc cref="Id" path="/summary"/></param>
-  /// <param name="mixins"><inheritdoc cref="Mixins" path="/summary"/></param>
-  public MetaAttribute(string id, params Type[] mixins) {
-    Id = id;
-    Mixins = mixins;
-  }
-
-  /// <summary>
-  /// <inheritdoc cref="MetaAttribute" path="/summary"/>
-  /// </summary>
   /// <param name="mixins"><inheritdoc cref="Mixins" path="/summary"/></param>
   public MetaAttribute(params Type[] mixins) {
-    Id = null;
     Mixins = mixins;
   }
 }

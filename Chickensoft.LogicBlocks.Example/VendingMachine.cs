@@ -2,21 +2,16 @@ namespace Chickensoft.LogicBlocks.Example;
 
 using System.Collections.Generic;
 using Chickensoft.Introspection;
-using Chickensoft.Serialization;
 
-[Meta("vending_machine")]
-[LogicBlock(typeof(State), Diagram = true)]
+[LogicBlock(typeof(State), Diagram = true), Meta]
 public partial class VendingMachine : LogicBlock<VendingMachine.State> {
   // Data shared between states
-  [Meta("vending_machine_data")]
+
   public partial record Data {
-    [Save("type")]
     public ItemType Type { get; set; }
 
-    [Save("price")]
     public int Price { get; set; }
 
-    [Save("amount_received")]
     public int AmountReceived { get; set; }
 
     public override string ToString() =>
@@ -57,7 +52,7 @@ public partial class VendingMachine : LogicBlock<VendingMachine.State> {
   public override Transition GetInitialState() => To<Idle>();
 
   public VendingMachine() {
-    Save(() => new Data());
+    Set(new Data());
   }
 }
 

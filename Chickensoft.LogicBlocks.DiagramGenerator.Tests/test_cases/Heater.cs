@@ -24,7 +24,7 @@ public record TemperatureSensor : ITemperatureSensor {
   }
 }
 
-[Meta("heater")]
+[Meta, Id("heater")]
 [LogicBlock(typeof(State), Diagram = true)]
 public partial class Heater : LogicBlock<Heater.State> {
   public override Transition GetInitialState() =>
@@ -36,7 +36,7 @@ public partial class Heater : LogicBlock<Heater.State> {
     public readonly record struct TargetTempChanged(double Temp);
     public readonly record struct AirTempSensorChanged(double AirTemp);
   }
-  [Meta("heater_state")]
+  [Meta, Id("heater_state")]
   public abstract partial record State :
     StateLogic<State>, IGet<Input.TargetTempChanged> {
     public double TargetTemp { get; set; }
@@ -46,7 +46,7 @@ public partial class Heater : LogicBlock<Heater.State> {
       return ToSelf().With(state => state.TargetTemp = temp);
     }
 
-    [Meta("heater_state_powered")]
+    [Meta, Id("heater_state_powered")]
     public abstract partial record Powered : State, IGet<Input.TurnOff> {
       public Powered() {
         // Whenever a Powered state is entered, play a chime to
@@ -78,7 +78,7 @@ public partial class Heater : LogicBlock<Heater.State> {
         Input(new Input.AirTempSensorChanged(airTemp));
     }
 
-    [Meta("heater_state_off")]
+    [Meta, Id("heater_state_off")]
     public partial record Off : State, IGet<Input.TurnOn> {
       public Transition On(in Input.TurnOn input) {
         // Get the temperature sensor from the blackboard.
@@ -94,7 +94,7 @@ public partial class Heater : LogicBlock<Heater.State> {
       }
     }
 
-    [Meta("heater_state_powered_idle")]
+    [Meta, Id("heater_state_powered_idle")]
     public partial record Idle : Powered, IGet<Input.AirTempSensorChanged> {
       public Transition On(in Input.AirTempSensorChanged input) {
         if (input.AirTemp < TargetTemp - 3.0d) {
@@ -107,7 +107,7 @@ public partial class Heater : LogicBlock<Heater.State> {
       }
     }
 
-    [Meta("heater_state_powered_heating")]
+    [Meta, Id("heater_state_powered_heating")]
     public partial record Heating : Powered, IGet<Input.AirTempSensorChanged> {
       public Transition On(in Input.AirTempSensorChanged input) {
         if (input.AirTemp >= TargetTemp) {

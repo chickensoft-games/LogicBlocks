@@ -9,7 +9,7 @@ using Xunit;
 public partial class LogicBlockListenerTest {
   public interface ITestLogic : ILogicBlock<TestLogic.State>;
 
-  [Meta("logic_block_listener_test_logic")]
+  [Meta, Id("logic_block_listener_test_logic")]
   [LogicBlock(typeof(State))]
   public partial class TestLogic : LogicBlock<TestLogic.State> {
     public override Transition GetInitialState() => To<State>();

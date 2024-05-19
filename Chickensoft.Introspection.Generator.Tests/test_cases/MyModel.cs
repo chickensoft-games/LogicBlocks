@@ -14,7 +14,7 @@ public interface IMySecondMixin : IMixin<IMySecondMixin> {
 }
 
 public partial class MyContainerClass {
-  [Meta("my_model", typeof(IMyMixin), typeof(IMySecondMixin))]
+  [Id("my_model"), Meta(typeof(IMyMixin), typeof(IMySecondMixin))]
   public partial record MyModel {
     [Save("name")]
     public string Name { get; set; } = "";

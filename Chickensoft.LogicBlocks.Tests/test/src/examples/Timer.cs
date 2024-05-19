@@ -14,7 +14,7 @@ public interface IClock {
   event Action<double> TimeElapsed;
 }
 
-[Meta("timer")]
+[Meta, Id("timer")]
 [LogicBlock(typeof(State), Diagram = true)]
 public partial class Timer : LogicBlock<Timer.State> {
   public override Transition GetInitialState() => To<State.PoweredOff>();
@@ -47,19 +47,19 @@ public partial class Timer : LogicBlock<Timer.State> {
     public readonly record struct TimeElapsed(double Delta);
   }
 
-  [Meta("timer_state")]
+  [Meta, Id("timer_state")]
   public abstract partial record State : StateLogic<State> {
-    [Meta("timer_state_powered_off")]
+    [Meta, Id("timer_state_powered_off")]
     public partial record PoweredOff : State, IGet<Input.PowerButtonPressed> {
       public Transition On(in Input.PowerButtonPressed input) =>
         To<PoweredOn.Idle>();
     }
 
-    [Meta("timer_state_powered_on")]
+    [Meta, Id("timer_state_powered_on")]
     public abstract partial record PoweredOn : State, IGet<Input.PowerButtonPressed> {
       public Transition On(in Input.PowerButtonPressed input) => To<PoweredOff>();
 
-      [Meta("timer_state_powered_on_idle")]
+      [Meta, Id("timer_state_powered_on_idle")]
       public partial record Idle : PoweredOn, IGet<Input.StartStopButtonPressed> {
         public Transition On(in Input.ChangeDuration input) {
           Get<Data>().Duration = input.Duration;
@@ -70,7 +70,7 @@ public partial class Timer : LogicBlock<Timer.State> {
           To<Running>();
       }
 
-      [Meta("timer_state_powered_on_running")]
+      [Meta, Id("timer_state_powered_on_running")]
       public partial record Running : PoweredOn,
           IGet<Input.TimeElapsed>, IGet<Input.StartStopButtonPressed> {
         public Running() {
@@ -90,7 +90,7 @@ public partial class Timer : LogicBlock<Timer.State> {
         public Transition On(in Input.StartStopButtonPressed input) => To<Idle>();
       }
 
-      [Meta("timer_state_powered_on_beeping")]
+      [Meta, Id("timer_state_powered_on_beeping")]
       public partial record Beeping : PoweredOn {
         public Beeping() {
           this.OnEnter(() => Output(new Output.PlayBeepingSound()));

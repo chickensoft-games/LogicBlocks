@@ -2,7 +2,7 @@ namespace Chickensoft.Serialization.Tests.Fixtures;
 
 using Chickensoft.Introspection;
 
-[Meta("person")]
+[Meta, Id("person")]
 public partial record Person {
   [Save("name")]
   public string Name { get; set; } = default!;
@@ -22,7 +22,7 @@ public enum PetType {
   Cat,
 }
 
-[Meta("pet")]
+[Meta, Id("pet")]
 public abstract partial record Pet {
   [Save("name")]
   public string Name { get; set; } = "";
@@ -30,7 +30,7 @@ public abstract partial record Pet {
   public PetType Type { get; set; }
 }
 
-[Meta("dog")]
+[Meta, Id("dog")]
 public partial record Dog : Pet {
   public Dog() {
     Type = PetType.Dog;
@@ -40,7 +40,7 @@ public partial record Dog : Pet {
   public int BarkVolume { get; set; }
 }
 
-[Meta("cat")]
+[Meta, Id("cat")]
 public partial record Cat : Pet {
   public Cat() {
     Type = PetType.Cat;

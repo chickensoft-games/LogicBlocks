@@ -10,7 +10,7 @@ using JSON = System.Text.Json;
 [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
 public class JunkAttribute : Attribute;
 
-[Meta("my_type")]
+[Meta, Id("my_type")]
 [Junk]
 [Junk]
 public partial class MyType {
@@ -40,7 +40,7 @@ public static partial class One {
   internal partial record struct Two {
     public partial interface IThree {
       public sealed partial record Four {
-        [Meta("nested_type")]
+        [Meta, Id("nested_type")]
         public sealed partial class NestedType {
           [Junk]
           [Junk]
