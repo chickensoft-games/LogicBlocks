@@ -42,7 +42,7 @@ internal class TypeGraph : ITypeGraph {
   public void Register(ITypeRegistry registry) {
     RegisterTypes(registry);
     ComputeTypesByBaseType(registry);
-    // ValidateDerivedTypesOfIdentifiableTypesAreAlsoIdentifiable();
+    ValidateTypeGraph();
   }
 
   public Type? GetIdentifiableType(string id) =>
@@ -228,13 +228,16 @@ internal class TypeGraph : ITypeGraph {
     } while (currentType != null);
   }
 
-  private void ValidateDerivedTypesOfIdentifiableTypesAreAlsoIdentifiable() {
+  private void ValidateTypeGraph() {
+    // Ensures that all types derived from an identifiable type are also
+    // identifiable.
     var nonIdTypes = new HashSet<string>();
 
     foreach (var type in _identifiableTypes.Keys) {
       nonIdTypes.Clear();
 
       var typeMetadata = _identifiableTypes[type];
+      var id = typeMetadata.Id;
 
       // Validate types derived from an identifiable type are also
       // identifiable.
@@ -251,14 +254,26 @@ internal class TypeGraph : ITypeGraph {
 
       if (nonIdTypes.Count == 0) { continue; }
 
-      throw new InvalidOperationException(
-        $"The identifiable type `{typeMetadata}` has derived types which are " +
-        "not identifiable. Please ensure they are identifiable, " +
-        $"introspective types by adding the `[{nameof(MetaAttribute)}]` and " +
-        $"`[{nameof(IdAttribute)}]` attributes to them: " +
-        $"{string.Join(", ", nonIdTypes)}."
-      );
+      var warning =
+        $"WARNING: The identifiable type `{typeMetadata.Id}` has derived " +
+        "types which are not identifiable. Please ensure they are " +
+        "identifiable, introspective types by adding the " +
+        $"`[{nameof(MetaAttribute)}]` and `[{nameof(IdAttribute)}]` " +
+        $"attributes to them: {string.Join(", ", nonIdTypes)}.";
+
+      PrintWarning(warning);
     }
+  }
+
+  private void PrintWarning(string warning) {
+    var bgColor = Console.BackgroundColor;
+    var fgColor = Console.ForegroundColor;
+    Console.BackgroundColor = ConsoleColor.DarkRed;
+    Console.ForegroundColor = ConsoleColor.White;
+    Console.Write(warning);
+    Console.BackgroundColor = bgColor;
+    Console.ForegroundColor = fgColor;
+    Console.WriteLine();
   }
   #endregion Private Utilities
 }
