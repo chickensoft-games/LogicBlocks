@@ -1,8 +1,8 @@
 namespace Chickensoft.Serialization.Tests;
 
-using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
+using Chickensoft.Collections;
+using Chickensoft.LogicBlocks.Serialization;
 using Chickensoft.Serialization.Tests.Fixtures;
 using Shouldly;
 using Xunit;
@@ -19,11 +19,12 @@ public partial class IntrospectiveTypeResolverTest {
       },
     };
 
-    var resolver = new IntrospectiveTypeResolver();
+    var resolver = new SerializableTypeResolver();
 
     var options = new JsonSerializerOptions {
       WriteIndented = true,
-      TypeInfoResolver = resolver
+      TypeInfoResolver = resolver,
+      Converters = { new IdentifiableTypeConverter(new Blackboard()) }
     };
 
     var json = JsonSerializer.Serialize(person, options);
@@ -32,8 +33,9 @@ public partial class IntrospectiveTypeResolverTest {
       /*lang=json,strict*/
       """
       {
-        "name": "John Doe",
+        "$type": "person",
         "age": 30,
+        "name": "John Doe",
         "pet": {
           "$type": "dog",
           "bark_volume": 11,
@@ -48,47 +50,5 @@ public partial class IntrospectiveTypeResolverTest {
       JsonSerializer.Deserialize<Person>(json, options);
 
     deserializedPerson.ShouldBe(person);
-  }
-
-  [Fact]
-  public void CreatesCorrectTypeInfo() {
-    var resolver = new IntrospectiveTypeResolver();
-    var options = new JsonSerializerOptions {
-      WriteIndented = true
-    };
-
-    var personType = typeof(Person);
-    var personTypeInfo = resolver.GetTypeInfo(personType, options);
-
-    personTypeInfo!.Properties.Select(p => p.Name).ShouldBe(
-      ["name", "age", "pet"], ignoreOrder: true
-    );
-    personTypeInfo.Type.ShouldBe(personType);
-
-    var petType = typeof(Pet);
-    var petTypeInfo = resolver.GetTypeInfo(petType, options);
-
-    petTypeInfo.ShouldNotBeNull();
-    petTypeInfo.Type.ShouldBe(petType);
-    petTypeInfo.PolymorphismOptions!.DerivedTypes.ShouldBe(
-      [
-        new JsonDerivedType(typeof(Dog), "dog"),
-        new JsonDerivedType(typeof(Cat), "cat"),
-      ],
-      comparer: JsonDerivedTypeComparer.Instance,
-      ignoreOrder: true
-    );
-
-    var dogType = typeof(Dog);
-    var dogTypeInfo = resolver.GetTypeInfo(dogType, options);
-
-    dogTypeInfo.ShouldNotBeNull();
-    dogTypeInfo.Type.ShouldBe(dogType);
-
-    var catType = typeof(Cat);
-    var catTypeInfo = resolver.GetTypeInfo(catType, options);
-
-    catTypeInfo.ShouldNotBeNull();
-    catTypeInfo.Type.ShouldBe(catType);
   }
 }

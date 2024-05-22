@@ -2,7 +2,9 @@ namespace Chickensoft.Serialization.Tests;
 
 using System.Collections.Generic;
 using System.Text.Json;
+using Chickensoft.Collections;
 using Chickensoft.Introspection;
+using Chickensoft.LogicBlocks.Serialization;
 using DeepEqual.Syntax;
 using Shouldly;
 using Xunit;
@@ -40,11 +42,10 @@ public partial class CollectionsTest {
       },
     };
 
-    var resolver = new IntrospectiveTypeResolver();
-
     var options = new JsonSerializerOptions {
       WriteIndented = true,
-      TypeInfoResolver = resolver
+      TypeInfoResolver = new SerializableTypeResolver(),
+      Converters = { new IdentifiableTypeConverter(new Blackboard()) }
     };
 
     var json = JsonSerializer.Serialize(book, options);
@@ -53,7 +54,7 @@ public partial class CollectionsTest {
       /*lang=json,strict*/
       """
       {
-        "title": "The Book",
+        "$type": "book",
         "author": "The Author",
         "related_books": {
           "Title A": [
@@ -78,7 +79,8 @@ public partial class CollectionsTest {
             []
           ],
           "Title C": []
-        }
+        },
+        "title": "The Book"
       }
       """,
       options: StringCompareShould.IgnoreLineEndings

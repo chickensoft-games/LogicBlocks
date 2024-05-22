@@ -2,6 +2,7 @@ namespace Chickensoft.Introspection;
 
 using System;
 using System.Collections.Generic;
+using Chickensoft.Collections;
 
 /// <summary>
 /// Type graph representing all the registered types in the application, across
@@ -9,7 +10,7 @@ using System.Collections.Generic;
 /// reference types that are visible from the global scope of the assembly that
 /// registered the types are represented in the graph, including nested types.
 /// </summary>
-public interface ITypeGraph : ITypeRegistry {
+public interface ITypeGraph {
   /// <summary>
   /// Computes and caches secondary type lookup tables based on the types
   /// registered in the provided type registry.
@@ -19,104 +20,73 @@ public interface ITypeGraph : ITypeRegistry {
   void Register(ITypeRegistry registry);
 
   /// <summary>
-  /// Whether or not a type is visible from the global scope. The type graph
-  /// only contains information about reference types that are visible from the
-  /// global scope of the assembly that registered the types.
+  /// Gets the identifiable type associated with the given id, if any.
   /// </summary>
-  /// <param name="type">Type to examine.</param>
-  /// <returns>True if the type is visible from the global scope.</returns>
-  bool IsVisibleFromGlobalScope(Type type);
+  /// <param name="id">Identifiable type id.</param>
+  /// <returns>Identifiable type metadata, if any.</returns>
+  Type? GetIdentifiableType(string id);
 
   /// <summary>
-  /// True if the given reference type is a concrete type visible from the
-  /// global scope.
+  /// Checks if the given type has metadata associated with it.
   /// </summary>
-  /// <param name="type">Type to examine.</param>
-  /// <remarks>
-  /// A type is considered concrete if it is a reference type that is not
-  /// abstract (and not an interface).
-  /// </remarks>
-  /// <returns>True if the type is known to be concrete.</returns>
-  bool IsConcrete(Type type);
+  /// <param name="type">System type.</param>
+  /// <returns>True if the type has metadata associated with it.</returns>
+  bool HasMetadata(Type type);
 
   /// <summary>
-  /// Check if a type is an introspective type that has a generated metatype
-  /// class associated with it. Use <see cref="GetMetatype(Type)" /> to get the
-  /// associated metatype information if this returns true.
+  /// Gets metadata associated with the given type, if any.
   /// </summary>
-  /// <param name="type">Type to examine.</param>
-  /// <returns>True if the type has generated metatype information.</returns>
-  bool IsIntrospectiveType(Type type);
-
-  /// <summary>
-  /// Check if a type is an introspective type that has a generated metatype
-  /// class associated with it that has been given an explicit, user-defined
-  /// id. Use <see cref="GetMetatype(Type)" /> to get the
-  /// associated metatype information if this returns true.
-  /// </summary>
-  /// <param name="type">Type to examine.</param>
-  /// <returns>True if the type is an identifiable type.</returns>
-  bool IsIdentifiableType(Type type);
-
-  /// <summary>
-  /// Check if an introspective type exists for the given id. The id for an
-  /// introspective type is supplied to the introspection generator via the
-  /// <see cref="MetaAttribute" />.
-  /// </summary>
-  /// <param name="id">Potential introspective type id.</param>
-  /// <returns>True if an introspective type exists with this id.</returns>
-  bool HasIntrospectiveType(string id);
-
-  /// <summary>
-  /// Get the introspective type associated with the given id. To check if an
-  /// id is associated with an introspective type, use
-  /// <see cref="HasIntrospectiveType(string)" />. To get the metatype of the
-  /// introspective type, use <see cref="GetMetatype(Type)" />.
-  /// </summary>
-  /// <param name="id">Introspective type id.</param>
-  /// <returns>The system type of the introspective type.</returns>
-  Type GetIntrospectiveType(string id);
-
-  /// <summary>
-  /// Gets the metatype associated with the given introspective type. To check
-  /// if a type is introspective, use <see cref="IsIntrospectiveType(Type)" />.
-  /// </summary>
-  /// <param name="type">Introspective type's system type.</param>
-  /// <returns>The metatype associated with the introspective type.</returns>
-  /// <exception cref="InvalidOperationException" />
-  IMetatype GetMetatype(Type type);
+  /// <param name="type">System type.</param>
+  /// <returns>Metadata associated with the type, if any.</returns>
+  ITypeMetadata? GetMetadata(Type type);
 
   /// <summary>
   /// Gets the immediately known subtypes of the given type. To get all
   /// subtypes, including descendants, use <see cref="GetDescendantSubtypes"/>.
   /// </summary>
-  /// <param name="type">Parent type.</param>
-  /// <returns>Immediate subtypes.</returns>
-  ISet<Type> GetSubtypes(Type type);
+  /// <param name="type">Parent system type.</param>
+  /// <returns>Set of system types comprising the type's immediate
+  /// subtypes.</returns>
+  IReadOnlySet<Type> GetSubtypes(Type type);
 
   /// <summary>
   /// Gets all known subtypes of the given type, including its immediate
   /// subtypes. To just get the immediate subtypes, use
   /// <see cref="GetSubtypes"/>.
   /// </summary>
-  /// <param name="type">Ancestor type.</param>
-  ISet<Type> GetDescendantSubtypes(Type type);
+  /// <param name="type">Ancestor system type.</param>
+  /// <returns>Set of system types comprising all of the type's descendants.
+  /// </returns>
+  IReadOnlySet<Type> GetDescendantSubtypes(Type type);
 
   /// <summary>
-  /// Gets all the properties of the given metatype, including the properties
-  /// inherited from any base metatypes that the type extends.
+  /// Gets all the properties of the given introspective type, including
+  /// properties inherited from any base introspective types that the type
+  /// extends.
   /// </summary>
-  /// <param name="type">Type whose properties should be looked up.</param>
-  /// <returns>All properties of the metatype, including the properties
-  /// inherited from any base metatypes that the type extends.</returns>
+  /// <param name="type">The system type of an introspective type.</param>
+  /// <returns>All properties of the introspective type, including properties
+  /// inherited from any base introspective types that the type extends.
+  /// </returns>
   IEnumerable<PropertyMetadata> GetProperties(Type type);
 
   /// <summary>
-  /// Gets all the attributes of the given type, including the attributes
-  /// inherited from any base metatypes that the type extends.
+  /// Gets the first attribute of the specified type that is applied on a
+  /// type, if any.
   /// </summary>
-  /// <param name="type">Type whose attributes should be looked up.</param>
+  /// <typeparam name="TAttribute">Type of attribute to get.</typeparam>
+  /// <param name="type">Type whose attributes should be searched.</param>
+  /// <returns>The attribute instance, or null if the attribute was not found.
+  /// </returns>
+  TAttribute? GetAttribute<TAttribute>(Type type)
+  where TAttribute : Attribute;
+
+  /// <summary>
+  /// Gets all the attributes of the given introspective type, including the
+  /// attributes inherited from any base metatypes that the type extends.
+  /// </summary>
+  /// <param name="type">The system type of an introspective type.</param>
   /// <returns>Map of attribute types to the list of attribute instances
   /// that represent the applied attributes on the type.</returns>
-  IDictionary<Type, Attribute[]> GetAttributes(Type type);
+  IReadOnlyDictionary<Type, Attribute[]> GetAttributes(Type type);
 }

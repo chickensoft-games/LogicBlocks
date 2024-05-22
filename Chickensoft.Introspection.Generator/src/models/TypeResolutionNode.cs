@@ -27,7 +27,9 @@ public record TypeNode(
   bool IsConcrete,
   string OpenGenerics,
   Dictionary<string, TypeNode> TypeChildren
-) : TypeResolutionNode(Name, TypeChildren);
+) : TypeResolutionNode(Name, TypeChildren) {
+  public bool IsGeneric => OpenGenerics.Length > 0;
+}
 
 /// <summary>
 /// Represents a namespace in a type tree.

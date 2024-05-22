@@ -4,11 +4,9 @@ using System;
 using System.Collections.Generic;
 using Chickensoft.Introspection;
 
-public abstract partial class LogicBlock<TState> {
-  internal static ITypeGraph DefaultGraph => Introspection.Types.Graph;
-  // Graph to use for introspection. Allows it to be shimmed for testing.
-  internal static ITypeGraph Graph { get; set; } = DefaultGraph;
+using static Introspection.Types;
 
+public abstract partial class LogicBlock<TState> {
   /// <summary>
   /// Adds an instance of every concrete state type in the state hierarchy to
   /// the blackboard. For this to work, the logic block and its states must be
@@ -20,24 +18,14 @@ public abstract partial class LogicBlock<TState> {
   /// <exception cref="LogicBlockException" />
   internal static void PreallocateStates(ILogicBlock<TState> logic) {
     var type = logic.GetType();
-    // If we're not an introspective type, we can't examine our state hierarchy.
-    if (!Graph.IsIntrospectiveType(type)) {
-      return;
-    }
+    var metadata = Graph.GetMetadata(type);
 
-    var metatype = Graph.GetMetatype(type);
-
-    var logicBlockAttributes =
-      metatype.Attributes.ContainsKey(typeof(LogicBlockAttribute))
-        ? metatype.Attributes[typeof(LogicBlockAttribute)]
-        : null;
-
-    // Identify the logic block attribute, if any.
     if (
-      logicBlockAttributes is not { } attributes ||
-      attributes.Length < 1 ||
-      attributes[0] is not LogicBlockAttribute logicBlockAttribute
+      metadata is not IIntrospectiveTypeMetadata introspectiveMetadata ||
+      Graph.GetAttribute<LogicBlockAttribute>(type) is not { } logicAttribute
     ) {
+      // Not an introspective type, or we're missing the logic block
+      // attribute.
       return;
     }
 
@@ -46,72 +34,73 @@ public abstract partial class LogicBlock<TState> {
     // introspective types. If we're not an identifiable, introspective type,
     // we don't need to perform additional validation for serialization —
     // just do enough to preallocate states and be done.
-    var isIdentifiable = metatype.Id is not null;
+    var isIdentifiable = metadata is IIdentifiableTypeMetadata;
 
-    bool isValidStateType(Type type) {
-      // All states are valid if we're not a serializable logic block.
-      if (!isIdentifiable) { return true; }
-      // Serializable logic blocks require all states to also be serializable.
-      return Graph.IsIdentifiableType(type);
+    var baseStateType = logicAttribute.StateType;
+    var descendantStateTypes = Graph.GetDescendantSubtypes(baseStateType);
+
+    // Only allocate list if we need to validate state types for serialization.
+    var stateTypesNeedingAttention = isIdentifiable ?
+      new HashSet<Type>(descendantStateTypes.Count + 1)
+      : null;
+
+    void cacheStateIfNeeded(Type type, IConcreteTypeMetadata metadata) {
+      // Cache a pristine version of the state. Only done once per logic block
+      // type (not instance). Used by the logic block converter to determine
+      // if it really needs to save a state.
+      if (!ReferenceStates.ContainsKey(type)) {
+        ReferenceStates.TryAdd(type, metadata.Factory());
+      }
     }
 
-    var baseStateType = logicBlockAttribute.StateType;
+    void discoverState(Type type) {
+      if (isIdentifiable) {
+        // Serializable logic block.
 
-    var subtypes = Graph.GetDescendantSubtypes(baseStateType);
+        if (Graph.GetMetadata(type) is IIdentifiableTypeMetadata idMetadata) {
+          if (idMetadata is IConcreteTypeMetadata concreteMetadata) {
+            cacheStateIfNeeded(type, concreteMetadata);
 
-    var stateTypesNeedingAttention = new HashSet<Type>(subtypes.Count + 1);
+            // We're a serializable logic block. States should be persisted when
+            // changed.
+            logic.SaveObject(type, concreteMetadata.Factory);
 
-    if (!isValidStateType(baseStateType)) {
-      stateTypesNeedingAttention.Add(baseStateType);
+            // Force persisted state to be created and added to the blackboard.
+            // Reasoning: do as much heap allocation as possible during setup
+            // instead of during execution.
+            logic.OverwriteObject(type, concreteMetadata.Factory());
+          }
+        }
+        else {
+          // Logic block is serializable, but the state is not. Add state to
+          // the list of states to mention when we throw later.
+          stateTypesNeedingAttention!.Add(type);
+        }
+
+        return;
+      }
+
+      // Non-serializable logic block.
+
+      if (Graph.GetMetadata(type) is IConcreteTypeMetadata metadata) {
+        cacheStateIfNeeded(type, metadata);
+        // We're not a serializable logic block. Just add the state to the
+        // blackboard the normal way.
+        logic.OverwriteObject(type, metadata.Factory());
+      }
     }
 
-    if (Graph.IsConcrete(baseStateType)) {
-      var factory =
-        Graph.ConcreteVisibleTypes[baseStateType].Factory;
-      logic.SaveObject(baseStateType, factory);
-      // Force type to be created and added to the blackboard.
-      // Reasoning: do as much heap allocation as possible during setup
-      // instead of during execution.
-      logic.GetObject(baseStateType);
+    discoverState(baseStateType);
+
+    foreach (var stateType in descendantStateTypes) {
+      discoverState(stateType);
     }
 
-    foreach (var stateType in subtypes) {
-      if (!isValidStateType(stateType)) {
-        stateTypesNeedingAttention.Add(stateType);
-        continue;
-      }
+    if (!isIdentifiable) { return; }
 
-      if (!Graph.IsConcrete(stateType)) {
-        continue;
-      }
+    if (stateTypesNeedingAttention!.Count == 0) { return; }
 
-      // Mark the state as persisted and add a factory for it to the
-      // blackboard that will be used if we do not end up deserializing
-      // the state later.
-      if (logic.HasObject(stateType)) {
-        // Don't preallocate states that have been manually added.
-        continue;
-      }
-
-      var factory = Graph.ConcreteVisibleTypes[stateType].Factory;
-
-      if (!ReferenceStates.ContainsKey(stateType)) {
-        ReferenceStates.TryAdd(stateType, factory());
-      }
-
-      logic.SaveObject(stateType, factory);
-
-      // Force type to be created and added to the blackboard.
-      // Reasoning: do as much heap allocation as possible during setup
-      // instead of during execution.
-      logic.GetObject(stateType);
-    }
-
-    if (stateTypesNeedingAttention.Count == 0) { return; }
-
-    var statesNeedingAttention = string.Join(
-      ", ", stateTypesNeedingAttention
-    );
+    var statesNeedingAttention = string.Join(", ", stateTypesNeedingAttention);
 
     throw new LogicBlockException(
       $"Serializable LogicBlock `{type}` has states that are not " +

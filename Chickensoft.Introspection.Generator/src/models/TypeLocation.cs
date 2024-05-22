@@ -19,7 +19,7 @@ public record TypeLocation(
   /// <summary>Type prefix, used to generate the fully qualified name.</summary>
   public string Prefix {
     get {
-      var prefix = FullName;
+      var prefix = FullNameOpen;
       if (prefix is not "") {
         prefix += ".";
       }
@@ -30,9 +30,9 @@ public record TypeLocation(
   /// <summary>
   /// Full name of the type that represents this location.
   /// </summary>
-  public string FullName => string.Join(
+  public string FullNameOpen => string.Join(
     ".",
-    Namespaces.Concat(ContainingTypes.Select(t => t.NameWithOpenGenerics))
+    Namespaces.Concat(ContainingTypes.Select(t => t.SimpleNameOpen))
   );
 
   /// <summary>
@@ -41,8 +41,9 @@ public record TypeLocation(
   public bool IsInGenericType => ContainingTypes.Any(t => t.IsGeneric);
 
   /// <summary>
-  /// True if the location is top-level, or nested only within partial types.
+  /// True if the location is not in a nested type, or nested only within
+  /// only partial types.
   /// </summary>
-  public bool IsFullyPartialOrTopLevel =>
+  public bool IsFullyPartialOrNotNested =>
     ContainingTypes.Length == 0 || ContainingTypes.All(t => t.IsPartial);
 }

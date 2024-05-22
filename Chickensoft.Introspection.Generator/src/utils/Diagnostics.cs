@@ -30,7 +30,7 @@ public static class Diagnostics {
     ),
     location,
     name,
-    string.Join(",", offendingTypes.Select(t => $"`{t.Reference.NameWithGenerics}`"))
+    string.Join(",", offendingTypes.Select(t => $"`{t.Reference.SimpleNameClosed}`"))
   );
 
   public static Diagnostic TypeNotFullyPartial(
@@ -51,7 +51,7 @@ public static class Diagnostics {
     ),
     location,
     name,
-    string.Join(",", offendingTypes.Select(t => $"`{t.Reference.NameWithGenerics}`"))
+    string.Join(",", offendingTypes.Select(t => $"`{t.Reference.SimpleNameClosed}`"))
   );
 
   public static Diagnostic TypeIsGeneric(
@@ -72,7 +72,7 @@ public static class Diagnostics {
     ),
     location,
     name,
-    string.Join(",", offendingTypes.Select(t => $"`{t.Reference.NameWithGenerics}`"))
+    string.Join(",", offendingTypes.Select(t => $"`{t.Reference.SimpleNameClosed}`"))
   );
 
   public static Diagnostic TypeDoesNotHaveUniqueId(
@@ -92,6 +92,6 @@ public static class Diagnostics {
     ),
     location,
     name,
-    existingType.FullName
+    existingType.FullNameOpen
   );
 }

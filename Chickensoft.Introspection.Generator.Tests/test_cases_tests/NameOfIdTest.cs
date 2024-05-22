@@ -7,7 +7,9 @@ using Xunit;
 public class NameOfIdTest {
   [Fact]
   public void ModelWithNameOfIdWorks() {
-    var metatype = TypeRegistry.Instance.Metatypes[typeof(NameOfId)];
-    metatype.Id.ShouldBe(nameof(NameOfId));
+    var idMetadata =
+      TypeRegistry.Instance.VisibleTypes[typeof(NameOfId)]
+        .ShouldBeAssignableTo<IIdentifiableTypeMetadata>().ShouldNotBeNull();
+    idMetadata.Id.ShouldBe(nameof(NameOfId));
   }
 }

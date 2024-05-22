@@ -56,19 +56,19 @@ public record TypeResolutionTree {
 
       if (
         !current.TypeChildren.TryGetValue(
-          containingTypeName.NameWithOpenGenerics, out var child
+          containingTypeName.SimpleNameOpen, out var child
         )
       ) {
         child = new TypeNode(
-          Name: containingTypeName.Name,
-          IsVisible: containingDeclaredType?.IsTopLevelAccessible ?? false,
+          Name: containingTypeName.SimpleName,
+          IsVisible: containingDeclaredType?.IsPublicOrInternal ?? false,
           IsConcrete:
             containingDeclaredType?.Kind == DeclaredTypeKind.ConcreteType,
           OpenGenerics: containingDeclaredType?.Reference.OpenGenerics ?? "",
           TypeChildren: new()
         );
         current.TypeChildren.Add(
-          containingTypeName.NameWithOpenGenerics, child
+          containingTypeName.SimpleNameOpen, child
         );
       }
       current = child;
@@ -77,18 +77,18 @@ public record TypeResolutionTree {
     // Add the type itself
     if (
       !current.TypeChildren.ContainsKey(
-        declaredType.Reference.Name + declaredType.Reference.OpenGenerics
+        declaredType.Reference.SimpleName + declaredType.Reference.OpenGenerics
       )
     ) {
       var typeNode = new TypeNode(
-        Name: declaredType.Reference.Name,
-        IsVisible: declaredType.IsTopLevelAccessible,
+        Name: declaredType.Reference.SimpleName,
+        IsVisible: declaredType.IsPublicOrInternal,
         IsConcrete: declaredType.Kind == DeclaredTypeKind.ConcreteType,
         OpenGenerics: declaredType.Reference.OpenGenerics,
         TypeChildren: new()
       );
       current.TypeChildren.Add(
-        declaredType.Reference.Name + declaredType.Reference.OpenGenerics,
+        declaredType.Reference.SimpleName + declaredType.Reference.OpenGenerics,
         typeNode
       );
     }

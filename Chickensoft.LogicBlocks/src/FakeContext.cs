@@ -3,6 +3,7 @@ namespace Chickensoft.LogicBlocks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Chickensoft.Introspection;
 
 /// <summary>
 /// Fake logic block context — provided for your testing convenience.
@@ -54,13 +55,12 @@ internal readonly struct FakeContext : IFakeContext {
     // testing). This is done as a convenience to the developer and can be
     // easily bypassed by adding a state to the blackboard manually.
     if (
-      Introspection.Types.Graph.IsConcrete(type) &&
-      Introspection.Types.Graph
+      Types.Graph.GetMetadata(type) is IConcreteTypeMetadata concreteMetadata &&
+      Types.Graph
         .GetDescendantSubtypes(typeof(StateBase))
         .Contains(type)
     ) {
-      var state =
-        Introspection.Types.Graph.ConcreteVisibleTypes[type].Factory();
+      var state = concreteMetadata.Factory();
       _blackboard[type] = state;
       return (TDataType)state;
     }

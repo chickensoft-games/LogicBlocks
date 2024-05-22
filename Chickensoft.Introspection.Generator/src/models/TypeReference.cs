@@ -3,7 +3,7 @@ namespace Chickensoft.Introspection.Generator.Models;
 using System.Collections.Immutable;
 
 public record TypeReference(
-  string Name,
+  string SimpleName,
   Construction Construction,
   bool IsPartial,
   ImmutableArray<string> TypeParameters
@@ -18,19 +18,19 @@ public record TypeReference(
   /// Name of the type, including any open generics portion of the name (if the
   /// type is generic).
   /// </summary>
-  public string NameWithOpenGenerics => Name + OpenGenerics;
+  public string SimpleNameOpen => SimpleName + OpenGenerics;
 
   /// <summary>
   /// Name of the type, including any generic type parameters.
   /// </summary>
-  public string NameWithGenerics => Name + GetGenerics(TypeParameters);
+  public string SimpleNameClosed => SimpleName + GetGenerics(TypeParameters);
 
   /// <summary>True if the type is generic.</summary>
   public bool IsGeneric => TypeParameters.Length > 0;
 
   public TypeReference MergePartialDefinition(TypeReference reference) =>
     new(
-      Name,
+      SimpleName,
       Construction,
       IsPartial || reference.IsPartial,
       TypeParameters
@@ -39,7 +39,7 @@ public record TypeReference(
   public string CodeString => GetConstructionCodeString(
     IsPartial,
     Construction,
-    NameWithGenerics
+    SimpleNameClosed
   );
 
   public static string GetGenerics(ImmutableArray<string> typeParameters) =>

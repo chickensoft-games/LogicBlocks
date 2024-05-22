@@ -9,19 +9,8 @@ using System.Collections.Generic;
 /// </summary>
 public interface ITypeRegistry {
   /// <summary>
-  /// Map of non-generic reference types that are visible from the assembly's
-  /// global scope to their names.
+  /// Map of system types to types that are visible from the top-level
+  /// assemblies of the code that the type generator has been executed on.
   /// </summary>
-  IReadOnlyDictionary<Type, string> VisibleTypes { get; }
-  /// <summary>
-  /// Map of non-generic, non-abstract, reference types that are visible from
-  /// the assembly's global scope.
-  /// </summary>
-  IReadOnlyDictionary<Type, TypeMetadata> ConcreteVisibleTypes { get; }
-
-  /// <summary>
-  /// Map of metatype instances by the system type of their associated
-  /// introspective type.
-  /// </summary>
-  IReadOnlyDictionary<Type, IMetatype> Metatypes { get; }
+  IReadOnlyDictionary<Type, ITypeMetadata> VisibleTypes { get; }
 }

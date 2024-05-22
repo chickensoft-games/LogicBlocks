@@ -5,112 +5,107 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using Chickensoft.Collections;
 
 internal class TypeGraph : ITypeGraph {
-  #region ITypeRegistry
-  public IReadOnlyDictionary<Type, string> VisibleTypes => _visibleTypes;
-
-  public IReadOnlyDictionary<Type, TypeMetadata> ConcreteVisibleTypes =>
-    _concreteVisibleTypes;
-
-  public IReadOnlyDictionary<Type, IMetatype> Metatypes => _metatypes;
-  #endregion ITypeRegistry
-
   #region Caches
-  private readonly ConcurrentDictionary<Type, string> _visibleTypes =
+  private readonly ConcurrentDictionary<Type, ITypeMetadata> _types = new();
+  private readonly ConcurrentDictionary<Type, IIdentifiableTypeMetadata>
+    _identifiableTypes = new();
+  private readonly ConcurrentDictionary<string, Type>
+    _identifiableTypesById = new();
+  private readonly ConcurrentDictionary<Type, Set<Type>> _typesByBaseType =
     new();
-  private readonly ConcurrentDictionary<Type, TypeMetadata>
-    _concreteVisibleTypes = new();
-  private readonly ConcurrentDictionary<Type, IMetatype> _metatypes = new();
-  private readonly ConcurrentDictionary<Type, HashSet<Type>> _typesByBaseType =
-    new();
-  private readonly ConcurrentDictionary<Type, HashSet<Type>> _typesByAncestor =
+  private readonly ConcurrentDictionary<Type, Set<Type>> _typesByAncestor =
     new();
   private readonly ConcurrentDictionary<Type, IEnumerable<PropertyMetadata>>
     _properties = new();
-  private readonly ConcurrentDictionary<Type, IDictionary<Type, Attribute[]>>
+  private readonly ConcurrentDictionary<Type, Dictionary<Type, Attribute[]>>
     _attributes = new();
-  private readonly ConcurrentDictionary<string, Type> _introspectiveTypesById =
-    new();
+
+  private readonly IReadOnlySet<Type> _emptyTypeSet = new Set<Type>();
+
+  private readonly IReadOnlyDictionary<Type, Attribute[]> _emptyAttributes =
+    new Dictionary<Type, Attribute[]>();
   #endregion Caches
 
   internal void Reset() {
-    _visibleTypes.Clear();
-    _concreteVisibleTypes.Clear();
-    _metatypes.Clear();
+    _identifiableTypes.Clear();
+    _identifiableTypesById.Clear();
     _typesByBaseType.Clear();
     _typesByAncestor.Clear();
     _properties.Clear();
     _attributes.Clear();
-    _introspectiveTypesById.Clear();
   }
 
   #region ITypeGraph
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public void Register(ITypeRegistry registry) {
     RegisterTypes(registry);
     ComputeTypesByBaseType(registry);
-    ValidateDerivedTypesOfIdentifiableTypesAreAlsoIdentifiable();
+    // ValidateDerivedTypesOfIdentifiableTypesAreAlsoIdentifiable();
   }
 
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public bool IsVisibleFromGlobalScope(Type type) =>
-    _visibleTypes.ContainsKey(type);
+  public Type? GetIdentifiableType(string id) =>
+    _identifiableTypesById.TryGetValue(id, out var type) ? type : null;
 
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public bool IsConcrete(Type type) =>
-    _concreteVisibleTypes.ContainsKey(type);
+  public bool HasMetadata(Type type) =>
+    _types.ContainsKey(type);
 
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public bool IsIntrospectiveType(Type type) => _metatypes.ContainsKey(type);
+  public ITypeMetadata? GetMetadata(Type type) =>
+    _types.TryGetValue(type, out var metadata) ? metadata : null;
 
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public bool IsIdentifiableType(Type type) =>
-    _metatypes.ContainsKey(type) && _metatypes[type].Id is not null;
+  public IReadOnlySet<Type> GetSubtypes(Type type) =>
+    _typesByBaseType.TryGetValue(type, out var subtypes)
+      ? subtypes
+      : _emptyTypeSet;
 
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public bool HasIntrospectiveType(string id) =>
-    _introspectiveTypesById.ContainsKey(id);
-
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public Type GetIntrospectiveType(string id) =>
-    _introspectiveTypesById[id];
-
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public IMetatype GetMetatype(Type type) =>
-    !Metatypes.TryGetValue(type, out var metatype)
-      ? throw new KeyNotFoundException(
-        $"Type {type} is not an introspective type. To make a type " +
-        $"introspective, add the [{nameof(MetaAttribute)}] " +
-        "to it so the introspection generator will generate a metatype " +
-        "description of it."
-      )
-      : metatype;
-
-  public ISet<Type> GetSubtypes(Type type) =>
-    _typesByBaseType[type];
-
-  public ISet<Type> GetDescendantSubtypes(Type type) {
+  public IReadOnlySet<Type> GetDescendantSubtypes(Type type) {
     CacheDescendants(type);
     return _typesByAncestor[type];
   }
 
   public IEnumerable<PropertyMetadata> GetProperties(Type type) {
-    // Cache the properties for a type once computed.
+    if (
+      !_types.ContainsKey(type) ||
+      _types[type] is not IIntrospectiveTypeMetadata metadata
+    ) {
+      return [];
+    }
+
     if (!_properties.TryGetValue(type, out var properties)) {
-      _properties[type] = GetMetatypeAndBaseMetatypes(type)
-      .SelectMany((t) => Metatypes[t].Properties)
-      .Distinct();
+      // Cache the properties for a type so we never have to do this again.
+      _properties[type] =
+        GetTypeAndBaseTypes(type)
+          .Select(type => GetMetadata(type))
+          .OfType<IIntrospectiveTypeMetadata>()
+          .SelectMany(metadata => metadata.Metatype.Properties)
+          .Distinct();
     }
     return _properties[type];
   }
 
-  public IDictionary<Type, Attribute[]> GetAttributes(Type type) {
-    // Cache the attributes for a type once computed.
+  public TAttribute? GetAttribute<TAttribute>(Type type)
+  where TAttribute : Attribute =>
+    GetAttributes(type).TryGetValue(typeof(TAttribute), out var attributes) &&
+    attributes is { Length: > 0 } &&
+    attributes[0] is TAttribute attribute
+      ? attribute
+      : null;
+
+  public IReadOnlyDictionary<Type, Attribute[]> GetAttributes(Type type) {
+    if (
+      !_types.ContainsKey(type) ||
+      _types[type] is not IIntrospectiveTypeMetadata metadata
+    ) {
+      return _emptyAttributes;
+    }
+
     if (!_attributes.TryGetValue(type, out var attributes)) {
-      _attributes[type] = GetMetatypeAndBaseMetatypes(type)
-        .SelectMany((t) => Metatypes[t].Attributes)
+      // Cache the attributes for a type so we never have to do this again.
+      _attributes[type] = GetTypeAndBaseTypes(type)
+        .Select(type => _types[type])
+        .OfType<IIntrospectiveTypeMetadata>()
+        .SelectMany((metadata) => metadata.Metatype.Attributes)
         .ToDictionary(
           keySelector: (typeToAttr) => typeToAttr.Key,
           elementSelector: (typeToAttr) => typeToAttr.Value
@@ -118,12 +113,9 @@ internal class TypeGraph : ITypeGraph {
     }
     return _attributes[type];
   }
-
   #endregion ITypeGraph
 
   #region Private Utilities
-
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
   private void CacheDescendants(Type type) {
     if (_typesByAncestor.ContainsKey(type)) {
       return;
@@ -131,8 +123,8 @@ internal class TypeGraph : ITypeGraph {
     _typesByAncestor[type] = FindDescendants(type);
   }
 
-  private HashSet<Type> FindDescendants(Type type) {
-    var descendants = new HashSet<Type>();
+  private Set<Type> FindDescendants(Type type) {
+    var descendants = new Set<Type>();
     var queue = new Queue<Type>();
     queue.Enqueue(type);
 
@@ -158,29 +150,29 @@ internal class TypeGraph : ITypeGraph {
     // Why do this? We want to allow multiple assemblies to use this system to
     // find types by their base type or ancestor.
     foreach (var type in registry.VisibleTypes.Keys) {
-      _visibleTypes[type] = registry.VisibleTypes[type];
+      var typeMetadata = registry.VisibleTypes[type];
 
-      if (registry.ConcreteVisibleTypes.ContainsKey(type)) {
-        _concreteVisibleTypes[type] =
-          registry.ConcreteVisibleTypes[type];
-      }
+      // Cache types by system type.
+      _types[type] = typeMetadata;
 
-      if (registry.Metatypes.ContainsKey(type)) {
-        _metatypes[type] = registry.Metatypes[type];
+      if (
+        typeMetadata is IIdentifiableTypeMetadata identifiableTypeMetadata
+      ) {
+        var id = identifiableTypeMetadata.Id;
 
-        var id = registry.Metatypes[type].Id;
-
-        if (id is null) { continue; }
-
-        if (_introspectiveTypesById.ContainsKey(id)) {
+        if (_identifiableTypesById.ContainsKey(id)) {
           throw new DuplicateNameException(
             $"Cannot register introspective type `{type}` with id `{id}`. " +
             "A different type with the same id has already been " +
-            $"registered: `{_introspectiveTypesById[id]}`."
+            $"registered: `{_identifiableTypesById[id]}`."
           );
         }
 
-        _introspectiveTypesById[id] = type;
+        // Cache identifiable introspective type system types by their id for
+        // fast and convenient lookups.
+        _identifiableTypesById[id] = type;
+        // Cache by system type, too.
+        _identifiableTypes[type] = identifiableTypeMetadata;
       }
     }
   }
@@ -197,12 +189,12 @@ internal class TypeGraph : ITypeGraph {
 
       // As far as we know, any type could be a base type.
       if (!_typesByBaseType.ContainsKey(type)) {
-        _typesByBaseType[type] = new HashSet<Type>();
+        _typesByBaseType[type] = new Set<Type>();
       }
 
       while (baseType != null) {
         if (!_typesByBaseType.TryGetValue(baseType, out var existingSet)) {
-          existingSet = new HashSet<Type>();
+          existingSet = new Set<Type>();
           _typesByBaseType[baseType] = existingSet;
         }
         existingSet.Add(lastType);
@@ -221,11 +213,14 @@ internal class TypeGraph : ITypeGraph {
   /// <returns>The type's metatype (if it has one), and any metatypes that
   /// describe its base types, in the order of the most derived type to the
   /// least derived type.</returns>
-  private IEnumerable<Type> GetMetatypeAndBaseMetatypes(Type type) {
+  private IEnumerable<Type> GetTypeAndBaseTypes(Type type) {
     var currentType = type;
 
     do {
-      if (_metatypes.ContainsKey(currentType)) {
+      if (
+        _types.ContainsKey(currentType) &&
+        _types[currentType] is IIntrospectiveTypeMetadata
+      ) {
         yield return currentType;
       }
 
@@ -236,33 +231,34 @@ internal class TypeGraph : ITypeGraph {
   private void ValidateDerivedTypesOfIdentifiableTypesAreAlsoIdentifiable() {
     var nonIdTypes = new HashSet<string>();
 
-    foreach (var type in _introspectiveTypesById.Values) {
+    foreach (var type in _identifiableTypes.Keys) {
       nonIdTypes.Clear();
 
-      if (_metatypes[type].Id is null) {
-        continue;
-      }
+      var typeMetadata = _identifiableTypes[type];
 
-      // Validate concrete types derived from an identifiable type are also
+      // Validate types derived from an identifiable type are also
       // identifiable.
       foreach (var descendant in GetDescendantSubtypes(type)) {
-        if (IsConcrete(type) && _metatypes[descendant].Id is null) {
-          nonIdTypes.Add(ConcreteVisibleTypes[descendant].Name);
+        if (_types[descendant] is not IIdentifiableTypeMetadata) {
+          // Found a derived type of an identifiable type that is not
+          // also identifiable.
+          //
+          // All derived types of of an identifiable type must also be
+          // identifiable to ensure serialization systems are sound.
+          nonIdTypes.Add(_types[descendant].Name);
         }
       }
 
       if (nonIdTypes.Count == 0) { continue; }
 
       throw new InvalidOperationException(
-        $"The identifiable type `{type}` has derived types which are not " +
-        "identifiable. Please ensure they are identifiable, introspective " +
-        $"types by adding the `[{nameof(MetaAttribute)}]` and " +
+        $"The identifiable type `{typeMetadata}` has derived types which are " +
+        "not identifiable. Please ensure they are identifiable, " +
+        $"introspective types by adding the `[{nameof(MetaAttribute)}]` and " +
         $"`[{nameof(IdAttribute)}]` attributes to them: " +
         $"{string.Join(", ", nonIdTypes)}."
       );
     }
   }
-
   #endregion Private Utilities
-
 }

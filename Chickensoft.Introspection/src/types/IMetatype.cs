@@ -7,11 +7,8 @@ using System.Collections.Generic;
 /// Represents a metatype — a type that helps describe another type.
 /// </summary>
 public interface IMetatype {
-  /// <summary>
-  /// Introspective type identifier as specified by the
-  /// <see cref="IdAttribute" />, if any.
-  /// </summary>
-  string? Id { get; }
+  /// <summary>System type of the introspective type.</summary>
+  Type Type { get; }
 
   /// <summary>
   /// Properties on the type. Only non-partial properties marked with

@@ -3,6 +3,7 @@ namespace Chickensoft.LogicBlocks.Tests.Serialization;
 using System;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Chickensoft.Collections;
 using Chickensoft.Introspection;
 using Chickensoft.LogicBlocks.Serialization;
@@ -20,12 +21,13 @@ public partial class LogicBlockConverterTest {
       "state": "serializable_logic_block_state",
       "blackboard": {
         "a": {
+          "$type": "a",
           "a_value": "a"
         },
         "b": {
+          "$type": "b",
           "b_value": "b"
-        },
-        "serializable_logic_block_state": {}
+        }
       }
     }
     """;
@@ -269,15 +271,18 @@ public partial class LogicBlockConverterTest {
     }
     """;
 
-    var resolver = new Mock<IIntrospectiveTypeResolver>();
+    var resolver = new Mock<IJsonTypeInfoResolver>();
     resolver
       .Setup(resolver => resolver.GetTypeInfo(
         It.IsAny<Type>(), It.IsAny<JsonSerializerOptions>())
       )
       .Returns(() => null);
 
-    var converter = new LogicBlockConverter(resolver.Object, new Blackboard());
-    var options = new JsonSerializerOptions();
+    var converter = new LogicBlockConverter(new Blackboard());
+    var options = new JsonSerializerOptions {
+      Converters = { converter },
+      TypeInfoResolver = resolver.Object
+    };
 
     Should.Throw<JsonException>(
       () => {
@@ -363,12 +368,12 @@ public partial class LogicBlockConverterTest {
     IReadOnlyBlackboard? deps = null
   ) {
     deps ??= new Blackboard();
-    var resolver = new IntrospectiveTypeResolver();
     return new JsonSerializerOptions {
       Converters = {
-        new LogicBlockConverter(resolver, deps)
+        new LogicBlockConverter(deps),
+        new IdentifiableTypeConverter(deps),
       },
-      TypeInfoResolver = resolver,
+      TypeInfoResolver = new SerializableTypeResolver(),
       WriteIndented = true
     };
   }

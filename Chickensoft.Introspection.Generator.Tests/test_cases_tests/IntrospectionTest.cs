@@ -16,13 +16,13 @@ public class LogicBlockTypeUtilsTest {
   public class ParentCousin : AncestorSibling;
   public class ChildCousin : ParentCousin;
 
-  private static readonly Dictionary<Type, string> _visibleTypes = new() {
-    [typeof(Ancestor)] = nameof(Ancestor),
-    [typeof(Parent)] = nameof(Parent),
-    [typeof(Child)] = nameof(Child),
-    [typeof(AncestorSibling)] = nameof(AncestorSibling),
-    [typeof(ParentCousin)] = nameof(ParentCousin),
-    [typeof(ChildCousin)] = nameof(ChildCousin),
+  private static readonly Dictionary<Type, ITypeMetadata> _visibleTypes = new() {
+    [typeof(Ancestor)] = new Mock<ITypeMetadata>().Object,
+    [typeof(Parent)] = new Mock<ITypeMetadata>().Object,
+    [typeof(Child)] = new Mock<ITypeMetadata>().Object,
+    [typeof(AncestorSibling)] = new Mock<ITypeMetadata>().Object,
+    [typeof(ParentCousin)] = new Mock<ITypeMetadata>().Object,
+    [typeof(ChildCousin)] = new Mock<ITypeMetadata>().Object,
   };
   private readonly Mock<ITypeRegistry> _registry;
 
@@ -33,10 +33,6 @@ public class LogicBlockTypeUtilsTest {
   [Fact]
   public void GetDescendantSubtypes() {
     _registry.Setup(reg => reg.VisibleTypes).Returns(_visibleTypes);
-    _registry.Setup(reg => reg.ConcreteVisibleTypes)
-      .Returns(new Dictionary<Type, TypeMetadata>());
-    _registry.Setup(reg => reg.Metatypes)
-      .Returns(new Dictionary<Type, IMetatype>());
 
     Types.Graph.Register(_registry.Object);
 
@@ -84,13 +80,9 @@ public class LogicBlockTypeUtilsTest {
     // we want to make sure we don't crash.
     _registry
       .Setup(reg => reg.VisibleTypes)
-      .Returns(new Dictionary<Type, string> {
-        [typeof(LogicBlockTypeUtilsTest)] = nameof(LogicBlockTypeUtilsTest)
+      .Returns(new Dictionary<Type, ITypeMetadata> {
+        [typeof(LogicBlockTypeUtilsTest)] = new Mock<ITypeMetadata>().Object,
       });
-    _registry.Setup(reg => reg.ConcreteVisibleTypes)
-      .Returns(new Dictionary<Type, TypeMetadata>());
-    _registry.Setup(reg => reg.Metatypes)
-      .Returns(new Dictionary<Type, IMetatype>());
 
     Types.InternalGraph.Reset();
     Types.Graph.Register(_registry.Object);

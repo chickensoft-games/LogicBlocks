@@ -1,270 +1,70 @@
 namespace Chickensoft.LogicBlocks.Tests;
 
-using System;
-using System.Collections.Generic;
 using Chickensoft.Introspection;
-using Chickensoft.LogicBlocks.Tests.Fixtures;
-using Moq;
 using Shouldly;
 using Xunit;
 
 // Don't run in parallel with other LogicBlock tests.
 // Global introspection state is shared.
 [Collection("LogicBlock")]
-public class PreallocationTest : IDisposable {
-  public Mock<ITypeGraph> Graph { get; set; } = new();
-  public Mock<ILogicBlock<EmptyLogicBlock.State>> Logic { get; set; } = new();
+public partial class PreallocationTest {
 
-  // Runs before each test
-  public PreallocationTest() {
-    EmptyLogicBlock.Graph = Graph.Object;
+  [LogicBlock(typeof(State))]
+  public partial class RegularLogic : LogicBlock<RegularLogic.State> {
+    public override Transition GetInitialState() => To<State>();
+
+    public RegularLogic() {
+      Set(new State());
+    }
+
+    public record State : StateLogic<State>;
   }
 
-  // Runs after each test
-#pragma warning disable CA1816
-  public void Dispose() =>
-    EmptyLogicBlock.Graph = EmptyLogicBlock.DefaultGraph;
-#pragma warning restore CA1816
+  [LogicBlock(typeof(State)), Meta]
+  public partial class MissingLogic : LogicBlock<MissingLogic.State> {
+    public override Transition GetInitialState() => To<State>();
+
+    public record State : StateLogic<State>;
+  }
+
+  [LogicBlock(typeof(State)), Meta]
+  public partial class MetaLogic : LogicBlock<MetaLogic.State> {
+    public override Transition GetInitialState() => To<State>();
+
+    public record State : StateLogic<State>;
+  }
+
+  [LogicBlock(typeof(State))]
+  [Meta, Id("preallocation_serializable_logic_block")]
+  public partial class SerializableLogic : LogicBlock<SerializableLogic.State> {
+    public override Transition GetInitialState() => To<State>();
+
+    [Meta, Id("preallocation_serializable_logic_block_state")]
+    public partial record State : StateLogic<State>;
+  }
+
+  [LogicBlock(typeof(State))]
+  [Meta, Id("preallocation_non_id_substate_logic_block")]
+  public partial class NonIdSubstate : LogicBlock<NonIdSubstate.State> {
+    public override Transition GetInitialState() => To<State>();
+
+    [Meta, Id("preallocation_non_id_substate_logic_block_state")]
+    public abstract partial record State : StateLogic<State>;
+
+    [Meta] // Missing [Id]
+    public partial record Substate : State;
+  }
 
   [Fact]
-  public void DoesNothingIfLogicBlockIsNotIntrospective() {
-    Graph
-      .Setup(g => g.IsIntrospectiveType(Logic.Object.GetType()))
-      .Returns(false);
-
-    Should.NotThrow(() => EmptyLogicBlock.PreallocateStates(Logic.Object));
-  }
+  public void DoesNothingIfLogicBlockIsNotIntrospective() =>
+    Should.NotThrow(() => new RegularLogic());
 
   [Fact]
-  public void DoesNothingIfAttributesIsEmpty() {
-    Graph
-      .Setup(g => g.IsIntrospectiveType(Logic.Object.GetType()))
-      .Returns(true);
-
-    var metatype = new Mock<IMetatype>();
-    var attributes = new Dictionary<Type, Attribute[]>();
-
-    metatype
-      .Setup(m => m.Attributes)
-      .Returns(attributes);
-
-    Graph
-      .Setup(g => g.GetMetatype(Logic.Object.GetType()))
-      .Returns(metatype.Object);
-
-    Should.NotThrow(() => EmptyLogicBlock.PreallocateStates(Logic.Object));
-  }
-
-  [Fact]
-  public void DoesNothingIfFirstAttributeIsNotLogicBlockAttribute() {
-    Graph
-      .Setup(g => g.IsIntrospectiveType(Logic.Object.GetType()))
-      .Returns(true);
-
-    var metatype = new Mock<IMetatype>();
-
-    // The introspection generator will never produce malformed
-    // metadata like this, but we still need to test the code path for
-    // null safety.
-    var attributes = new Dictionary<Type, Attribute[]>() {
-      [typeof(LogicBlockAttribute)] = [new ObsoleteAttribute()]
-    };
-
-    metatype
-      .Setup(m => m.Attributes)
-      .Returns(attributes);
-
-    Graph
-      .Setup(g => g.GetMetatype(Logic.Object.GetType()))
-      .Returns(metatype.Object);
-
-    Should.NotThrow(() => EmptyLogicBlock.PreallocateStates(Logic.Object));
-  }
+  public void DoesNothingIfMissingLogicBlockAttribute() =>
+    Should.NotThrow(() => new MissingLogic());
 
   [Fact]
   public void
-  ThrowsWhenSerializableLogicBlockBaseStateOrSubstatesAreNotSerializable() {
-    Graph
-      .Setup(g => g.IsIntrospectiveType(Logic.Object.GetType()))
-      .Returns(true);
-
-    var metatype = new Mock<IMetatype>();
-    metatype.Setup(m => m.Id).Returns("valid_id");
-
-    Graph
-      .Setup(g => g.GetMetatype(Logic.Object.GetType()))
-      .Returns(metatype.Object);
-
-    // The introspection generator will never produce malformed
-    // metadata like this, but we still need to test the code path for
-    // null safety.
-    var attributes = new Dictionary<Type, Attribute[]>() {
-      [typeof(LogicBlockAttribute)] = [
-        new LogicBlockAttribute(typeof(EmptyLogicBlock.State))
-      ]
-    };
-
-    metatype
-      .Setup(m => m.Attributes)
-      .Returns(attributes);
-
-    Graph
-      .Setup(g => g.IsIdentifiableType(typeof(EmptyLogicBlock.State)))
-      .Returns(false);
-
-    Graph.Setup(g => g.IsConcrete(typeof(EmptyLogicBlock.State)))
-      .Returns(true);
-
-    Graph.Setup(g => g.ConcreteVisibleTypes)
-      .Returns(new Dictionary<Type, TypeMetadata>() {
-        [typeof(EmptyLogicBlock.State)] = new TypeMetadata(
-          Name: "State",
-          GenericTypeGetter: (r) => r.Receive<EmptyLogicBlock.State>(),
-          Factory: () => new EmptyLogicBlock.State()
-        )
-      });
-
-    Logic.Setup(logic => logic.SaveObject(
-      typeof(EmptyLogicBlock.State),
-      It.IsAny<Func<object>>()
-    ));
-
-    Logic
-      .Setup(logic => logic.GetObject(typeof(EmptyLogicBlock.State)))
-      .Returns<EmptyLogicBlock.State>(default!);
-
-    Graph.Setup(g => g.GetDescendantSubtypes(typeof(EmptyLogicBlock.State)))
-      .Returns(new HashSet<Type>() { typeof(object) });
-
-    Graph.Setup(g => g.IsIdentifiableType(typeof(object)))
-      .Returns(false);
-
-    Graph.Setup(g => g.IsConcrete(typeof(object)))
-      .Returns(false);
-
-    Should.Throw<LogicBlockException>(
-      () => EmptyLogicBlock.PreallocateStates(Logic.Object)
-    );
-  }
-
-  [Fact]
-  public void DoesNotThrowsWhenLogicBlockAlreadyHasStateTypeOnBlackboard() {
-    Graph
-      .Setup(g => g.IsIntrospectiveType(Logic.Object.GetType()))
-      .Returns(true);
-
-    var metatype = new Mock<IMetatype>();
-
-    Graph
-      .Setup(g => g.GetMetatype(Logic.Object.GetType()))
-      .Returns(metatype.Object);
-
-    // The introspection generator will never produce malformed
-    // metadata like this, but we still need to test the code path for
-    // null safety.
-    var attributes = new Dictionary<Type, Attribute[]>() {
-      [typeof(LogicBlockAttribute)] = [
-        new LogicBlockAttribute(typeof(EmptyLogicBlock.State))
-      ]
-    };
-
-    metatype
-      .Setup(m => m.Attributes)
-      .Returns(attributes);
-
-    Graph
-      .Setup(g => g.IsIdentifiableType(typeof(EmptyLogicBlock.State)))
-      .Returns(false);
-
-    Graph.Setup(g => g.IsConcrete(typeof(EmptyLogicBlock.State)))
-      .Returns(true);
-
-    Graph.Setup(g => g.ConcreteVisibleTypes)
-      .Returns(new Dictionary<Type, TypeMetadata>() {
-        [typeof(EmptyLogicBlock.State)] = new TypeMetadata(
-          Name: "State",
-          GenericTypeGetter: (r) => r.Receive<EmptyLogicBlock.State>(),
-          Factory: () => new EmptyLogicBlock.State()
-        )
-      });
-
-    Logic.Setup(logic => logic.SaveObject(
-      typeof(EmptyLogicBlock.State),
-      It.IsAny<Func<object>>()
-    ));
-
-    Logic
-      .Setup(logic => logic.GetObject(typeof(EmptyLogicBlock.State)))
-      .Returns<EmptyLogicBlock.State>(default!);
-
-    Graph.Setup(g => g.GetDescendantSubtypes(typeof(EmptyLogicBlock.State)))
-      .Returns(new HashSet<Type>() { typeof(object) });
-
-    Graph.Setup(g => g.IsIdentifiableType(typeof(object)))
-      .Returns(true);
-
-    Graph.Setup(g => g.IsConcrete(typeof(object)))
-      .Returns(true);
-
-    Logic.Setup(logic => logic.HasObject(typeof(object)))
-      .Returns(true);
-
-    Should.NotThrow(() => EmptyLogicBlock.PreallocateStates(Logic.Object));
-  }
-
-  [Fact]
-  public void AddsStatesToTheBlackboard() {
-    Graph
-      .Setup(g => g.IsIntrospectiveType(Logic.Object.GetType()))
-      .Returns(true);
-
-    var metatype = new Mock<IMetatype>();
-
-    Graph
-      .Setup(g => g.GetMetatype(Logic.Object.GetType()))
-      .Returns(metatype.Object);
-
-    // The introspection generator will never produce malformed
-    // metadata like this, but we still need to test the code path for
-    // null safety.
-    var attributes = new Dictionary<Type, Attribute[]>() {
-      [typeof(LogicBlockAttribute)] = [
-        new LogicBlockAttribute(typeof(EmptyLogicBlock.State))
-      ]
-    };
-
-    metatype
-      .Setup(m => m.Attributes)
-      .Returns(attributes);
-
-    Graph
-      .Setup(g => g.IsIdentifiableType(typeof(EmptyLogicBlock.State)))
-      .Returns(true);
-
-    Graph.Setup(g => g.IsConcrete(typeof(EmptyLogicBlock.State)))
-      .Returns(true);
-
-    Graph.Setup(g => g.ConcreteVisibleTypes)
-      .Returns(new Dictionary<Type, TypeMetadata>() {
-        [typeof(EmptyLogicBlock.State)] = new TypeMetadata(
-          Name: "State",
-          GenericTypeGetter: (r) => r.Receive<EmptyLogicBlock.State>(),
-          Factory: () => new EmptyLogicBlock.State()
-        )
-      });
-
-    Logic.Setup(logic => logic.SaveObject(
-      typeof(EmptyLogicBlock.State),
-      It.IsAny<Func<object>>()
-    ));
-
-    Logic
-      .Setup(logic => logic.GetObject(typeof(EmptyLogicBlock.State)))
-      .Returns<EmptyLogicBlock.State>(default!);
-
-    Graph.Setup(g => g.GetDescendantSubtypes(typeof(EmptyLogicBlock.State)))
-      .Returns(new HashSet<Type>() { });
-
-    Should.NotThrow(() => EmptyLogicBlock.PreallocateStates(Logic.Object));
-  }
+  ThrowsWhenSerializableLogicBlockBaseStateOrSubstatesAreNotSerializable() =>
+    Should.Throw<LogicBlockException>(() => new NonIdSubstate());
 }

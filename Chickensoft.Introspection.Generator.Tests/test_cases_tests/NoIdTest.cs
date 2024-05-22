@@ -7,7 +7,7 @@ using Xunit;
 public class NoIdTest {
   [Fact]
   public void ModelWithoutExplicitIdIsAllowed() {
-    var metatype = TypeRegistry.Instance.Metatypes[typeof(NoId)];
-    metatype.Id.ShouldBeNull();
+    var metadata = TypeRegistry.Instance.VisibleTypes[typeof(NoId)]
+      .ShouldBeOfType<IntrospectiveTypeMetadata>();
   }
 }

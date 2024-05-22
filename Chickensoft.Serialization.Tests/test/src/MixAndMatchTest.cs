@@ -2,6 +2,8 @@ namespace Chickensoft.Serialization.Tests;
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Chickensoft.Collections;
+using Chickensoft.LogicBlocks.Serialization;
 using Chickensoft.Serialization.Tests.Fixtures;
 using DeepEqual.Syntax;
 using Shouldly;
@@ -11,14 +13,19 @@ public class MixAndMatchTest {
   [Fact]
   public void CanUseChickensoftModelsFromOutermostSTJModel() {
     var options = new JsonSerializerOptions {
-      Converters = { new JsonStringEnumConverter() },
-      WriteIndented = true
+      Converters = {
+        new JsonStringEnumConverter(),
+        new IdentifiableTypeConverter(new Blackboard())
+      },
+      WriteIndented = true,
+      TypeInfoResolverChain = {
+        // If mixing and matching, always provide the chickensoft type
+        // resolver as the first resolver in the chain :)
+        new SerializableTypeResolver(),
+        // Generated serialization contexts:
+        MixAndMatchContext.Default
+      }
     };
-
-    // If mixing and matching, always provide the introspective type resolver
-    // as the first resolver in the chain :)
-    options.TypeInfoResolverChain.Add(new IntrospectiveTypeResolver());
-    options.TypeInfoResolverChain.Add(MixAndMatchContext.Default);
 
     var campCounselor = new CampCounselor {
       Person = new Person {
@@ -39,8 +46,9 @@ public class MixAndMatchTest {
       """
       {
         "person": {
-          "name": "Alice Doe",
+          "$type": "person",
           "age": 30,
+          "name": "Alice Doe",
           "pet": {
             "$type": "dog",
             "bark_volume": 11,
@@ -65,14 +73,20 @@ public class MixAndMatchTest {
   [Fact]
   public void CanUseSTJModelsFromOutermostChickensoftModel() {
     var options = new JsonSerializerOptions {
-      Converters = { new JsonStringEnumConverter() },
-      WriteIndented = true
+      Converters = {
+        new JsonStringEnumConverter(),
+        new IdentifiableTypeConverter(new Blackboard())
+      },
+      WriteIndented = true,
+      TypeInfoResolverChain = {
+        // If mixing and matching, always provide the chickensoft type
+        // resolver as the first resolver in the chain :)
+        new SerializableTypeResolver(),
+        // Generated serialization contexts:
+        MixAndMatchContext.Default
+      }
     };
 
-    // If mixing and matching, always provide the introspective type resolver
-    // as the first resolver in the chain :)
-    options.TypeInfoResolverChain.Add(new IntrospectiveTypeResolver());
-    options.TypeInfoResolverChain.Add(MixAndMatchContext.Default);
 
     var campInstructor = new CampInstructor {
       Person = new Person {
@@ -92,18 +106,20 @@ public class MixAndMatchTest {
       /*lang=json,strict*/
       """
       {
+        "$type": "camp_instructor",
+        "activity": {
+          "Place": "Park",
+          "Description": "Walking the dog"
+        },
         "person": {
-          "name": "Alice Doe",
+          "$type": "person",
           "age": 30,
+          "name": "Alice Doe",
           "pet": {
             "$type": "dog",
             "bark_volume": 11,
             "name": "Fido"
           }
-        },
-        "activity": {
-          "Place": "Park",
-          "Description": "Walking the dog"
         }
       }
       """,

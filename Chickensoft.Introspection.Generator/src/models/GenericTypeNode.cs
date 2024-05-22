@@ -3,6 +3,7 @@ namespace Chickensoft.Introspection.Generator.Models;
 using System.CodeDom.Compiler;
 using System.Collections.Immutable;
 using System.Linq;
+using Chickensoft.Introspection.Generator.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -61,13 +62,13 @@ public record GenericTypeNode(
     if (Children.Length > 0) {
       writer.WriteLine("Arguments: new GenericType[] {");
       writer.Indent++;
-      foreach (var child in Children) {
-        var isLast = Children[Children.Length - 1] == child;
-        child.Write(writer);
-        if (!isLast) {
-          writer.WriteLine(",");
-        }
-      }
+
+      writer.WriteCommaSeparatedList(
+        Children,
+        child => child.Write(writer),
+        multiline: true
+      );
+
       writer.Indent--;
       writer.WriteLine("},");
     }

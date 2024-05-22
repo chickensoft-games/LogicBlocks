@@ -6,8 +6,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 using Chickensoft.Collections;
+using Chickensoft.Introspection;
 using Chickensoft.Serialization;
 
 // Logic blocks JSON representation. Note that the blackboard object is dynamic.
@@ -30,29 +30,22 @@ using Chickensoft.Serialization;
 
 /// <inheritdoc />
 public class LogicBlockConverter :
-JsonConverter<object>, IIntrospectiveTypeConverter {
-  /// <summary>Json type info resolver.</summary>
-  public IJsonTypeInfoResolver Resolver { get; }
-
+JsonConverter<object>, IIdentifiableTypeConverter {
   /// <inheritdoc />
   public IReadOnlyBlackboard DependenciesBlackboard { get; }
 
   /// <summary>
   /// Create a new logic block converter with the given type info resolver.
   /// </summary>
-  /// <param name="resolver">Json type info resolver.</param>
   /// <param name="dependenciesBlackboard">Dependencies that might be needed
   /// by outdated states to upgrade themselves.</param>
   public LogicBlockConverter(
-    IJsonTypeInfoResolver resolver,
     IReadOnlyBlackboard dependenciesBlackboard
   ) {
-    Resolver = resolver;
     DependenciesBlackboard = dependenciesBlackboard;
   }
 
-  private string TypeDiscriminator =>
-    IntrospectiveTypeResolver.TYPE_DISCRIMINATOR;
+  private string TypeDiscriminator => Serializer.TYPE_DISCRIMINATOR;
 
   private const string STATE_PROPERTY = "state";
   private const string BLACKBOARD_PROPERTY = "blackboard";
@@ -61,10 +54,11 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
   public override bool CanConvert(Type typeToConvert) =>
     // We can only convert logic blocks that are also marked with the
     // [Meta] attribute to make them serializable.
-    Introspection.Types.Graph
+    Types.Graph
       .GetDescendantSubtypes(typeof(LogicBlockBase))
       .Contains(typeToConvert) &&
-    Introspection.Types.Graph.IsIdentifiableType(typeToConvert);
+    Types.Graph.GetMetadata(typeToConvert) is
+      IIdentifiableTypeMetadata;
 
   /// <inheritdoc />
   public override object? Read(
@@ -93,16 +87,31 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
         "property."
       );
 
-    if (!Introspection.Types.Graph.HasIntrospectiveType(typeId)) {
+    if (Types.Graph.GetIdentifiableType(typeId) is not { } type) {
       throw new JsonException(
-        $"Logic block {typeToConvert} has an unknown introspective type id " +
+        $"Logic block {typeToConvert} has an unknown identifiable type id " +
         $"`{typeId}`."
       );
     }
 
-    if (!Introspection.Types.Graph.HasIntrospectiveType(stateId)) {
+    var idMetadata = (IIdentifiableTypeMetadata)Types.Graph.GetMetadata(type)!;
+
+    if (
+      Types.Graph.GetMetadata(type) is not
+        IConcreteTypeMetadata concreteMetadata
+    ) {
       throw new JsonException(
-        $"Logic block {typeToConvert} has an unknown introspective state " +
+        $"Logic block {typeToConvert} has an unknown identifiable type id " +
+        $"`{typeId}`."
+      );
+    }
+
+    if (
+      Types.Graph.GetIdentifiableType(stateId) is not { } stateType ||
+      Types.Graph.GetMetadata(stateType) is not IIdentifiableTypeMetadata
+    ) {
+      throw new JsonException(
+        $"Logic block {typeToConvert} has an unknown identifiable state " +
         $"type id `{stateId}`."
       );
     }
@@ -112,18 +121,20 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
     // Create blackboard objects
 
     foreach (var member in blackboard.AsObject()) {
-      if (!Introspection.Types.Graph.HasIntrospectiveType(member.Key)) {
+      if (
+        Types.Graph.GetIdentifiableType(member.Key) is not
+          Type blackboardObjType ||
+        Types.Graph.GetMetadata(blackboardObjType) is not
+          IIdentifiableTypeMetadata blackboardObjMetadata
+      ) {
         throw new JsonException(
-          $"Logic block {typeToConvert} has an unknown introspective type id " +
+          $"Logic block {typeToConvert} has an unknown identifiable type id " +
           $"`{member.Key}` in its blackboard."
         );
       }
 
-      var blackboardObjType =
-        Introspection.Types.Graph.GetIntrospectiveType(member.Key);
-
       var blackboardObjTypeInfo =
-        Resolver.GetTypeInfo(blackboardObjType, options) ??
+        options.TypeInfoResolver?.GetTypeInfo(blackboardObjType, options) ??
         throw new JsonException(
           $"Failed to get type info for blackboard object {blackboardObjType}."
         );
@@ -139,9 +150,7 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
     }
 
     // Create logic block
-    var type = Introspection.Types.Graph.GetIntrospectiveType(typeId);
-    var logicBlock =
-      Introspection.Types.Graph.ConcreteVisibleTypes[type].Factory();
+    var logicBlock = concreteMetadata.Factory();
 
     // Set blackboard values
     foreach (var blackboardObj in blackboardObjects) {
@@ -149,9 +158,6 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
         blackboardObj.GetType(), blackboardObj
       );
     }
-
-    // Create state
-    var stateType = Introspection.Types.Graph.GetIntrospectiveType(stateId);
 
     // Load the state from the logic block's blackboard, since we just
     // setup the blackboard and the blackboard should have all possible states.
@@ -195,7 +201,16 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
     var logicBlock = (LogicBlockBase)value;
 
     var type = logicBlock.GetType();
-    var typeId = Introspection.Types.Graph.GetMetatype(type).Id;
+
+    if (
+      Types.Graph.GetMetadata(type) is not IIdentifiableTypeMetadata metadata
+    ) {
+      throw new JsonException(
+        $"Logic block {type} is not introspective and cannot be serialized."
+      );
+    }
+
+    var typeId = metadata.Id;
 
     writer.WriteStartObject();
     writer.WriteString(TypeDiscriminator, typeId);
@@ -208,7 +223,17 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
     }
 
     var stateType = state.GetType();
-    var stateId = Introspection.Types.Graph.GetMetatype(stateType).Id;
+
+    if (
+      Types.Graph.GetMetadata(stateType) is not IIdentifiableTypeMetadata
+        stateMetadata
+      ) {
+      throw new JsonException(
+        $"Logic block {type} has an unidentifiable state type {stateType}."
+      );
+    }
+
+    var stateId = stateMetadata.Id;
 
     writer.WriteString(STATE_PROPERTY, stateId);
 
@@ -216,12 +241,24 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
     writer.WriteStartObject();
 
     var savedTypesWithMetatypes = logicBlock._blackboard.SavedTypes
-      .Select((type) => new {
-        Type = type,
-        Metatype = Introspection.Types.Graph.GetMetatype(type)
-      }).OrderBy((pair) => pair.Metatype.Id);
+      .Select((type) => {
+        if (
+          Types.Graph.GetMetadata(type) is not IIdentifiableTypeMetadata
+            metadata
+        ) {
+          throw new JsonException(
+            $"Logic block {type} has an unidentifiable blackboard object " +
+            $"of type {type}."
+          );
+        }
 
-    var stateTypes = Introspection.Types.Graph
+        return new {
+          Type = type,
+          Metadata = metadata
+        };
+      }).OrderBy((pair) => pair.Metadata.Id);
+
+    var stateTypes = Types.Graph
       .GetDescendantSubtypes(type);
 
     foreach (var blackboardObjType in savedTypesWithMetatypes) {
@@ -241,13 +278,13 @@ JsonConverter<object>, IIntrospectiveTypeConverter {
         continue;
       }
 
-      writer.WritePropertyName(blackboardObjType.Metatype.Id!);
+      writer.WritePropertyName(blackboardObjType.Metadata.Id);
 
       JsonSerializer.Serialize(
-        writer,
-        blackboardObj,
-        blackboardObjType.Type,
-        options
+        writer: writer,
+        value: blackboardObj,
+        inputType: blackboardObjType.Type,
+        options: options
       );
     }
 
