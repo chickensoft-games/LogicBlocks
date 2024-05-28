@@ -29,6 +29,9 @@ public class SerializableTypeResolver : IJsonTypeInfoResolver {
       return customConverterFactory(options);
     }
 
+    // Check for identifiable types that have generated metadata and are
+    // converted by the IdentifiableTypeConverter.
+
     if (
       Serializer.GetRuntimeConverterForType(type, options) is { } converter &&
       Types.Graph.GetMetadata(type) is IClosedTypeMetadata closedTypeMetadata
@@ -50,6 +53,8 @@ public class SerializableTypeResolver : IJsonTypeInfoResolver {
       }
     }
 
+    // Check built-in types.
+
     if (
       Serializer.BuiltInConverterFactories.TryGetValue(
         type, out var builtInConverterFactory
@@ -59,7 +64,7 @@ public class SerializableTypeResolver : IJsonTypeInfoResolver {
       return builtInConverterFactory(options);
     }
 
-    // Type doesn't have a custom converter.
+    // Check collection types that we know about.
 
     if (Serializer._collections.TryGetValue(type, out var collectionInfo)) {
       // Supported collection type we discovered previously
@@ -67,8 +72,8 @@ public class SerializableTypeResolver : IJsonTypeInfoResolver {
       return collectionInfo(options);
     }
 
-    // Not an introspective type, collection, or built-in type. Maybe another
-    // type resolver down the chain can handle it.
+    // Not an introspective type, identifiable type, collection, or
+    // built-in type. Maybe another type resolver down the chain can handle it.
     return null;
   }
 }

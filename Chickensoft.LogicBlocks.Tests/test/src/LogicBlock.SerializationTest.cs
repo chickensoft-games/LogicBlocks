@@ -1,37 +1,14 @@
 namespace Chickensoft.LogicBlocks.Tests.Serialization;
 
-using System;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using Chickensoft.Collections;
 using Chickensoft.Introspection;
-using Chickensoft.LogicBlocks.Serialization;
 using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Chickensoft.Serialization;
-using Moq;
 using Shouldly;
 using Xunit;
 
-public partial class LogicBlockConverterTest {
-  private const string LOGIC_BLOCK_JSON = /*lang=json,strict*/
-    """
-    {
-      "$type": "serializable_logic_block",
-      "state": "serializable_logic_block_state",
-      "blackboard": {
-        "a": {
-          "$type": "a",
-          "a_value": "a"
-        },
-        "b": {
-          "$type": "b",
-          "b_value": "b"
-        }
-      }
-    }
-    """;
-
+public partial class LogicBlockSerializationTest {
   [Meta, Id("a")]
   public partial record A {
     [Save("a_value")]
@@ -56,7 +33,35 @@ public partial class LogicBlockConverterTest {
 
     var json = JsonSerializer.Serialize(logic, options);
 
-    json.ShouldBe(LOGIC_BLOCK_JSON);
+    json.ShouldBe(
+      /*lang=json,strict*/
+      """
+      {
+        "$type": "serializable_logic_block",
+        "$v": 1,
+        "state": {
+          "$type": "serializable_logic_block_state",
+          "$v": 1
+        },
+        "blackboard": {
+          "$type": "blackboard",
+          "$v": 1,
+          "values": {
+            "a": {
+              "$type": "a",
+              "$v": 1,
+              "a_value": "a"
+            },
+            "b": {
+              "$type": "b",
+              "$v": 1,
+              "b_value": "b"
+            }
+          }
+        }
+      }
+      """
+    );
   }
 
   [Fact]
@@ -65,7 +70,33 @@ public partial class LogicBlockConverterTest {
 
     var logic =
       JsonSerializer.Deserialize<SerializableLogicBlock>(
-        LOGIC_BLOCK_JSON,
+        /*lang=json,strict*/
+        """
+        {
+          "$type": "serializable_logic_block",
+          "$v": 1,
+          "state": {
+            "$type": "serializable_logic_block_state",
+            "$v": 1
+          },
+          "blackboard": {
+            "$type": "blackboard",
+            "$v": 1,
+            "values": {
+              "a": {
+                "$type": "a",
+                "$v": 1,
+                "a_value": "a"
+              },
+              "b": {
+                "$type": "b",
+                "$v": 1,
+                "b_value": "b"
+              }
+            }
+          }
+        }
+        """,
         options
     );
 
@@ -95,8 +126,16 @@ public partial class LogicBlockConverterTest {
       """
       {
         "$type": "serializable_parallel_logic_block",
-        "state": "serializable_parallel_logic_block_state_parallel",
-        "blackboard": {}
+        "$v": 1,
+        "state": {
+          "$type": "serializable_parallel_logic_block_state_parallel",
+          "$v": 1
+        },
+        "blackboard": {
+          "$type": "blackboard",
+          "$v": 1,
+          "values": {}
+        }
       }
       """,
       options: StringCompareShould.IgnoreLineEndings
@@ -115,33 +154,6 @@ public partial class LogicBlockConverterTest {
 
     parallelState.StateA.ShouldNotBeNull();
     parallelState.StateB.ShouldNotBeNull();
-  }
-
-  [Fact]
-  public void ThrowsWhenTryingToDeserializeNull() {
-    var json = "null";
-    var options = CreateOptions();
-    var converter = (LogicBlockConverter)options.Converters[0];
-
-    Should.Throw<JsonException>(
-      () => {
-        var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(json));
-        converter.Read(ref reader, typeof(SerializableLogicBlock), options);
-      }
-    );
-  }
-
-  [Fact]
-  public void ThrowsWhenCannotGetTypeDiscriminator() {
-    var options = CreateOptions();
-
-    Should.Throw<JsonException>(
-      () => JsonSerializer.Deserialize<SerializableLogicBlock>(
-        /*lang=json,strict*/
-        "{}",
-        options
-      )
-    );
   }
 
   [Fact]
@@ -257,42 +269,6 @@ public partial class LogicBlockConverterTest {
   }
 
   [Fact]
-  public void ThrowsIfResolverFailsToGetBlackboardObjTypeInfo() {
-    var json = /*lang=json,strict*/
-    """
-    {
-      "$type": "serializable_logic_block",
-      "state": "serializable_logic_block_state",
-      "blackboard": {
-        "a": {
-          "a_value": "a"
-        }
-      }
-    }
-    """;
-
-    var resolver = new Mock<IJsonTypeInfoResolver>();
-    resolver
-      .Setup(resolver => resolver.GetTypeInfo(
-        It.IsAny<Type>(), It.IsAny<JsonSerializerOptions>())
-      )
-      .Returns(() => null);
-
-    var converter = new LogicBlockConverter(new Blackboard());
-    var options = new JsonSerializerOptions {
-      Converters = { converter },
-      TypeInfoResolver = resolver.Object
-    };
-
-    Should.Throw<JsonException>(
-      () => {
-        var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(json));
-        converter.Read(ref reader, typeof(SerializableLogicBlock), options);
-      }
-    );
-  }
-
-  [Fact]
   public void ThrowsWhenBlackboardObjIsNull() {
     // Blackboards only contain non-null values.
     var options = CreateOptions();
@@ -354,23 +330,12 @@ public partial class LogicBlockConverterTest {
     deserializedLogic.Value.ShouldBeOfType<OutdatedLogicBlock.V3>();
   }
 
-  [Fact]
-  public void ThrowsIfLogicBlockIsNotStarted() {
-    var logic = new SerializableLogicBlock();
-    var options = CreateOptions();
-
-    Should.Throw<JsonException>(
-      () => JsonSerializer.Serialize(logic, options)
-    );
-  }
-
   private static JsonSerializerOptions CreateOptions(
     IReadOnlyBlackboard? deps = null
   ) {
     deps ??= new Blackboard();
     return new JsonSerializerOptions {
       Converters = {
-        new LogicBlockConverter(deps),
         new IdentifiableTypeConverter(deps),
       },
       TypeInfoResolver = new SerializableTypeResolver(),

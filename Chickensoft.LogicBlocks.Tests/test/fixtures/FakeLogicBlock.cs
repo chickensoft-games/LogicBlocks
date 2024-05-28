@@ -22,7 +22,7 @@ public partial class FakeLogicBlock {
     public readonly record struct Custom(Func<IContext, Transition> Next);
   }
 
-  [Meta, Id("fake_logic_block_state")]
+  [Meta]
   public abstract partial record State : StateLogic<State>,
     IGet<Input.InputOne>,
     IGet<Input.InputTwo>,

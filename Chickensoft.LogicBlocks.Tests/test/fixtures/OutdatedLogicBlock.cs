@@ -12,16 +12,16 @@ public partial class OutdatedLogicBlock : LogicBlock<OutdatedLogicBlock.State> {
   [Meta, Id("outdated_logic_block_state")]
   public abstract partial record State : StateLogic<State>;
 
-  [Meta, Id("outdated_logic_block_state_v1")]
+  [Meta, Version(1)]
   public partial record V1 : State, IOutdated {
     public object Upgrade(IReadOnlyBlackboard blackboard) => new V2();
   }
 
-  [Meta, Id("outdated_logic_block_state_v2")]
+  [Meta, Version(2)]
   public partial record V2 : State, IOutdated {
     public object Upgrade(IReadOnlyBlackboard blackboard) => new V3();
   }
 
-  [Meta, Id("outdated_logic_block_state_v3")]
+  [Meta, Version(3)]
   public partial record V3 : State;
 }

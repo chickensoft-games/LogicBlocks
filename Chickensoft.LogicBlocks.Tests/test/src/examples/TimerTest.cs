@@ -10,7 +10,8 @@ public class TimerTest {
   [Fact]
   public void Initializes() {
     var clock = new Mock<IClock>();
-    var timer = new Timer(clock.Object);
+    var timer = new Timer();
+    timer.Set(clock.Object);
 
     var state = timer.GetInitialState().State;
 

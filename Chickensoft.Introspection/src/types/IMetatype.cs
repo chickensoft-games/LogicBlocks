@@ -11,6 +11,14 @@ public interface IMetatype {
   Type Type { get; }
 
   /// <summary>
+  /// True if the type has init-only properties that must be set at
+  /// construction. If this is true for a concrete type, you may call
+  /// <see cref="Construct"/> with a map of argument names to values to set
+  /// these properties at construction.
+  /// </summary>
+  bool HasInitProperties { get; }
+
+  /// <summary>
   /// Properties on the type. Only non-partial properties marked with
   /// attributes on the current type are included. To get all of the properties,
   /// including the inherited properties from any base metatypes, see the
@@ -32,9 +40,11 @@ public interface IMetatype {
   IReadOnlyDictionary<Type, Action<object>> MixinHandlers { get; }
 
   /// <summary>
-  /// Calls the type receiver's <see cref="ITypeReceiver.Receive{T}"/> method
-  /// with the generic type as the argument.
+  /// Constructs the type with the given arguments, if any. If the type is not
+  /// a concrete type, this throws. If the type has init-only properties, this
+  /// can be used to set them at construction.
   /// </summary>
-  /// <param name="receiver">Generic type argument receiver.</param>
-  void GetGenericType(ITypeReceiver receiver);
+  /// <param name="args">Map of argument names to values.</param>
+  /// <returns>A new instance of the type.</returns>
+  object Construct(IReadOnlyDictionary<string, object?>? args = null);
 }

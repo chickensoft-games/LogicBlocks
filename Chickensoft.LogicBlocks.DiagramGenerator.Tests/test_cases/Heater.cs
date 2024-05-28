@@ -36,7 +36,7 @@ public partial class Heater : LogicBlock<Heater.State> {
     public readonly record struct TargetTempChanged(double Temp);
     public readonly record struct AirTempSensorChanged(double AirTemp);
   }
-  [Meta, Id("heater_state")]
+  [Meta]
   public abstract partial record State :
     StateLogic<State>, IGet<Input.TargetTempChanged> {
     public double TargetTemp { get; set; }
@@ -46,7 +46,7 @@ public partial class Heater : LogicBlock<Heater.State> {
       return ToSelf().With(state => state.TargetTemp = temp);
     }
 
-    [Meta, Id("heater_state_powered")]
+    [Meta]
     public abstract partial record Powered : State, IGet<Input.TurnOff> {
       public Powered() {
         // Whenever a Powered state is entered, play a chime to

@@ -9,7 +9,7 @@ public partial class SerializableParallelLogicBlock :
 LogicBlock<SerializableParallelLogicBlock.State> {
   public override Transition GetInitialState() => To<NotParallelState>();
 
-  [Meta, Id("serializable_parallel_logic_block_state")]
+  [Meta]
   public abstract partial record State : StateLogic<State>;
 
   [Meta, Id("serializable_parallel_logic_block_state_not_parallel")]

@@ -46,7 +46,7 @@ public abstract partial class LogicBlock<TState> {
 
     void cacheStateIfNeeded(Type type, IConcreteTypeMetadata metadata) {
       // Cache a pristine version of the state. Only done once per logic block
-      // type (not instance). Used by the logic block converter to determine
+      // type (not instance). Used by the serialization system to determine
       // if it really needs to save a state.
       if (!ReferenceStates.ContainsKey(type)) {
         ReferenceStates.TryAdd(type, metadata.Factory());
@@ -56,14 +56,19 @@ public abstract partial class LogicBlock<TState> {
     void discoverState(Type type) {
       if (isIdentifiable) {
         // Serializable logic block.
+        var stateMetadata = Graph.GetMetadata(type);
 
-        if (Graph.GetMetadata(type) is IIdentifiableTypeMetadata idMetadata) {
+        if (stateMetadata is IIdentifiableTypeMetadata idMetadata) {
           if (idMetadata is IConcreteTypeMetadata concreteMetadata) {
             cacheStateIfNeeded(type, concreteMetadata);
 
-            // We're a serializable logic block. States should be persisted when
-            // changed.
-            logic.SaveObject(type, concreteMetadata.Factory);
+            // We're a serializable logic block. States should only be saved if
+            // they have diverged from the reference state.
+            logic.SaveObject(
+              type: type,
+              factory: concreteMetadata.Factory,
+              referenceValue: ReferenceStates[type]
+            );
 
             // Force persisted state to be created and added to the blackboard.
             // Reasoning: do as much heap allocation as possible during setup
@@ -71,9 +76,17 @@ public abstract partial class LogicBlock<TState> {
             logic.OverwriteObject(type, concreteMetadata.Factory());
           }
         }
-        else {
-          // Logic block is serializable, but the state is not. Add state to
-          // the list of states to mention when we throw later.
+        else if (stateMetadata is not IIntrospectiveTypeMetadata) {
+          // Logic block is serializable, but the state is not even an
+          // introspective type. Add state to the list of states to mention
+          // when we throw an error later.
+          stateTypesNeedingAttention!.Add(type);
+        }
+        else if (
+          stateMetadata is IIntrospectiveTypeMetadata and IConcreteTypeMetadata
+        ) {
+          // Concrete introspective types on serializable logic blocks MUST
+          // be identifiable types.
           stateTypesNeedingAttention!.Add(type);
         }
 

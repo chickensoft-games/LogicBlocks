@@ -3,7 +3,6 @@ namespace Chickensoft.Serialization.Tests;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Chickensoft.Collections;
-using Chickensoft.LogicBlocks.Serialization;
 using Chickensoft.Serialization.Tests.Fixtures;
 using DeepEqual.Syntax;
 using Shouldly;
@@ -47,10 +46,12 @@ public class MixAndMatchTest {
       {
         "person": {
           "$type": "person",
+          "$v": 1,
           "age": 30,
           "name": "Alice Doe",
           "pet": {
             "$type": "dog",
+            "$v": 1,
             "bark_volume": 11,
             "name": "Fido"
           }
@@ -107,16 +108,19 @@ public class MixAndMatchTest {
       """
       {
         "$type": "camp_instructor",
+        "$v": 1,
         "activity": {
           "Place": "Park",
           "Description": "Walking the dog"
         },
         "person": {
           "$type": "person",
+          "$v": 1,
           "age": 30,
           "name": "Alice Doe",
           "pet": {
             "$type": "dog",
+            "$v": 1,
             "bark_volume": 11,
             "name": "Fido"
           }

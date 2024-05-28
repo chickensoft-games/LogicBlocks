@@ -27,12 +27,9 @@ public partial class Timer : LogicBlock<Timer.State> {
     public double TimeRemaining { get; set; }
   }
 
-  public Timer(IClock clock) {
+  public Timer() {
     // Set shared data for all states in the blackboard.
     Set(new Data() { Duration = 30.0d });
-
-    // Make sure all states can access the clock.
-    Set(clock);
   }
 
   public static class Input {
@@ -47,7 +44,7 @@ public partial class Timer : LogicBlock<Timer.State> {
     public readonly record struct TimeElapsed(double Delta);
   }
 
-  [Meta, Id("timer_state")]
+  [Meta]
   public abstract partial record State : StateLogic<State> {
     [Meta, Id("timer_state_powered_off")]
     public partial record PoweredOff : State, IGet<Input.PowerButtonPressed> {
@@ -55,7 +52,7 @@ public partial class Timer : LogicBlock<Timer.State> {
         To<PoweredOn.Idle>();
     }
 
-    [Meta, Id("timer_state_powered_on")]
+    [Meta]
     public abstract partial record PoweredOn : State, IGet<Input.PowerButtonPressed> {
       public Transition On(in Input.PowerButtonPressed input) => To<PoweredOff>();
 

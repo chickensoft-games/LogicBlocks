@@ -272,7 +272,7 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
   /// otherwise.</returns>
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   protected virtual bool CanChangeState(TState? state) =>
-    !IsEquivalent(state, _value);
+    !SerializationUtilities.IsEquivalent(state, _value);
 
   /// <summary>
   /// Adds an error to the logic block. Call this from your states to
@@ -358,14 +358,18 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
   /// <inheritdoc cref="ISerializableBlackboard.SavedTypes" />
   public IEnumerable<Type> SavedTypes => _blackboard.SavedTypes;
 
+  /// <inheritdoc cref="ISerializableBlackboard.TypesToSave" />
+  public IEnumerable<Type> TypesToSave => _blackboard.TypesToSave;
+
   /// <inheritdoc cref="ISerializableBlackboard.Save{TData}(Func{TData})" />
   public void Save<TData>(Func<TData> factory)
     where TData : class, IIdentifiable => _blackboard.Save(factory);
 
   /// <inheritdoc
-  ///   cref="ISerializableBlackboard.SaveObject(Type, Func{object})" />
-  public void SaveObject(Type type, Func<object> factory) =>
-    _blackboard.SaveObject(type, factory);
+  /// cref="ISerializableBlackboard.SaveObject(Type, Func{object}, object?)" />
+  public void SaveObject(
+    Type type, Func<object> factory, object? referenceValue
+  ) => _blackboard.SaveObject(type, factory, referenceValue);
   #endregion ISerializableBlackboard
 
   internal TState ProcessInputs<TInputType>(
@@ -507,7 +511,9 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
     }
 
     // Ensure current states are equal.
-    if (!IsEquivalent(ValueAsObject, logic.ValueAsObject)) {
+    if (
+      !SerializationUtilities.IsEquivalent(ValueAsObject, logic.ValueAsObject)
+    ) {
       return false;
     }
 
@@ -523,7 +529,7 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
       var obj1 = _blackboard.GetObject(type);
       var obj2 = logic._blackboard.GetObject(type);
 
-      if (IsEquivalent(obj1, obj2)) {
+      if (SerializationUtilities.IsEquivalent(obj1, obj2)) {
         continue;
       }
 

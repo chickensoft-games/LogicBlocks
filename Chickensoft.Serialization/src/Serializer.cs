@@ -3,6 +3,7 @@ namespace Chickensoft.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -13,17 +14,18 @@ using Chickensoft.Introspection;
 /// Chickensoft serialization utilities.
 /// </summary>
 public static class Serializer {
+
   /// <summary>
   /// Type discriminator used when serializing and deserializing identifiable
   /// types. Helps with polymorphism.
   /// </summary>
-  public const string TYPE_DISCRIMINATOR = "$type";
+  public const string TYPE_PROPERTY = "$type";
 
   /// <summary>
   /// Version discriminator used when serializing and deserializing polymorphic
   /// types. Helps with making upgradeable models.
   /// </summary>
-  public const string VERSION_DISCRIMINATOR = "$version";
+  public const string VERSION_PROPERTY = "$v";
 
   // Stores collection type info factories as they are requested.
   internal static readonly Dictionary<
@@ -162,6 +164,20 @@ public static class Serializer {
         options, JsonMetadataServices.VersionConverter
       )
   };
+
+  [ModuleInitializer]
+  internal static void Initialize() {
+    Types.Graph.AddCustomType(
+      type: typeof(SerializableBlackboard),
+      name: "SerializableBlackboard",
+      genericTypeGetter: (r) => r.Receive<SerializableBlackboard>(),
+      factory: () => new SerializableBlackboard(),
+      id: "blackboard",
+      version: 1
+    );
+
+    return;
+  }
 
   /// <summary>
   /// Adds a custom converter for a type that is outside the current assembly.

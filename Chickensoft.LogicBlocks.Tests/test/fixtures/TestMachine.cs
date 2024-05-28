@@ -16,7 +16,7 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
     public readonly record struct Deactivate();
   }
 
-  [Meta, Id("test_machine_state")]
+  [Meta]
   public abstract partial record State : StateLogic<State>, IGet<Input.Activate> {
     public Transition On(in Input.Activate input) =>
       input.Secondary switch {
@@ -25,7 +25,7 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
         _ => throw new ArgumentException("Unrecognized secondary state.")
       };
 
-    [Meta, Id("test_machine_state_activated")]
+    [Meta]
     public abstract partial record Activated : State, IGet<Input.Deactivate> {
       public Activated() {
         this.OnEnter(() => Output(new Output.Activated()));

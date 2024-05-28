@@ -22,7 +22,7 @@ public enum PetType {
   Cat,
 }
 
-[Meta, Id("pet")]
+[Meta]
 public abstract partial record Pet {
   [Save("name")]
   public string Name { get; set; } = "";

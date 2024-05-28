@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Chickensoft.Collections;
 using Chickensoft.Introspection;
-using Chickensoft.LogicBlocks.Serialization;
 using DeepEqual.Syntax;
 using Shouldly;
 using Xunit;
@@ -19,7 +18,7 @@ public partial class CollectionsTest {
     public string Author { get; set; } = default!;
 
     [Save("related_books")]
-    public Dictionary<string, List<HashSet<string>>> RelatedBooks { get; set; }
+    public Dictionary<string, List<HashSet<string>>>? RelatedBooks { get; set; }
       = default!;
   }
 
@@ -55,6 +54,7 @@ public partial class CollectionsTest {
       """
       {
         "$type": "book",
+        "$v": 1,
         "author": "The Author",
         "related_books": {
           "Title A": [
@@ -89,5 +89,55 @@ public partial class CollectionsTest {
     var bookAgain = JsonSerializer.Deserialize<Book>(json, options);
 
     bookAgain.ShouldDeepEqual(book);
+  }
+
+  [Fact]
+  public void DeserializesMissingCollectionsToEmptyOnes() {
+    var options = new JsonSerializerOptions {
+      TypeInfoResolver = new SerializableTypeResolver(),
+      Converters = { new IdentifiableTypeConverter(new Blackboard()) },
+      WriteIndented = true
+    };
+
+    var json =
+      /*lang=json,strict*/
+      """
+      {
+        "$type": "book",
+        "$v": 1,
+        "author": "The Author",
+        "title": "The Book"
+      }
+      """;
+
+    var book = JsonSerializer.Deserialize<Book>(json, options)!;
+
+    book.RelatedBooks.ShouldBeEmpty();
+  }
+
+
+  [Fact]
+  public void DeserializesExplicitlyNullCollectionsToNull() {
+    var options = new JsonSerializerOptions {
+      TypeInfoResolver = new SerializableTypeResolver(),
+      Converters = { new IdentifiableTypeConverter(new Blackboard()) },
+      WriteIndented = true
+    };
+
+    var json =
+      /*lang=json,strict*/
+      """
+      {
+        "$type": "book",
+        "$v": 1,
+        "author": "The Author",
+        "related_books": null,
+        "title": "The Book"
+      }
+      """;
+
+    var book = JsonSerializer.Deserialize<Book>(json, options)!;
+
+    book.RelatedBooks.ShouldBeNull();
   }
 }

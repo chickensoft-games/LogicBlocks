@@ -14,6 +14,7 @@ using System.Collections.Immutable;
 public record DeclaredProperty(
   string Name,
   bool HasSetter,
+  bool IsInit,
   bool IsNullable,
   GenericTypeNode GenericType,
   ImmutableArray<DeclaredAttribute> Attributes
@@ -25,11 +26,19 @@ public record DeclaredProperty(
     var propertyValue = "value" + (IsNullable ? "" : "!");
 
     var setter = HasSetter
-      ? $"(object obj, object? value) => (({typeSimpleNameClosed})obj)" +
-        $".{Name} = ({GenericType.ClosedType}){propertyValue}"
+      ? (
+        IsInit
+          ? "(object obj, object? value) => throw new " +
+          "System.InvalidOperationException(" +
+          $"\"Property {Name} on {typeSimpleNameClosed} is init-only.\"" +
+          ")"
+          : $"(object obj, object? value) => (({typeSimpleNameClosed})obj)" +
+          $".{Name} = ({GenericType.ClosedType}){propertyValue}"
+      )
       : "(object obj, object? _) => { }";
 
     writer.WriteLine($"Name: \"{Name}\",");
+    writer.WriteLine($"IsInit: {(IsInit ? "true" : "false")},");
     writer.WriteLine(
       $"Getter: (object obj) => (({typeSimpleNameClosed})obj).{Name},"
     );

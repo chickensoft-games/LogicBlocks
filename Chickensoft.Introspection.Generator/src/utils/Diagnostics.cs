@@ -78,20 +78,62 @@ public static class Diagnostics {
   public static Diagnostic TypeDoesNotHaveUniqueId(
     Location location,
     string name,
+    DeclaredType type,
     DeclaredType existingType
   ) => Diagnostic.Create(
     new(
       $"{ERR_PREFIX}_003",
-      "Introspective Type Id Reused",
+      "Introspective Type Does Not Have Unique Id",
       messageFormat:
-        "Introspective type `{0}` does not have a unique id. The following " +
-        "type shares the same id: `{1}`.",
+        "Introspective type `{0}` shares the same id `{1}` as the type " +
+        "`{2}.` Please ensure the id is unique across all types in your " +
+        "project.",
       category: ERR_CATEGORY,
       DiagnosticSeverity.Error,
       isEnabledByDefault: true
     ),
     location,
     name,
-    existingType.FullNameOpen
+    type.Id,
+    existingType.FullNameClosed
+  );
+
+  public static Diagnostic TypeHasInvalidVersion(
+    Location location,
+    string name,
+    DeclaredType type
+  ) => Diagnostic.Create(
+    new(
+      $"{ERR_PREFIX}_004",
+      "Introspective Type Invalid Version",
+      messageFormat:
+        "Introspective type `{0}` has an invalid version `{1}`. Please ensure " +
+        "the version is an integer value >= 1.",
+      category: ERR_CATEGORY,
+      DiagnosticSeverity.Warning,
+      isEnabledByDefault: true
+    ),
+    location,
+    name,
+    type.Version
+  );
+
+  public static Diagnostic AbstractTypeHasVersion(
+    Location location,
+    string name,
+    DeclaredType type
+  ) => Diagnostic.Create(
+    new(
+      $"{ERR_PREFIX}_005",
+      "Introspective Abstract Type Has Version",
+      messageFormat:
+        "Abstract introspective type `{0}` should not have a version. Please " +
+        "remove the version attribute from the type.",
+      category: ERR_CATEGORY,
+      DiagnosticSeverity.Error,
+      isEnabledByDefault: true
+    ),
+    location,
+    name
   );
 }

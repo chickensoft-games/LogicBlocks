@@ -68,6 +68,10 @@ public record DeclaredType(
     Location.IsFullyPartialOrNotNested &&
     !IsGeneric;
 
+  /// <summary>True if the type has a version attribute.</summary>
+  public bool HasVersionAttribute =>
+    VersionAttribute.Value is not null;
+
   /// <summary>
   /// True if the type is generic. A type is generic if it has type parameters
   /// or is nested inside any containing types that have type parameters.
@@ -82,6 +86,25 @@ public record DeclaredType(
   /// identifier to be given as the type's id.
   /// </summary>
   public string? Id => IdAttribute?.Value?.ConstructorArgs.FirstOrDefault();
+
+  /// <summary>
+  /// Version of the type. Types tagged with the [Meta] attribute can also be
+  /// tagged with the optional [Id] attribute, which allows a custom version
+  /// number to be given as the type's version.
+  /// </summary>
+  public int Version {
+    get {
+      if (Kind == DeclaredTypeKind.AbstractType) {
+        // Abstract types don't have versions.
+        return -1;
+      }
+
+      return int.TryParse(
+        VersionAttribute?.Value?.ConstructorArgs.FirstOrDefault() ?? "1",
+        out var version
+      ) ? version : 1;
+    }
+  }
 
   /// <summary>
   /// Whether or not the declared type was given a specific identifier.
@@ -134,6 +157,11 @@ public record DeclaredType(
     () => Attributes
       .FirstOrDefault((attr) => attr.Name == Constants.ID_ATTRIBUTE_NAME)
     );
+
+  private Lazy<DeclaredAttribute?> VersionAttribute { get; } = new(
+    () => Attributes
+      .FirstOrDefault((attr) => attr.Name == Constants.VERSION_ATTRIBUTE_NAME)
+  );
 
   private enum DeclaredTypeState {
     Unsupported,
@@ -216,6 +244,7 @@ public record DeclaredType(
     var factory = $"() => System.Activator.CreateInstance<{FullNameClosed}>()";
     var metatype = $"new {FullNameClosed}.{Constants.METATYPE_IMPL}()";
     var id = $"{Id ?? ""}";
+    var version = $"{Version}";
 
     switch (GetState(knownToBeAccessibleFromGlobalScope)) {
       case DeclaredTypeState.Type:
@@ -223,7 +252,8 @@ public record DeclaredType(
         return true;
       case DeclaredTypeState.ConcreteType:
         writer.Write(
-          $"new {prefix}.ConcreteTypeMetadata({name}, {genericTypeGetter}, {factory})"
+          $"new {prefix}.ConcreteTypeMetadata({name}, {genericTypeGetter}, " +
+          $"{factory})"
         );
         return true;
       case DeclaredTypeState.AbstractIntrospectiveType:
@@ -235,7 +265,7 @@ public record DeclaredType(
       case DeclaredTypeState.ConcreteIntrospectiveType:
         writer.Write(
           $"new {prefix}.IntrospectiveTypeMetadata(" +
-          $"{name}, {genericTypeGetter}, {factory}, {metatype})"
+          $"{name}, {genericTypeGetter}, {factory}, {metatype}, {version})"
         );
         return true;
       case DeclaredTypeState.AbstractIdentifiableType:
@@ -247,7 +277,8 @@ public record DeclaredType(
       case DeclaredTypeState.ConcreteIdentifiableType:
         writer.Write(
           $"new {prefix}.IdentifiableTypeMetadata(" +
-          $"{name}, {genericTypeGetter}, {factory}, {metatype}, {id})"
+          $"{name}, {genericTypeGetter}, {factory}, {metatype}, {id}, " +
+          $"{version})"
         );
         return true;
       case DeclaredTypeState.Unsupported:
@@ -288,6 +319,8 @@ public record DeclaredType(
     // introspective types without explicitly given id's.
     var identifiable = HasId ? $", {Constants.IDENTIFIABLE}" : "";
 
+    var initProperties = Properties.Where(prop => prop.IsInit).ToArray();
+
     // Nest inside us.
     writer.WriteLine(
       $"{Reference.CodeString} : " +
@@ -311,7 +344,7 @@ public record DeclaredType(
     writer.WriteLine();
 
     writer.WriteLine(
-      $"public record {Constants.METATYPE_IMPL} : {Constants.METATYPE} {{"
+      $"public class {Constants.METATYPE_IMPL} : {Constants.METATYPE} {{"
     );
 
     writer.Indent++; // metatype contents
@@ -320,6 +353,16 @@ public record DeclaredType(
     // ----------------------------------------------------------------- //
     writer.WriteLine(
       $"public System.Type Type => typeof({Reference.SimpleNameClosed});"
+    );
+    // ----------------------------------------------------------------- //
+
+    // HasInitProperties property
+    // ----------------------------------------------------------------- //
+    var hasInitProperties = initProperties.Any();
+
+    writer.WriteLine(
+      "public bool HasInitProperties { get; } = " +
+      $"{(hasInitProperties ? "true" : "false")};"
     );
     // ----------------------------------------------------------------- //
 
@@ -402,12 +445,62 @@ public record DeclaredType(
 
     writer.WriteLine();
 
-    // GetGenericType method
+    // Generate constructor for init properties, if needed
     // ----------------------------------------------------------------- //
     writer.WriteLine(
-      "public void GetGenericType" +
-      "(Chickensoft.Introspection.ITypeReceiver receiver) => " +
-      $"receiver.Receive<{Reference.SimpleNameClosed}>();"
+      "public object Construct(" +
+      "System.Collections.Generic.IReadOnlyDictionary<string, object?>? " +
+      "args = null) {"
+    );
+    writer.Indent++;
+
+    if (initProperties.Length == 0) {
+      if (Kind is DeclaredTypeKind.ConcreteType) {
+        writer.WriteLine($"return new {Reference.SimpleNameClosed}();");
+      }
+      else {
+        writer.WriteLine(
+          "throw new System.NotImplementedException(" +
+          $"\"{Reference.SimpleNameClosed} is not instantiable.\"" +
+          ");"
+        );
+      }
+
+      goto CLOSE_CONSTRUCT_METHOD; /* yay! a goto! */
+    }
+
+    writer.WriteLine(
+      $"args = args ?? throw new System.ArgumentNullException(" +
+      $"nameof(args), \"Constructing {Reference.SimpleNameClosed} requires " +
+      "init args.\");"
+    );
+    writer.WriteLine($"return new {Reference.SimpleNameClosed}() {{");
+
+    var propStrings = Properties
+      .Where(prop => prop.HasSetter)
+      .Select(
+        (prop) =>
+          $"{prop.Name} = ({prop.GenericType.ClosedType})args[\"{prop.Name}\"]"
+      );
+
+    writer.WriteCommaSeparatedList(
+      propStrings,
+      (prop) => writer.Write(prop),
+      multiline: true
+    );
+
+    writer.WriteLine("};"); // close init args
+
+    CLOSE_CONSTRUCT_METHOD:
+    writer.Indent--; // close construct method
+    writer.WriteLine("}");
+    // ----------------------------------------------------------------- //
+
+    // Generate constructor for init properties, if needed
+    // ----------------------------------------------------------------- //
+    writer.WriteLine("public override bool Equals(object obj) => true;");
+    writer.WriteLine(
+      "public override int GetHashCode() => base.GetHashCode();"
     );
     // ----------------------------------------------------------------- //
 

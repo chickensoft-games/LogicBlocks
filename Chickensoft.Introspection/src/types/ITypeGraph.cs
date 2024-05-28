@@ -20,11 +20,21 @@ public interface ITypeGraph {
   void Register(ITypeRegistry registry);
 
   /// <summary>
+  /// Gets the latest version of an identifiable type, if any. This lookup is
+  /// O(1) since it is cached during type registration.
+  /// </summary>
+  /// <param name="id">Identifiable type id.</param>
+  /// <returns>The latest version, or null if the type does not exist.</returns>
+  int? GetLatestVersion(string id);
+
+  /// <summary>
   /// Gets the identifiable type associated with the given id, if any.
   /// </summary>
   /// <param name="id">Identifiable type id.</param>
+  /// <param name="version">Optional identifiable type version to find. If this
+  /// is null, the latest version will be retrieved.</param>
   /// <returns>Identifiable type metadata, if any.</returns>
-  Type? GetIdentifiableType(string id);
+  Type? GetIdentifiableType(string id, int? version = null);
 
   /// <summary>
   /// Checks if the given type has metadata associated with it.
@@ -89,4 +99,26 @@ public interface ITypeGraph {
   /// <returns>Map of attribute types to the list of attribute instances
   /// that represent the applied attributes on the type.</returns>
   IReadOnlyDictionary<Type, Attribute[]> GetAttributes(Type type);
+
+  /// <summary>
+  /// Adds a custom identifiable type to the introspection system. Custom types
+  /// can represent metadata about types whose introspection is not
+  /// automatically generated and registered.
+  /// </summary>
+  /// <param name="type">System type.</param>
+  /// <param name="name">System type name.</param>
+  /// <param name="genericTypeGetter">Callback that invokes a type receiver with
+  /// the generic type.</param>
+  /// <param name="factory">Function which returns a new instance of the object.
+  /// </param>
+  /// <param name="id">Identifiable type id.</param>
+  /// <param name="version">Identifiable type version.</param>
+  void AddCustomType(
+    Type type,
+    string name,
+    Action<ITypeReceiver> genericTypeGetter,
+    Func<object> factory,
+    string id,
+    int version = 1
+  );
 }

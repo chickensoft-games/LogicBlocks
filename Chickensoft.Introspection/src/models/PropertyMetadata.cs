@@ -7,6 +7,7 @@ using System.Collections.Generic;
 /// Represents property metadata on an introspective type.
 /// </summary>
 /// <param name="Name">Property name.</param>
+/// <param name="IsInit">True if the property is init-only.</param>
 /// <param name="Getter">Getter function.</param>
 /// <param name="Setter">Setter function.</param>
 /// <param name="GenericType">If the property's type is a closed constructed
@@ -17,6 +18,7 @@ using System.Collections.Generic;
 /// instances.</param>
 public sealed record PropertyMetadata(
   string Name,
+  bool IsInit,
   Func<object, object?> Getter,
   Action<object, object?>? Setter,
   GenericType GenericType,

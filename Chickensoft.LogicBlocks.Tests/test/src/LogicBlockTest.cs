@@ -66,7 +66,7 @@ public partial class LogicBlockTest {
     block.GetObject(typeof(string)).ShouldBe("overwritten");
     block.SetObject(typeof(int), 5);
     block.GetObject(typeof(int)).ShouldBe(5);
-    block.SaveObject(typeof(TestObject), () => obj);
+    block.SaveObject(typeof(TestObject), () => obj, null);
 
     block.Types.ShouldContain(typeof(string));
     block.Types.ShouldContain(typeof(int));

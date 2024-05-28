@@ -45,13 +45,16 @@ public partial class PreallocationTest {
 
   [LogicBlock(typeof(State))]
   [Meta, Id("preallocation_non_id_substate_logic_block")]
-  public partial class NonIdSubstate : LogicBlock<NonIdSubstate.State> {
+  public partial class ConcreteSubstateWithoutId :
+  LogicBlock<ConcreteSubstateWithoutId.State> {
     public override Transition GetInitialState() => To<State>();
 
-    [Meta, Id("preallocation_non_id_substate_logic_block_state")]
+    [Meta]
     public abstract partial record State : StateLogic<State>;
 
-    [Meta] // Missing [Id]
+    [Meta]
+    // Missing [Id]
+    // Serializable logic blocks require concrete states to be identifiable.
     public partial record Substate : State;
   }
 
@@ -65,6 +68,6 @@ public partial class PreallocationTest {
 
   [Fact]
   public void
-  ThrowsWhenSerializableLogicBlockBaseStateOrSubstatesAreNotSerializable() =>
-    Should.Throw<LogicBlockException>(() => new NonIdSubstate());
+  ThrowsWhenConcreteStateIsMissingId() =>
+    Should.Throw<LogicBlockException>(() => new ConcreteSubstateWithoutId());
 }

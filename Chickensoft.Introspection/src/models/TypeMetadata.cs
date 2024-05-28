@@ -45,12 +45,24 @@ public interface IIntrospectiveTypeMetadata : IClosedTypeMetadata {
 }
 
 /// <summary>
+/// Metadata about a concrete introspective type.
+/// </summary>
+public interface IConcreteIntrospectiveTypeMetadata :
+IIntrospectiveTypeMetadata, IConcreteTypeMetadata {
+  /// <summary>
+  /// Introspective type version as specified by the
+  /// <see cref="VersionAttribute" />, if any.
+  /// </summary>
+  int Version { get; }
+}
+
+/// <summary>
 /// Metadata about an identifiable introspective type.
 /// </summary>
 public interface IIdentifiableTypeMetadata : IIntrospectiveTypeMetadata {
   /// <summary>
   /// Introspective type identifier as specified by the
-  /// <see cref="IdAttribute" />, if any. Must be globally unique.
+  /// <see cref="IdAttribute" />, if any.
   /// </summary>
   string Id { get; }
 }
@@ -117,14 +129,18 @@ public record AbstractIntrospectiveTypeMetadata(
 /// <param name="Metatype">
 /// <inheritdoc cref="IIntrospectiveTypeMetadata.Metatype" path="/summary" />
 /// </param>
+/// <param name="Version">
+/// <inheritdoc cref="IConcreteIntrospectiveTypeMetadata.Version"
+/// path="/summary" />
+/// </param>
 public record IntrospectiveTypeMetadata(
   string Name,
   Action<ITypeReceiver> GenericTypeGetter,
   Func<object> Factory,
-  IMetatype Metatype
-) :
-ConcreteTypeMetadata(Name, GenericTypeGetter, Factory),
-IIntrospectiveTypeMetadata;
+  IMetatype Metatype,
+  int Version
+) : ConcreteTypeMetadata(Name, GenericTypeGetter, Factory),
+IConcreteIntrospectiveTypeMetadata;
 
 /// <summary>
 /// Metadata about an abstract and identifiable introspective type.
@@ -171,12 +187,17 @@ public record AbstractIdentifiableTypeMetadata(
 /// <param name="Id">
 /// <inheritdoc cref="IIdentifiableTypeMetadata.Id" path="/summary" />
 /// </param>
+/// <param name="Version">
+/// <inheritdoc cref="IConcreteIntrospectiveTypeMetadata.Version"
+/// path="/summary" />
+/// </param>
 public record IdentifiableTypeMetadata(
   string Name,
   Action<ITypeReceiver> GenericTypeGetter,
   Func<object> Factory,
   IMetatype Metatype,
-  string Id
-) :
-ConcreteTypeMetadata(Name, GenericTypeGetter, Factory),
-IIdentifiableTypeMetadata;
+  string Id,
+  int Version
+) : IntrospectiveTypeMetadata(
+  Name, GenericTypeGetter, Factory, Metatype, Version
+), IIdentifiableTypeMetadata, IConcreteIntrospectiveTypeMetadata;
