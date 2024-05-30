@@ -1,7 +1,9 @@
 namespace Chickensoft.Introspection.Generator.Models;
 
+using System;
 using System.Collections.Immutable;
 using System.Linq;
+using Chickensoft.Introspection.Generator.Utils;
 
 /// <summary>
 /// Represents the location of a type inside any namespaces and/or containing
@@ -9,7 +11,7 @@ using System.Linq;
 /// </summary>
 /// <param name="Namespaces">Namespaces containing the type.</param>
 /// <param name="ContainingTypes">Containing type names.</param>
-public record TypeLocation(
+public sealed record TypeLocation(
   ImmutableArray<string> Namespaces,
   ImmutableArray<TypeReference> ContainingTypes
 ) {
@@ -46,4 +48,13 @@ public record TypeLocation(
   /// </summary>
   public bool IsFullyPartialOrNotNested =>
     ContainingTypes.Length == 0 || ContainingTypes.All(t => t.IsPartial);
+
+  public bool Equals(TypeLocation? other) =>
+    other is not null &&
+    Namespaces.SequenceEqual(other.Namespaces) &&
+    ContainingTypes.SequenceEqual(other.ContainingTypes);
+
+  public override int GetHashCode() => HashCode.Combine(
+    Namespaces, ContainingTypes
+  );
 }

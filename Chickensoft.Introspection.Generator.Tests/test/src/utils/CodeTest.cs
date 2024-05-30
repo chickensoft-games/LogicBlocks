@@ -1,5 +1,7 @@
+#pragma warning disable SYSLIB1045
 namespace Chickensoft.Introspection.Generator.Tests.Utils;
 
+using System.Text.RegularExpressions;
 using Chickensoft.Introspection.Generator.Utils;
 using Shouldly;
 using Xunit;
@@ -27,11 +29,11 @@ public class CodeTest {
   public void NameOf(string value, string expected) =>
     Code.NameOf(value).ShouldBe(expected);
 
-  [Theory]
-  [InlineData("TheURLRef", "the_url_ref")]
-  [InlineData("camelCase", "camel_case")]
-  [InlineData("snake_case", "snake_case")]
-  [InlineData("ALLCapsGOHereEndOnCAPS", "all_caps_go_here_end_on_caps")]
-  public void SnakeCase(string value, string expected) =>
-    Code.PascalCaseToSnakeCase(value).ShouldBe(expected);
+  [Fact]
+  public void NameOfNoSuccess() {
+    // Make a regex that doesn't match anything
+    Code.NameOfRegex = new Regex("nope");
+    Code.NameOf("input").ShouldBe("input");
+  }
 }
+#pragma warning restore SYSLIB1045

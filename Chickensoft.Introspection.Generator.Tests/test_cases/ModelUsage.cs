@@ -3,7 +3,7 @@ namespace Chickensoft.Introspection.Generator.Tests.TestCases;
 using System;
 using System.Text;
 using Chickensoft.Introspection;
-using Chickensoft.Serialization;
+using Chickensoft.Introspection.Generator.Tests.TestUtils;
 using static System.Console;
 using JSON = System.Text.Json;
 
@@ -20,16 +20,18 @@ public partial class MyType {
     return new StringBuilder();
   }
 
+  public int NoAttributeSoNoMetadata { get; } = 10;
+
   [Junk]
   [Junk]
-  [Save("my_property")]
+  [Tag("my_property")]
   public string MyProperty { get; set; } = "";
 
-  [Save("optional_int")]
+  [Tag("optional_int")]
   public int? OptionalInt { get; set; } = 10;
 
 #pragma warning disable IDE0001, RCS1020
-  [Save("optional_float")]
+  [Tag("optional_float")]
   public Nullable<float> OptionalFloat { get; set; } = 10.0f;
 #pragma warning restore IDE0001, RCS1020
 }
@@ -44,16 +46,14 @@ public static partial class One {
         public sealed partial class NestedType {
           [Junk]
           [Junk]
-          [Save("my_property")]
+          [Tag("my_property")]
           public string MyProperty { get; set; } = "";
 
-          [Save("optional_int")]
+          [Tag("optional_int")]
           public int? OptionalInt { get; set; } = 10;
 
-#pragma warning disable IDE0001
-          [Save("optional_float")]
+          [Tag("optional_float")]
           public float? OptionalFloat { get; set; } = 10.0f;
-#pragma warning restore IDE0001
         }
       }
     }

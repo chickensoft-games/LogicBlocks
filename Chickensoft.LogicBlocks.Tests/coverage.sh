@@ -1,6 +1,6 @@
 #!/bin/bash
 
-dotnet build
+dotnet build-server shutdown; dotnet build --no-incremental
 
 dotnet test \
   -p:CollectCoverage=true \

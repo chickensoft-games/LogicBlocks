@@ -1,5 +1,7 @@
 namespace Chickensoft.Introspection.Generator.Models;
 
+using Chickensoft.Introspection.Generator.Utils;
+
 /// <summary>
 /// Using directive. In C# 12, a using can be global, static, and an alias all
 /// at the same time.
@@ -10,7 +12,7 @@ namespace Chickensoft.Introspection.Generator.Models;
 /// <param name="IsGlobal">True if this is a global using statement.</param>
 /// <param name="IsStatic">True if this is a static using alias.</param>
 /// <param name="IsAlias">True if this is a using alias.</param>
-public readonly record struct UsingDirective(
+public sealed record UsingDirective(
   string? Alias,
   string TypeName,
   bool IsGlobal,
@@ -24,4 +26,16 @@ public readonly record struct UsingDirective(
       : IsAlias
         ? $"using {Alias} = {TypeName};"
         : $"using {TypeName};";
+
+  public bool Equals(UsingDirective? other) =>
+    other is not null &&
+    Alias == other.Alias &&
+    TypeName == other.TypeName &&
+    IsGlobal == other.IsGlobal &&
+    IsStatic == other.IsStatic &&
+    IsAlias == other.IsAlias;
+
+  public override int GetHashCode() => HashCode.Combine(
+    Alias, TypeName, IsGlobal, IsStatic, IsAlias
+  );
 }

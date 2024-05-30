@@ -42,10 +42,6 @@
     <ProjectReference Include="../Chickensoft.Introspection.Generator/Chickensoft.Introspection.Generator.csproj" />
     <ProjectReference Include="../Chickensoft.Introspection.Generator/Chickensoft.Introspection.Generator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
     <ProjectReference Include="../Chickensoft.GeneratorTester/Chickensoft.GeneratorTester.csproj" />
-    <!-- TODO: Reference published packages -->
-    <ProjectReference Include="../Chickensoft.LogicBlocks.Analyzers/Chickensoft.LogicBlocks.Analyzers.csproj" PrivateAssets="all" OutputItemType="analyzer" />
-    <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
-    <ProjectReference Include="../Chickensoft.Serialization/Chickensoft.Serialization.csproj" />
   </ItemGroup>
 
 </Project>

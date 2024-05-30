@@ -2,6 +2,7 @@ namespace Chickensoft.Introspection.Generator.Tests;
 
 using System.IO;
 using Chickensoft.GeneratorTester;
+using Shouldly;
 using Xunit;
 
 public class IntrospectionGeneratorTest {
@@ -14,10 +15,45 @@ public class IntrospectionGeneratorTest {
     //
     // Running test cases through the generator allows us to collect coverage
     // which helps us identify missing test cases or unused code.
-    foreach (var file in Directory.GetFiles(Tester.CurrentDir("../test_cases"), "*.cs")) {
+    foreach (
+      var file in Directory.GetFiles(Tester.CurrentDir("../test_cases"), "*.cs")
+    ) {
       var contents = File.ReadAllText(file);
 
       new TypeGenerator().Generate(contents);
     }
+  }
+
+  // Have to test error diagnostics in unit tests since it would not build.
+
+  [Fact]
+  public void NotFullyPartialError() {
+    var contents = """
+    namespace Chickensoft.Introspection.Generator.Tests.TestCases;
+
+    public sealed class Parent {
+      public sealed partial class Child {
+        [Meta]
+        public sealed partial class NotFullyPartial { }
+      }
+    }
+    """;
+
+    new TypeGenerator().Generate(contents).Diagnostics.ShouldNotBeEmpty();
+  }
+
+  [Fact]
+  public void TypeDoesNotHaveUniqueIdError() {
+    var contents = """
+    namespace Chickensoft.Introspection.Generator.Tests.TestCases;
+
+    [Meta, Id("same_model")]
+    public partial class SameModel;
+
+    [Meta, Id("same_model")]
+    public partial class OtherModel;
+    """;
+
+    new TypeGenerator().Generate(contents).Diagnostics.ShouldNotBeEmpty();
   }
 }

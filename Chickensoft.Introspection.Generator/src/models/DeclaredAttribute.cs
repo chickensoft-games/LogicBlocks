@@ -13,7 +13,7 @@ using Chickensoft.Introspection.Generator.Utils;
 /// <param name="InitializerArgs">Attribute initializer arguments (not part
 /// of the constructor signature, but settable properties from object
 /// initializer syntax).</param>
-public record DeclaredAttribute(
+public sealed record DeclaredAttribute(
   string Name,
   ImmutableArray<string> ConstructorArgs,
   ImmutableArray<string> InitializerArgs
@@ -60,4 +60,16 @@ public record DeclaredAttribute(
       writer.Write(" }");
     }
   }
+
+  public bool Equals(DeclaredAttribute? other) =>
+    other is not null &&
+    Name == other.Name &&
+    ConstructorArgs.SequenceEqual(other.ConstructorArgs) &&
+    InitializerArgs.SequenceEqual(other.InitializerArgs);
+
+  public override int GetHashCode() => HashCode.Combine(
+    Name,
+    ConstructorArgs,
+    InitializerArgs
+  );
 }

@@ -1,7 +1,7 @@
 namespace Chickensoft.Introspection.Generator.Tests.TestCases;
 
 using Chickensoft.Introspection;
-using Chickensoft.Serialization;
+using Chickensoft.Introspection.Generator.Tests.TestUtils;
 
 [Mixin]
 public interface IMyMixin : IMixin<IMyMixin> {
@@ -16,10 +16,10 @@ public interface IMySecondMixin : IMixin<IMySecondMixin> {
 public partial class MyContainerClass {
   [Id("my_model"), Meta(typeof(IMyMixin), typeof(IMySecondMixin))]
   public partial record MyModel {
-    [Save("name")]
+    [Tag("name")]
     public string Name { get; set; } = "";
 
-    [Save("age")]
+    [Tag("age")]
     public int? Age { get; set; } = 0;
   }
 }

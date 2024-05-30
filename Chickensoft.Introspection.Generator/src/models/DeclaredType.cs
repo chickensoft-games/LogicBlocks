@@ -22,24 +22,18 @@ using Microsoft.CodeAnalysis;
 /// <param name="Kind">Kind of the type.</param>
 /// <param name="IsStatic">True if the type is static. Static types can't
 /// provide generic type retrieval.</param>
-/// <param name="HasIntrospectiveAttribute">True if the type was tagged with the
-/// MetatypeAttribute.</param>
-/// <param name="HasMixinAttribute">True if the type is tagged with the mixin
-/// attribute.</param>
 /// <param name="IsPublicOrInternal">True if the public or internal
 /// visibility modifier was seen on the type.</param>
 /// <param name="Properties">Properties declared on the type.</param>
 /// <param name="Attributes">Attributes declared on the type.</param>
 /// <param name="Mixins">Mixins that are applied to the type.</param>
-public record DeclaredType(
+public sealed record DeclaredType(
   TypeReference Reference,
   Location SyntaxLocation,
   TypeLocation Location,
   ImmutableHashSet<UsingDirective> Usings,
   DeclaredTypeKind Kind,
   bool IsStatic,
-  bool HasIntrospectiveAttribute,
-  bool HasMixinAttribute,
   bool IsPublicOrInternal,
   ImmutableArray<DeclaredProperty> Properties,
   ImmutableArray<DeclaredAttribute> Attributes,
@@ -68,9 +62,19 @@ public record DeclaredType(
     Location.IsFullyPartialOrNotNested &&
     !IsGeneric;
 
+  /// <summary>True if the type has the meta attribute.</summary>
+  public bool HasIntrospectiveAttribute => IntrospectiveAttribute is not null;
+
+  /// <summary>True if the type has a mixin attribute.</summary>
+  public bool HasMixinAttribute => MixinAttribute is not null;
+
   /// <summary>True if the type has a version attribute.</summary>
-  public bool HasVersionAttribute =>
-    VersionAttribute.Value is not null;
+  public bool HasVersionAttribute => VersionAttribute is not null;
+
+  /// <summary>
+  /// Whether or not the declared type was given a specific identifier.
+  /// </summary>
+  public bool HasIdAttribute => IdAttribute is not null;
 
   /// <summary>
   /// True if the type is generic. A type is generic if it has type parameters
@@ -85,7 +89,7 @@ public record DeclaredType(
   /// be tagged with the optional [Id] attribute, which allows a custom string
   /// identifier to be given as the type's id.
   /// </summary>
-  public string? Id => IdAttribute?.Value?.ConstructorArgs.FirstOrDefault();
+  public string? Id => IdAttribute?.ConstructorArgs.FirstOrDefault();
 
   /// <summary>
   /// Version of the type. Types tagged with the [Meta] attribute can also be
@@ -100,16 +104,11 @@ public record DeclaredType(
       }
 
       return int.TryParse(
-        VersionAttribute?.Value?.ConstructorArgs.FirstOrDefault() ?? "1",
+        VersionAttribute?.ConstructorArgs.FirstOrDefault() ?? "1",
         out var version
       ) ? version : 1;
     }
   }
-
-  /// <summary>
-  /// Whether or not the declared type was given a specific identifier.
-  /// </summary>
-  public bool HasId => IdAttribute.Value is not null;
 
   /// <summary>
   /// Validates that the DeclaredType of this type and its containing types
@@ -146,24 +145,22 @@ public record DeclaredType(
     return typesToValidate.Where((type) => !predicate(type));
   }
 
-  private Lazy<DeclaredAttribute?> IntrospectiveAttribute { get; } = new(
-    () => Attributes
+  private DeclaredAttribute? IntrospectiveAttribute =>
+    Attributes
       .FirstOrDefault(
         (attr) => attr.Name == Constants.INTROSPECTIVE_ATTRIBUTE_NAME
-      )
-    );
+      );
 
-  private Lazy<DeclaredAttribute?> IdAttribute { get; } = new(
-    () => Attributes
-      .FirstOrDefault((attr) => attr.Name == Constants.ID_ATTRIBUTE_NAME)
-    );
+  private DeclaredAttribute? MixinAttribute => Attributes
+      .FirstOrDefault((attr) => attr.Name == Constants.MIXIN_ATTRIBUTE_NAME);
 
-  private Lazy<DeclaredAttribute?> VersionAttribute { get; } = new(
-    () => Attributes
-      .FirstOrDefault((attr) => attr.Name == Constants.VERSION_ATTRIBUTE_NAME)
-  );
+  private DeclaredAttribute? IdAttribute => Attributes
+      .FirstOrDefault((attr) => attr.Name == Constants.ID_ATTRIBUTE_NAME);
 
-  private enum DeclaredTypeState {
+  private DeclaredAttribute? VersionAttribute => Attributes
+      .FirstOrDefault((attr) => attr.Name == Constants.VERSION_ATTRIBUTE_NAME);
+
+  internal enum DeclaredTypeState {
     Unsupported,
     Type,
     ConcreteType,
@@ -173,7 +170,7 @@ public record DeclaredType(
     ConcreteIdentifiableType
   }
 
-  private DeclaredTypeState GetState(bool knownToBeAccessibleFromGlobalScope) {
+  internal DeclaredTypeState GetState(bool knownToBeAccessibleFromGlobalScope) {
     if (Kind is DeclaredTypeKind.Interface or DeclaredTypeKind.StaticClass) {
       // Can't generate metadata about interfaces or static classes.
       return DeclaredTypeState.Unsupported;
@@ -192,7 +189,7 @@ public record DeclaredType(
     }
 
     if (HasIntrospectiveAttribute) {
-      if (HasId) {
+      if (HasIdAttribute) {
         return Kind is DeclaredTypeKind.ConcreteType
           ? DeclaredTypeState.ConcreteIdentifiableType
           : DeclaredTypeState.AbstractIdentifiableType;
@@ -217,15 +214,13 @@ public record DeclaredType(
   public DeclaredType MergePartialDefinition(
     DeclaredType declaredType
   ) => new(
-    Reference.MergePartialDefinition(declaredType.Reference),
-    HasIntrospectiveAttribute ? SyntaxLocation : declaredType.SyntaxLocation,
-    Location,
-    Usings.Union(declaredType.Usings),
-    Kind,
-    IsStatic || declaredType.IsStatic,
-    HasIntrospectiveAttribute || declaredType.HasIntrospectiveAttribute,
-    HasMixinAttribute || declaredType.HasMixinAttribute,
-    IsPublicOrInternal || declaredType.IsPublicOrInternal,
+    Reference: Reference.MergePartialDefinition(declaredType.Reference),
+    SyntaxLocation: PickSyntaxLocation(declaredType.SyntaxLocation),
+    Location: Location,
+    Usings: Usings.Union(declaredType.Usings),
+    Kind: Kind,
+    IsStatic: PickIsStatic(declaredType.IsStatic),
+    IsPublicOrInternal: PickIsPublicOrInternal(declaredType.IsPublicOrInternal),
     Properties
       .ToImmutableHashSet()
       .Union(declaredType.Properties)
@@ -233,6 +228,14 @@ public record DeclaredType(
     Attributes.Concat(declaredType.Attributes).ToImmutableArray(),
     Mixins.Concat(declaredType.Mixins).ToImmutableArray()
   );
+
+  internal Location PickSyntaxLocation(Location other) =>
+    HasIntrospectiveAttribute ? SyntaxLocation : other;
+
+  internal bool PickIsStatic(bool other) => IsStatic || other;
+
+  internal bool PickIsPublicOrInternal(bool other) =>
+    IsPublicOrInternal || other;
 
   public bool WriteMetadata(
     IndentedTextWriter writer,
@@ -243,7 +246,7 @@ public record DeclaredType(
     var genericTypeGetter = $"(r) => r.Receive<{FullNameClosed}>()";
     var factory = $"() => System.Activator.CreateInstance<{FullNameClosed}>()";
     var metatype = $"new {FullNameClosed}.{Constants.METATYPE_IMPL}()";
-    var id = $"{Id ?? ""}";
+    var id = Id ?? "";
     var version = $"{Version}";
 
     switch (GetState(knownToBeAccessibleFromGlobalScope)) {
@@ -281,15 +284,17 @@ public record DeclaredType(
           $"{version})"
         );
         return true;
-      case DeclaredTypeState.Unsupported:
       default:
+      case DeclaredTypeState.Unsupported:
         break;
     }
     return false;
   }
 
   public void WriteMetatype(IndentedTextWriter writer) {
-    writer.WriteLine($"namespace {Location.Namespace};\n");
+    if (!string.IsNullOrEmpty(Location.Namespace)) {
+      writer.WriteLine($"namespace {Location.Namespace};\n");
+    }
 
     var usings = Usings
       .Where(u => !u.IsGlobal) // Globals are universally available
@@ -317,7 +322,7 @@ public record DeclaredType(
     // Types which have been given an explicit user-defined id
     // are marked as IIdentifiable to allow the serializer to reject
     // introspective types without explicitly given id's.
-    var identifiable = HasId ? $", {Constants.IDENTIFIABLE}" : "";
+    var identifiable = HasIdAttribute ? $", {Constants.IDENTIFIABLE}" : "";
 
     var initProperties = Properties.Where(prop => prop.IsInit).ToArray();
 
@@ -512,4 +517,35 @@ public record DeclaredType(
       writer.Indent--;
     }
   }
+
+
+  public bool Equals(DeclaredType? other) =>
+    other is not null &&
+    Reference.Equals(other.Reference) &&
+    SyntaxLocation.Equals(other.SyntaxLocation) &&
+    Location.Equals(other.Location) &&
+    Usings.SequenceEqual(other.Usings) &&
+    Kind == other.Kind &&
+    IsStatic == other.IsStatic &&
+    HasIntrospectiveAttribute == other.HasIntrospectiveAttribute &&
+    HasMixinAttribute == other.HasMixinAttribute &&
+    IsPublicOrInternal == other.IsPublicOrInternal &&
+    Properties.SequenceEqual(other.Properties) &&
+    Attributes.SequenceEqual(other.Attributes) &&
+    Mixins.SequenceEqual(other.Mixins);
+
+  public override int GetHashCode() => HashCode.Combine(
+    Reference,
+    SyntaxLocation,
+    Location,
+    Usings,
+    Kind,
+    IsStatic,
+    HasIntrospectiveAttribute,
+    HasMixinAttribute,
+    IsPublicOrInternal,
+    Properties,
+    Attributes,
+    Mixins
+  );
 }

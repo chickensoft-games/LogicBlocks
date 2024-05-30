@@ -1,5 +1,6 @@
 namespace Chickensoft.Introspection.Generator.Models;
 
+using System;
 using System.CodeDom.Compiler;
 using System.Collections.Immutable;
 using System.Linq;
@@ -8,17 +9,14 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-public record GenericTypeNode(
+
+// Not to be confused with the type resolution tree node, which has to do with
+// where types are. This represents a generic type as a hierarchy of all the
+// types that comprise it.
+public sealed record GenericTypeNode(
   string Type,
   ImmutableArray<GenericTypeNode> Children
 ) {
-  /// <summary>
-  /// Name of the type, including any open generics portion of the name (if the
-  /// type is generic) — i.e., the open generic type.
-  /// </summary>
-  public string OpenType =>
-    Type + TypeReference.GetOpenGenerics(Children.Length);
-
   /// <summary>
   /// Name of the type, including any generic type arguments — i.e., the closed
   /// generic type.
@@ -92,4 +90,14 @@ public record GenericTypeNode(
     writer.Indent--;
     writer.Write(")");
   }
+
+  public bool Equals(GenericTypeNode? other) =>
+    other is not null &&
+    Type == other.Type &&
+    Children.SequenceEqual(other.Children);
+
+  public override int GetHashCode() => HashCode.Combine(
+    Type,
+    Children
+  );
 }

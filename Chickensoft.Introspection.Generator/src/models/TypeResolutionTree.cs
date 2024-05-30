@@ -16,7 +16,7 @@ public record TypeResolutionTree {
   /// <param name="declaredTypesByFullName">Map of declared types by their
   /// fully qualified names.</param>
   public void AddDeclaredTypes(
-    Dictionary<string, DeclaredType> declaredTypesByFullName
+    IDictionary<string, DeclaredType> declaredTypesByFullName
   ) {
     foreach (var declaredType in declaredTypesByFullName.Values) {
       AddDeclaredType(declaredType, declaredTypesByFullName);
@@ -25,7 +25,7 @@ public record TypeResolutionTree {
 
   private void AddDeclaredType(
     DeclaredType declaredType,
-    Dictionary<string, DeclaredType> declaredTypesByFullName
+    IDictionary<string, DeclaredType> declaredTypesByFullName
   ) {
     var fullNameBuilder = new StringBuilder();
     var currentNs = Root;
@@ -44,15 +44,20 @@ public record TypeResolutionTree {
 
     // Drill down further based on containing types
     foreach (var containingTypeName in declaredType.Location.ContainingTypes) {
-      fullNameBuilder.Append($"{containingTypeName}.");
+      fullNameBuilder.Append(containingTypeName.SimpleNameOpen);
 
       var containingDeclaredTypeFullName = fullNameBuilder.ToString();
-      var containingDeclaredType =
-        (declaredTypesByFullName
-          ?.ContainsKey(containingDeclaredTypeFullName) ?? false
-        )
-        ? declaredTypesByFullName[containingDeclaredTypeFullName]
-        : null;
+
+
+      if (!declaredTypesByFullName.TryGetValue(
+        containingDeclaredTypeFullName, out var containingDeclaredType
+      )) {
+        throw new InvalidOperationException(
+          $"Could not find containing type: {containingDeclaredTypeFullName}"
+        );
+      }
+
+      fullNameBuilder.Append(".");
 
       if (
         !current.TypeChildren.TryGetValue(
@@ -61,10 +66,10 @@ public record TypeResolutionTree {
       ) {
         child = new TypeNode(
           Name: containingTypeName.SimpleName,
-          IsVisible: containingDeclaredType?.IsPublicOrInternal ?? false,
+          IsVisible: containingDeclaredType.IsPublicOrInternal,
           IsConcrete:
-            containingDeclaredType?.Kind == DeclaredTypeKind.ConcreteType,
-          OpenGenerics: containingDeclaredType?.Reference.OpenGenerics ?? "",
+            containingDeclaredType.Kind == DeclaredTypeKind.ConcreteType,
+          OpenGenerics: containingDeclaredType.Reference.OpenGenerics,
           TypeChildren: new()
         );
         current.TypeChildren.Add(
@@ -129,7 +134,7 @@ public record TypeResolutionTree {
         yield return name;
       }
 
-      if (typeNode.OpenGenerics != "" && !searchGenericTypes) {
+      if (typeNode.IsGeneric && !searchGenericTypes) {
         yield break;
       }
 

@@ -1,6 +1,5 @@
 namespace Chickensoft.Introspection.Generator.Models;
 
-using System;
 using System.CodeDom.Compiler;
 using System.Collections.Immutable;
 using System.Linq;

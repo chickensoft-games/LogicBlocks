@@ -5,5 +5,6 @@ public enum Construction {
   Class,
   RecordStruct,
   RecordClass,
-  Interface
+  Interface,
+  Struct
 }

@@ -37,7 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Chickensoft.Collections" Version="1.3.0" />
+    <PackageReference Include="Chickensoft.Collections" Version="1.4.0" />
     <PackageReference Include="SauceControl.InheritDoc" Version="1.3.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

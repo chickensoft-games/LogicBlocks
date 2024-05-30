@@ -25,7 +25,7 @@ public static class Diagnostics {
         Constants.INTROSPECTIVE_ATTRIBUTE_NAME + "] attribute on the type. " +
         "The following types are not indicated to be fully visible: {1}.",
       category: ERR_CATEGORY,
-      DiagnosticSeverity.Error,
+      DiagnosticSeverity.Warning,
       isEnabledByDefault: true
     ),
     location,
@@ -67,7 +67,7 @@ public static class Diagnostics {
         "type **and all of its containing types** are not generic. " +
         "The following types are generic: {1}.",
       category: ERR_CATEGORY,
-      DiagnosticSeverity.Error,
+      DiagnosticSeverity.Warning,
       isEnabledByDefault: true
     ),
     location,
@@ -130,7 +130,7 @@ public static class Diagnostics {
         "Abstract introspective type `{0}` should not have a version. Please " +
         "remove the version attribute from the type.",
       category: ERR_CATEGORY,
-      DiagnosticSeverity.Error,
+      DiagnosticSeverity.Warning,
       isEnabledByDefault: true
     ),
     location,

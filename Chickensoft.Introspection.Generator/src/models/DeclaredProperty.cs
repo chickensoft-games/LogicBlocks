@@ -2,6 +2,8 @@ namespace Chickensoft.Introspection.Generator.Models;
 
 using System.CodeDom.Compiler;
 using System.Collections.Immutable;
+using System.Linq;
+using Chickensoft.Introspection.Generator.Utils;
 
 /// <summary>
 /// Represents a property on a metatype. Properties are opt-in and persisted.
@@ -11,7 +13,7 @@ using System.Collections.Immutable;
 /// <param name="IsNullable">True if the property is nullable.</param>
 /// <param name="GenericType">Type of the </param>
 /// <param name="Attributes">Attributes applied to the </param>
-public record DeclaredProperty(
+public sealed record DeclaredProperty(
   string Name,
   bool HasSetter,
   bool IsInit,
@@ -59,4 +61,22 @@ public record DeclaredProperty(
 
     writer.Write(")");
   }
+
+  public bool Equals(DeclaredProperty? other) =>
+    other is not null &&
+    Name == other.Name &&
+    HasSetter == other.HasSetter &&
+    IsInit == other.IsInit &&
+    IsNullable == other.IsNullable &&
+    GenericType.Equals(other.GenericType) &&
+    Attributes.SequenceEqual(other.Attributes);
+
+  public override int GetHashCode() => HashCode.Combine(
+    Name,
+    HasSetter,
+    IsInit,
+    IsNullable,
+    GenericType,
+    Attributes
+  );
 }

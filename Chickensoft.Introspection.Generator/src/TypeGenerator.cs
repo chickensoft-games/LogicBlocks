@@ -143,8 +143,6 @@ public class TypeGenerator : IIncrementalGenerator {
             type
           )
         );
-
-        continue;
       }
 
       if (type.Kind is DeclaredTypeKind.ConcreteType && type.Version is < 1) {
@@ -219,7 +217,9 @@ public class TypeGenerator : IIncrementalGenerator {
 
       if (
         !registry.VisibleTypes.Contains(type) ||
-        !type.CanGenerateMetatypeInfo
+        !type.CanGenerateMetatypeInfo ||
+        type.Kind == DeclaredTypeKind.StaticClass ||
+        type.Kind == DeclaredTypeKind.Interface
       ) {
         // Type is not visible from global scope or we're not able to generate
         // a metatype for it because it's generic or not fully partial, etc.
@@ -295,8 +295,6 @@ public class TypeGenerator : IIncrementalGenerator {
     var location = GetLocation(typeDecl);
     var kind = GetKind(typeDecl);
     var isStatic = construction == Construction.StaticClass;
-    var hasIntrospectiveAttribute = HasIntrospectiveAttribute(typeDecl);
-    var hasMixinAttribute = HasMixinAttribute(typeDecl);
     var isTopLevelAccessible = IsTopLevelAccessible(typeDecl);
 
     var diagnostics = new HashSet<Diagnostic>();
@@ -313,8 +311,6 @@ public class TypeGenerator : IIncrementalGenerator {
       Usings: usings,
       Kind: kind,
       IsStatic: isStatic,
-      HasIntrospectiveAttribute: hasIntrospectiveAttribute,
-      HasMixinAttribute: hasMixinAttribute,
       IsPublicOrInternal: isTopLevelAccessible,
       Properties: properties,
       Attributes: attributes,
@@ -359,7 +355,7 @@ public class TypeGenerator : IIncrementalGenerator {
         ? Construction.RecordStruct
         : Construction.RecordClass;
     }
-    return Construction.Class;
+    return Construction.Struct;
   }
 
   public static ImmutableArray<string> GetTypeParameters(
@@ -385,20 +381,6 @@ public class TypeGenerator : IIncrementalGenerator {
 
   public static bool IsPartial(TypeDeclarationSyntax typeDecl) =>
     typeDecl.Modifiers.Any(SyntaxKind.PartialKeyword);
-
-  public static bool HasIntrospectiveAttribute(
-    TypeDeclarationSyntax typeDecl
-  ) => HasAttributeNamed(typeDecl, Constants.INTROSPECTIVE_ATTRIBUTE_NAME);
-
-  public static bool HasMixinAttribute(TypeDeclarationSyntax typeDecl) =>
-    HasAttributeNamed(typeDecl, Constants.MIXIN_ATTRIBUTE_NAME);
-
-  private static bool HasAttributeNamed(
-    TypeDeclarationSyntax typeDecl, string name
-  ) =>
-    typeDecl.AttributeLists.Any(
-      list => list.Attributes.Any(attr => attr.Name.ToString() == name)
-    );
 
   /// <summary>
   /// Determines where a type is located within the source code.
@@ -476,25 +458,16 @@ public class TypeGenerator : IIncrementalGenerator {
   ) {
     var properties = ImmutableArray.CreateBuilder<DeclaredProperty>();
     foreach (var property in type.Members.OfType<PropertyDeclarationSyntax>()) {
-      var isPartial = property.Modifiers.Any(SyntaxKind.PartialKeyword);
-
-      if (isPartial) { continue; } // Partial properties are unsupported.
-
       var propertyAttributes = GetAttributes(property.AttributeLists);
 
-      if (propertyAttributes.Length == 0) {
-        // Only record information about properties marked with attributes.
-        continue;
-      }
+      // Never identified a situation in which the accessor list is null.
+      var hasSetter = property.AccessorList!.Accessors
+        .Any(accessor => accessor.IsKind(SyntaxKind.SetAccessorDeclaration));
 
-      var hasSetter = property.AccessorList?.Accessors
-        .Any(accessor => accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
-        ?? false;
-
-      var isInit = property.AccessorList?.Accessors
+      var isInit = property.AccessorList.Accessors
           .Any(
             accessor => accessor.IsKind(SyntaxKind.InitAccessorDeclaration)
-          ) ?? false;
+          );
 
       hasSetter = hasSetter || isInit;
 

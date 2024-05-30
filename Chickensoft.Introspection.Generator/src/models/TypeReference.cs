@@ -1,8 +1,11 @@
 namespace Chickensoft.Introspection.Generator.Models;
 
+using System;
 using System.Collections.Immutable;
+using System.Linq;
+using Chickensoft.Introspection.Generator.Utils;
 
-public record TypeReference(
+public sealed record TypeReference(
   string SimpleName,
   Construction Construction,
   bool IsPartial,
@@ -42,6 +45,20 @@ public record TypeReference(
     SimpleNameClosed
   );
 
+  public bool Equals(TypeReference? other) =>
+    other is not null &&
+    SimpleName == other.SimpleName &&
+    Construction == other.Construction &&
+    IsPartial == other.IsPartial &&
+    TypeParameters.SequenceEqual(other.TypeParameters);
+
+  public override int GetHashCode() => HashCode.Combine(
+    SimpleName,
+    Construction,
+    IsPartial,
+    TypeParameters
+  );
+
   public static string GetGenerics(ImmutableArray<string> typeParameters) =>
     typeParameters.Length > 0
       ? $"<{string.Join(", ", typeParameters)}>"
@@ -71,7 +88,10 @@ public record TypeReference(
       Construction.RecordStruct => $"{partial}record struct ",
       Construction.RecordClass => $"{partial}record class ",
       Construction.Interface => $"{partial}interface ",
-      _ => "class"
+      Construction.Struct => $"{partial}struct ",
+      _ => throw new ArgumentException(
+        $"Unsupported construction type: {construction}", nameof(construction)
+      )
     };
 
     return code + name;
