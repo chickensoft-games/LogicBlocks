@@ -1,4 +1,4 @@
-namespace Chickensoft.Introspection;
+namespace Chickensoft.Introspection.Tests.Models;
 
 using System;
 using System.Collections.Generic;

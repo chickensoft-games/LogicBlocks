@@ -9,7 +9,7 @@ public class UsingDirectiveTest {
   public void CodeString() {
     var @using = new UsingDirective(
       Alias: null,
-      TypeName: "System",
+      Name: "System",
       IsGlobal: true,
       IsStatic: false,
       IsAlias: false
@@ -22,7 +22,7 @@ public class UsingDirectiveTest {
   public void Equality() {
     var a = new UsingDirective(
       Alias: null,
-      TypeName: "System",
+      Name: "System",
       IsGlobal: true,
       IsStatic: false,
       IsAlias: false

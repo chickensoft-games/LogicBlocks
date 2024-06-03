@@ -1,5 +1,6 @@
 namespace Chickensoft.Introspection.Generator.Tests.Models;
 
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Chickensoft.Introspection.Generator.Models;
 using Shouldly;
@@ -9,6 +10,10 @@ public class DeclaredTypeRegistryTest {
   [Fact]
   public void Equality() {
     var registry = new DeclaredTypeRegistry(
+      globalUsings: ImmutableArray<UsingDirective>.Empty,
+      scopeTree: new ScopeTree(
+        new Dictionary<string, DeclaredType>()
+      ),
       allTypes: ImmutableDictionary<string, DeclaredType>.Empty,
       visibleTypes: ImmutableHashSet<DeclaredType>.Empty
     );
@@ -19,16 +24,28 @@ public class DeclaredTypeRegistryTest {
 
     registry.ShouldBe(
       new DeclaredTypeRegistry(
+        globalUsings: ImmutableArray<UsingDirective>.Empty,
+        scopeTree: new ScopeTree(
+          new Dictionary<string, DeclaredType>()
+        ),
         allTypes: ImmutableDictionary<string, DeclaredType>.Empty,
         visibleTypes: ImmutableHashSet<DeclaredType>.Empty
       )
     );
 
     new DeclaredTypeRegistry(
+      globalUsings: ImmutableArray<UsingDirective>.Empty,
+      scopeTree: new ScopeTree(
+        new Dictionary<string, DeclaredType>()
+      ),
       allTypes: ImmutableDictionary<string, DeclaredType>.Empty,
       visibleTypes: ImmutableHashSet<DeclaredType>.Empty
     ).ShouldNotBe(
       new DeclaredTypeRegistry(
+        globalUsings: ImmutableArray<UsingDirective>.Empty,
+        scopeTree: new ScopeTree(
+          new Dictionary<string, DeclaredType>()
+        ),
         allTypes: ImmutableDictionary<string, DeclaredType>.Empty,
         visibleTypes: new DeclaredType[] {
           new(
@@ -43,6 +60,7 @@ public class DeclaredTypeRegistryTest {
               Namespaces: ImmutableArray<string>.Empty,
               ContainingTypes: ImmutableArray<TypeReference>.Empty
             ),
+            BaseType: null,
             Usings: ImmutableHashSet<UsingDirective>.Empty,
             Kind: DeclaredTypeKind.ConcreteType,
             IsStatic: false,

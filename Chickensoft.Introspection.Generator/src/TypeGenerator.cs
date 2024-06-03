@@ -55,6 +55,11 @@ public class TypeGenerator : IIncrementalGenerator {
     // System.Diagnostics.Debugger.Break();
     // --------------------------------------------------------------------- //
 
+    var globalUsings = context.SyntaxProvider.CreateSyntaxProvider(
+      predicate: IsGlobalUsing,
+      transform: (context, _) => GetUsing((UsingDirectiveSyntax)context.Node)
+    );
+
     // Because of partial type declarations, we may need to combine some
     // type declarations into one.
     var incrementalGenerationData = context.SyntaxProvider.CreateSyntaxProvider(
@@ -62,7 +67,11 @@ public class TypeGenerator : IIncrementalGenerator {
       transform: ResolveDeclaredTypeInfo
     )
     .Collect()
-    .Select((declaredTypes, _) => {
+    .Combine(globalUsings.Collect())
+    .Select((data, _) => {
+      var declaredTypes = data.Left;
+      var globalUsings = data.Right;
+
       var typesByFullName = declaredTypes
         .GroupBy((type) => type.FullNameOpen);
 
@@ -80,10 +89,9 @@ public class TypeGenerator : IIncrementalGenerator {
           g => g
         );
 
-      var tree = new TypeResolutionTree();
-      tree.AddDeclaredTypes(uniqueTypes);
+      var tree = new ScopeTree(uniqueTypes);
 
-      var visibleTypeFullNames = tree.GetVisibleTypes();
+      var visibleTypeFullNames = tree.GetTypes().Select(t => t.FullNameOpen);
 
       var visibleTypesBuilder =
         ImmutableHashSet.CreateBuilder<DeclaredType>();
@@ -97,6 +105,8 @@ public class TypeGenerator : IIncrementalGenerator {
       }
 
       return new DeclaredTypeRegistry(
+        globalUsings: globalUsings,
+        scopeTree: tree,
         allTypes: uniqueTypes.ToImmutableDictionary(),
         visibleTypes: visibleTypesBuilder.ToImmutable()
       );
@@ -226,11 +236,29 @@ public class TypeGenerator : IIncrementalGenerator {
         continue;
       }
 
+      // Compile base types, if any.
+      var currentType = type;
+      var baseTypes = new List<DeclaredType>();
+      while (currentType.BaseType is { } baseTypeReference) {
+        currentType = registry.ScopeTree.ResolveTypeReference(
+          globalUsings: registry.GlobalUsings,
+          type: currentType,
+          reference: baseTypeReference
+        );
+
+        if (currentType is not null) {
+          baseTypes.Add(currentType);
+          continue;
+        }
+
+        break;
+      }
+
       var writer = CreateCodeWriter();
 
       WriteFileStart(writer);
 
-      type.WriteMetatype(writer);
+      type.WriteMetatype(writer, baseTypes);
 
       WriteFileEnd(writer);
 
@@ -293,6 +321,7 @@ public class TypeGenerator : IIncrementalGenerator {
     );
 
     var location = GetLocation(typeDecl);
+    var baseType = GetBaseType(typeDecl);
     var kind = GetKind(typeDecl);
     var isStatic = construction == Construction.StaticClass;
     var isTopLevelAccessible = IsTopLevelAccessible(typeDecl);
@@ -308,6 +337,7 @@ public class TypeGenerator : IIncrementalGenerator {
       Reference: reference,
       SyntaxLocation: typeDecl.GetLocation(),
       Location: location,
+      BaseType: baseType,
       Usings: usings,
       Kind: kind,
       IsStatic: isStatic,
@@ -324,6 +354,10 @@ public class TypeGenerator : IIncrementalGenerator {
   // any containing types.
   public static bool IsTypeCandidate(SyntaxNode node, CancellationToken _) =>
       node is TypeDeclarationSyntax;
+
+  public static bool IsGlobalUsing(SyntaxNode node, CancellationToken _) =>
+    node is UsingDirectiveSyntax @using &&
+    @using.GlobalKeyword is { ValueText: "global" };
 
   public static DeclaredTypeKind GetKind(TypeDeclarationSyntax typeDecl) {
     if (typeDecl.Modifiers.Any(SyntaxKind.AbstractKeyword)) {
@@ -381,6 +415,9 @@ public class TypeGenerator : IIncrementalGenerator {
 
   public static bool IsPartial(TypeDeclarationSyntax typeDecl) =>
     typeDecl.Modifiers.Any(SyntaxKind.PartialKeyword);
+
+  public static string? GetBaseType(TypeDeclarationSyntax typeDecl) =>
+    typeDecl.BaseList?.Types.First().Type.NormalizeWhitespace().ToString();
 
   /// <summary>
   /// Determines where a type is located within the source code.
@@ -441,17 +478,17 @@ public class TypeGenerator : IIncrementalGenerator {
         allUsings = allUsings.AddRange(comp.Usings);
       }
     }
-    return allUsings
-      .Select(@using => new UsingDirective(
-          Alias: @using.Alias?.Name.NormalizeWhitespace().ToString(),
-          TypeName: @using.Name.NormalizeWhitespace().ToString(),
-          IsGlobal: @using.GlobalKeyword is { ValueText: "global" },
-          IsStatic: @using.StaticKeyword is { ValueText: "static" },
-          IsAlias: @using.Alias != default
-        )
-      )
-      .ToImmutableHashSet();
+    return allUsings.Select(@using => GetUsing(@using)).ToImmutableHashSet();
   }
+
+  public static UsingDirective GetUsing(UsingDirectiveSyntax @using) =>
+    new(
+      Alias: @using.Alias?.Name.NormalizeWhitespace().ToString(),
+      Name: @using.Name.NormalizeWhitespace().ToString(),
+      IsGlobal: @using.GlobalKeyword is { ValueText: "global" },
+      IsStatic: @using.StaticKeyword is { ValueText: "static" },
+      IsAlias: @using.Alias != default
+    );
 
   public static ImmutableArray<DeclaredProperty> GetProperties(
     TypeDeclarationSyntax type

@@ -29,7 +29,7 @@ public interface IIntrospective {
   /// <summary>
   /// Invokes the handler of each mixin that is applied to the type.
   /// </summary>
-  protected void InvokeMixins() {
+  public void InvokeMixins() {
     foreach (var mixin in Metatype.Mixins) {
       Metatype.MixinHandlers[mixin](this);
     }
@@ -40,7 +40,7 @@ public interface IIntrospective {
   /// </summary>
   /// <param name="type">Mixin type.</param>
   /// <exception cref="InvalidOperationException" />
-  protected void InvokeMixin(Type type) {
+  public void InvokeMixin(Type type) {
     if (!HasMixin(type)) {
       throw new InvalidOperationException(
         $"Type {GetType()} does not have mixin {type}"

@@ -1,13 +1,16 @@
-namespace Chickensoft.Introspection;
+namespace Chickensoft.Introspection.Tests.Models;
 
+using Shouldly;
 using Xunit;
 
 public class MixinBlackboardTest {
   [Fact]
   public void IsAlwaysEqualToAnything() {
     var blackboard = new MixinBlackboard();
-    Assert.True(blackboard.Equals(null!));
-    Assert.True(blackboard!.Equals(new object()));
-    Assert.True(blackboard.Equals(blackboard));
+    blackboard.Equals(null!).ShouldBeTrue();
+    blackboard!.Equals(new object()).ShouldBeTrue();
+    blackboard.Equals(blackboard).ShouldBeTrue();
+
+    blackboard.GetHashCode().ShouldBeOfType<int>();
   }
 }

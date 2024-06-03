@@ -8,7 +8,7 @@ using Xunit;
 public class BaseTypeTest {
   [Fact]
   public void GetsInheritedProperties() {
-    var props = Introspection.Types.Graph.GetProperties(typeof(DerivedModel));
+    var props = Types.Graph.GetProperties(typeof(DerivedModel));
 
     props
       .Select(p => p.Name)

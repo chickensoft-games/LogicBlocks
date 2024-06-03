@@ -18,6 +18,7 @@ public class DeclaredTypeTest {
     Namespaces: ImmutableArray<string>.Empty,
     ContainingTypes: ImmutableArray<TypeReference>.Empty
   ),
+  BaseType: null,
   Usings: ImmutableHashSet<UsingDirective>.Empty,
   Kind: DeclaredTypeKind.ConcreteType,
   IsStatic: false,

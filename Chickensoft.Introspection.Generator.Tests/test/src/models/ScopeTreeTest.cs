@@ -7,7 +7,7 @@ using Chickensoft.Introspection.Generator.Models;
 using Shouldly;
 using Xunit;
 
-public class TypeResolutionTreeTest {
+public class ScopeTreeTest {
   private readonly DeclaredType _genericOuter = new(
   Reference: new TypeReference(
     "GenericOuter",
@@ -20,6 +20,7 @@ public class TypeResolutionTreeTest {
     Namespaces: ImmutableArray<string>.Empty,
     ContainingTypes: ImmutableArray<TypeReference>.Empty
   ),
+  BaseType: null,
   Usings: ImmutableHashSet<UsingDirective>.Empty,
   Kind: DeclaredTypeKind.ConcreteType,
   IsStatic: false,
@@ -49,6 +50,7 @@ public class TypeResolutionTreeTest {
         )
       }.ToImmutableArray()
     ),
+    BaseType: null,
     Usings: ImmutableHashSet<UsingDirective>.Empty,
     Kind: DeclaredTypeKind.ConcreteType,
     IsStatic: false,
@@ -84,7 +86,54 @@ public class TypeResolutionTreeTest {
         )
       }.ToImmutableArray()
     ),
+    BaseType: null,
     Usings: ImmutableHashSet<UsingDirective>.Empty,
+    Kind: DeclaredTypeKind.ConcreteType,
+    IsStatic: false,
+    IsPublicOrInternal: true,
+    Properties: ImmutableArray<DeclaredProperty>.Empty,
+    Attributes: ImmutableArray<DeclaredAttribute>.Empty,
+    Mixins: ImmutableArray<string>.Empty
+  );
+
+  private readonly DeclaredType _typeInOtherNs = new(
+    Reference: new TypeReference(
+      "OtherType",
+      Construction: Construction.Class,
+      IsPartial: false,
+      TypeParameters: ImmutableArray<string>.Empty
+    ),
+    SyntaxLocation: Microsoft.CodeAnalysis.Location.None,
+    Location: new TypeLocation(
+      Namespaces: ImmutableArray.Create("A", "B", "C"),
+      ContainingTypes: ImmutableArray<TypeReference>.Empty
+    ),
+    BaseType: null,
+    Usings: ImmutableHashSet<UsingDirective>.Empty,
+    Kind: DeclaredTypeKind.ConcreteType,
+    IsStatic: false,
+    IsPublicOrInternal: true,
+    Properties: ImmutableArray<DeclaredProperty>.Empty,
+    Attributes: ImmutableArray<DeclaredAttribute>.Empty,
+    Mixins: ImmutableArray<string>.Empty
+  );
+
+  private readonly DeclaredType _typeExtendingTypeInOtherNs = new(
+    Reference: new TypeReference(
+      "OtherTypeChild",
+      Construction: Construction.Class,
+      IsPartial: false,
+      TypeParameters: ImmutableArray<string>.Empty
+    ),
+    SyntaxLocation: Microsoft.CodeAnalysis.Location.None,
+    Location: new TypeLocation(
+      Namespaces: ImmutableArray<string>.Empty,
+      ContainingTypes: ImmutableArray<TypeReference>.Empty
+    ),
+    BaseType: "OtherType",
+    Usings: ImmutableHashSet.Create(
+      new UsingDirective(Alias: null, Name: "A.B.C", false, false, false)
+    ),
     Kind: DeclaredTypeKind.ConcreteType,
     IsStatic: false,
     IsPublicOrInternal: true,
@@ -95,42 +144,54 @@ public class TypeResolutionTreeTest {
 
   [Fact]
   public void AddsDeclaredTypes() {
-    var tree = new TypeResolutionTree();
-
     // Use a map to guarantee types are added in the order shown below.
-    tree.AddDeclaredTypes(new Map<string, DeclaredType>() {
-      [_inner.FullNameOpen] = _inner,
-      [_outer.FullNameOpen] = _outer,
-      [_genericOuter.FullNameOpen] = _genericOuter
-    });
+    var tree = new ScopeTree(
+      new Map<string, DeclaredType>() {
+        [_inner.FullNameOpen] = _inner,
+        [_outer.FullNameOpen] = _outer,
+        [_genericOuter.FullNameOpen] = _genericOuter
+      }
+    );
 
     tree
-      .GetVisibleTypes((_) => false, searchGenericTypes: false)
+      .GetTypes((_) => false, searchGenericTypes: false)
       .ShouldBeEmpty();
 
     tree
-      .GetVisibleTypes((_) => true, searchGenericTypes: true)
+      .GetTypes((_) => true, searchGenericTypes: true)
       .ShouldBe(
         [
-          _inner.FullNameOpen,
-          _outer.FullNameOpen,
-          _genericOuter.FullNameOpen
+          _inner,
+          _outer,
+          _genericOuter
         ],
         ignoreOrder: true
     );
   }
 
   [Fact]
-  public void ThrowsIfContainingTypeIsNotAbleToBeFound() {
-    var tree = new TypeResolutionTree();
-
+  public void ThrowsIfContainingTypeIsNotAbleToBeFound() =>
     Should.Throw<InvalidOperationException>(
-      () => tree.AddDeclaredTypes(
+      () => new ScopeTree(
         new Map<string, DeclaredType>() {
           [_inner.FullNameOpen] = _inner,
           [_outer.FullNameOpen] = _outer
         }
       )
     );
+
+  [Fact]
+  public void FindsTypesInScope() {
+    var tree = new ScopeTree(
+      new Map<string, DeclaredType>() {
+        [_typeInOtherNs.FullNameOpen] = _typeInOtherNs,
+        [_typeExtendingTypeInOtherNs.FullNameOpen] = _typeExtendingTypeInOtherNs,
+      }
+    );
+
+    tree.ResolveTypeReference([], _typeExtendingTypeInOtherNs, "OtherType")
+      .ShouldNotBeNull()
+      .FullNameOpen
+      .ShouldBe("A.B.C.OtherType");
   }
 }

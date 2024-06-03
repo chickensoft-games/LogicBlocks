@@ -92,9 +92,9 @@ internal class TypeGraph : ITypeGraph {
         GetTypeAndBaseTypes(type)
           .Select(type => GetMetadata(type))
           .OfType<IIntrospectiveTypeMetadata>()
-          .SelectMany(metadata => metadata.Metatype.Properties);
-
-      _properties[type] = _properties[type].Distinct();
+          .SelectMany(metadata => metadata.Metatype.Properties)
+          .Distinct()
+          .OrderBy(property => property.Name);
     }
     return _properties[type];
   }

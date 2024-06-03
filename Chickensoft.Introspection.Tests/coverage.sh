@@ -5,7 +5,8 @@ dotnet build
 dotnet test \
   -p:CollectCoverage=true \
   -p:CoverletOutputFormat="opencover" \
-  -p:CoverletOutput=./coverage/
+  -p:CoverletOutput=./coverage/ \
+  -p:SkipAutoProps=true
 
 reportgenerator \
   -reports:"./coverage/coverage.opencover.xml" \

@@ -6,23 +6,30 @@ using System.Linq;
 using Chickensoft.Introspection.Generator.Utils;
 
 public class DeclaredTypeRegistry {
+  public ImmutableArray<UsingDirective> GlobalUsings { get; init; }
+  public ScopeTree ScopeTree { get; init; }
   public ImmutableDictionary<string, DeclaredType> AllTypes { get; init; }
   public ImmutableHashSet<DeclaredType> VisibleTypes { get; init; }
 
   public DeclaredTypeRegistry(
+    ImmutableArray<UsingDirective> globalUsings,
+    ScopeTree scopeTree,
     ImmutableDictionary<string, DeclaredType> allTypes,
     ImmutableHashSet<DeclaredType> visibleTypes
   ) {
+    GlobalUsings = globalUsings;
+    ScopeTree = scopeTree;
     AllTypes = allTypes;
     VisibleTypes = visibleTypes;
   }
 
   public override int GetHashCode() => HashCode.Combine(
-    AllTypes, VisibleTypes
+    GlobalUsings, ScopeTree, AllTypes, VisibleTypes
   );
 
   public override bool Equals(object? obj) =>
     obj is DeclaredTypeRegistry data &&
+    GlobalUsings.SequenceEqual(data.GlobalUsings) &&
     AllTypes.SequenceEqual(data.AllTypes) &&
     VisibleTypes.SequenceEqual(data.VisibleTypes);
 

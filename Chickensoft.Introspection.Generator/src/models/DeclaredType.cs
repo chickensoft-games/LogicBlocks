@@ -17,6 +17,7 @@ using Microsoft.CodeAnalysis;
 /// </param>
 /// <param name="Location">Location of the type in the source code, including
 /// namespaces and containing types.</param>
+/// <param name="BaseType">Base type of the type.</param>
 /// <param name="Usings">Using directives that are in scope for the type.
 /// </param>
 /// <param name="Kind">Kind of the type.</param>
@@ -31,6 +32,7 @@ public sealed record DeclaredType(
   TypeReference Reference,
   Location SyntaxLocation,
   TypeLocation Location,
+  string? BaseType,
   ImmutableHashSet<UsingDirective> Usings,
   DeclaredTypeKind Kind,
   bool IsStatic,
@@ -217,6 +219,7 @@ public sealed record DeclaredType(
     Reference: Reference.MergePartialDefinition(declaredType.Reference),
     SyntaxLocation: PickSyntaxLocation(declaredType.SyntaxLocation),
     Location: Location,
+    BaseType: BaseType,
     Usings: Usings.Union(declaredType.Usings),
     Kind: Kind,
     IsStatic: PickIsStatic(declaredType.IsStatic),
@@ -291,14 +294,17 @@ public sealed record DeclaredType(
     return false;
   }
 
-  public void WriteMetatype(IndentedTextWriter writer) {
+  public void WriteMetatype(
+    IndentedTextWriter writer,
+    IEnumerable<DeclaredType> baseTypes
+  ) {
     if (!string.IsNullOrEmpty(Location.Namespace)) {
       writer.WriteLine($"namespace {Location.Namespace};\n");
     }
 
     var usings = Usings
       .Where(u => !u.IsGlobal) // Globals are universally available
-      .OrderBy(u => u.TypeName)
+      .OrderBy(u => u.Name)
       .ThenBy(u => u.IsGlobal)
       .ThenBy(u => u.IsStatic)
       .ThenBy(u => u.IsAlias)
@@ -324,7 +330,11 @@ public sealed record DeclaredType(
     // introspective types without explicitly given id's.
     var identifiable = HasIdAttribute ? $", {Constants.IDENTIFIABLE}" : "";
 
-    var initProperties = Properties.Where(prop => prop.IsInit).ToArray();
+    var allProperties = Properties
+      .Concat(baseTypes.SelectMany(t => t.Properties))
+      .OrderBy(p => p.Name); // order for determinism
+
+    var initProperties = allProperties.Where(prop => prop.IsInit).ToArray();
 
     // Nest inside us.
     writer.WriteLine(
@@ -459,19 +469,23 @@ public sealed record DeclaredType(
     );
     writer.Indent++;
 
+    if (Kind is not DeclaredTypeKind.ConcreteType) {
+      // Skip constructor implementation for non-concrete types.
+      writer.WriteLine(
+        "throw new System.NotImplementedException(" +
+        $"\"{Reference.SimpleNameClosed} is not instantiable.\"" +
+        ");"
+      );
+
+      goto CLOSE_CONSTRUCT_METHOD; /* yay! a goto! */
+    }
+
     if (initProperties.Length == 0) {
       if (Kind is DeclaredTypeKind.ConcreteType) {
         writer.WriteLine($"return new {Reference.SimpleNameClosed}();");
       }
-      else {
-        writer.WriteLine(
-          "throw new System.NotImplementedException(" +
-          $"\"{Reference.SimpleNameClosed} is not instantiable.\"" +
-          ");"
-        );
-      }
 
-      goto CLOSE_CONSTRUCT_METHOD; /* yay! a goto! */
+      goto CLOSE_CONSTRUCT_METHOD; /* wow! another goto! */
     }
 
     writer.WriteLine(
@@ -481,7 +495,7 @@ public sealed record DeclaredType(
     );
     writer.WriteLine($"return new {Reference.SimpleNameClosed}() {{");
 
-    var propStrings = Properties
+    var propStrings = allProperties
       .Where(prop => prop.HasSetter)
       .Select(
         (prop) =>

@@ -1,13 +1,14 @@
-namespace Chickensoft.Introspection.Generator.Tests.Types;
+namespace Chickensoft.Introspection.Tests;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Chickensoft.Introspection;
 using Moq;
 using Shouldly;
 using Xunit;
 
-public class LogicBlockTypeUtilsTest {
+public class TypeGraphAncestryTest {
   public class Ancestor;
   public class Parent : Ancestor;
   public class Child : Parent;
@@ -26,7 +27,7 @@ public class LogicBlockTypeUtilsTest {
   };
   private readonly Mock<ITypeRegistry> _registry;
 
-  public LogicBlockTypeUtilsTest() {
+  public TypeGraphAncestryTest() {
     _registry = new Mock<ITypeRegistry>();
   }
 
@@ -81,14 +82,54 @@ public class LogicBlockTypeUtilsTest {
     _registry
       .Setup(reg => reg.VisibleTypes)
       .Returns(new Dictionary<Type, ITypeMetadata> {
-        [typeof(LogicBlockTypeUtilsTest)] = new Mock<ITypeMetadata>().Object,
+        [typeof(TypeGraphAncestryTest)] = new Mock<ITypeMetadata>().Object,
       });
 
     Types.InternalGraph.Reset();
     Types.Graph.Register(_registry.Object);
 
     Types.Graph
-    .GetDescendantSubtypes(typeof(LogicBlockTypeUtilsTest))
+    .GetDescendantSubtypes(typeof(TypeGraphAncestryTest))
     .ShouldBeEmpty();
+  }
+}
+
+
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Property)]
+public class TagAttribute : Attribute {
+  public string Name { get; }
+
+  public TagAttribute(string name) {
+    Name = name;
+  }
+}
+
+public partial class TypeGraphMemberMetadataTest {
+  [Meta, Tag("model")]
+  public partial class Model {
+    public string? Name { get; init; }
+    [Tag("age")]
+    public required int Age { get; init; }
+  }
+
+  [Meta, Tag("child")]
+  public partial class ChildModel : Model {
+    public string? ChildName { get; init; }
+  }
+
+  [Fact]
+  public void ComputesPropertyMetadataForDerivedTypes() {
+    var props = Types.Graph.GetProperties(typeof(ChildModel)).ToList();
+
+    // Props are in alphabetical order for stable & predictable orderings.
+
+    props[0].Name.ShouldBe("Age");
+    props[0]
+      .Attributes[typeof(TagAttribute)].Single()
+      .ShouldBeOfType<TagAttribute>().Name.ShouldBe("age");
+
+    props[1].Name.ShouldBe("ChildName");
+
+    props[2].Name.ShouldBe("Name");
   }
 }
