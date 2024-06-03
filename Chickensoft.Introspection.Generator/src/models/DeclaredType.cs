@@ -499,7 +499,8 @@ public sealed record DeclaredType(
       .Where(prop => prop.HasSetter)
       .Select(
         (prop) =>
-          $"{prop.Name} = ({prop.GenericType.ClosedType})args[\"{prop.Name}\"]"
+          $"{prop.Name} = args.ContainsKey(\"{prop.Name}\") " +
+          $"? ({prop.GenericType.ClosedType})args[\"{prop.Name}\"] : default!"
       );
 
     writer.WriteCommaSeparatedList(
