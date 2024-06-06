@@ -57,9 +57,6 @@
     <PackageReference Include="Chickensoft.Collections" Version="1.6.0" />
     <PackageReference Include="Chickensoft.Introspection" Version="1.1.0" />
     <PackageReference Include="Chickensoft.Serialization" Version="1.0.0" />
-
-    <!-- TODO: Reference published packages -->
-    <ProjectReference Include="../Chickensoft.Serialization/Chickensoft.Serialization.csproj" />
   </ItemGroup>
 
   <!-- Include analyzers as part of logic blocks -->
