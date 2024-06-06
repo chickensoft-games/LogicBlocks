@@ -14,12 +14,12 @@ public partial class OutdatedLogicBlock : LogicBlock<OutdatedLogicBlock.State> {
 
   [Meta, Version(1)]
   public partial record V1 : State, IOutdated {
-    public object Upgrade(IReadOnlyBlackboard blackboard) => new V2();
+    public object Upgrade(IReadOnlyBlackboard deps) => new V2();
   }
 
   [Meta, Version(2)]
   public partial record V2 : State, IOutdated {
-    public object Upgrade(IReadOnlyBlackboard blackboard) => new V3();
+    public object Upgrade(IReadOnlyBlackboard deps) => new V3();
   }
 
   [Meta, Version(3)]

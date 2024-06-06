@@ -15,7 +15,7 @@ public class SerializationTest {
     var options = new JsonSerializerOptions() {
       WriteIndented = true,
       TypeInfoResolver = new SerializableTypeResolver(),
-      Converters = { new IdentifiableTypeConverter(new Blackboard()) }
+      Converters = { new SerializableTypeConverter(new Blackboard()) }
     };
 
     var json = JsonSerializer.Serialize(logic, options);

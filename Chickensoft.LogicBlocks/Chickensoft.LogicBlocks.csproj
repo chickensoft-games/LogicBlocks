@@ -54,10 +54,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.Text.Json" Version="8.0.3" />
-    <PackageReference Include="Chickensoft.Collections" Version="1.4.0" />
+    <PackageReference Include="Chickensoft.Collections" Version="1.6.0" />
+    <PackageReference Include="Chickensoft.Introspection" Version="1.1.0" />
+    <PackageReference Include="Chickensoft.Serialization" Version="1.0.0" />
 
     <!-- TODO: Reference published packages -->
-    <ProjectReference Include="../Chickensoft.Introspection/Chickensoft.Introspection.csproj" />
     <ProjectReference Include="../Chickensoft.Serialization/Chickensoft.Serialization.csproj" />
   </ItemGroup>
 

@@ -1,8 +1,6 @@
-name: '📦 Publish'
+name: "📦 Publish"
 on:
   workflow_dispatch:
-    branches:
-      - main
     inputs:
       bump:
         description: "Version Bump Method"
@@ -32,7 +30,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           lfs: true
-          submodules: 'recursive'
+          submodules: "recursive"
 
       - name: 🔎 Read Current Project Version
         uses: KageKirin/get-csproj-version@v1.0.0
@@ -46,7 +44,7 @@ jobs:
           echo "Current Version: ${{ steps.current-version.outputs.version }}"
 
       - name: 🧮 Compute Next Version
-        uses:  chickensoft-games/next-godot-csproj-version@v1
+        uses: chickensoft-games/next-godot-csproj-version@v1
         id: next-version
         with:
           project-version: ${{ steps.current-version.outputs.version }}
@@ -64,13 +62,13 @@ jobs:
         uses: vers-one/dotnet-project-version-updater@v1.3
         with:
           file: "Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj"
-          version:  ${{ steps.next-version.outputs.version }}
+          version: ${{ steps.next-version.outputs.version }}
 
       - name: 📝 Change Version in Generator Project
         uses: vers-one/dotnet-project-version-updater@v1.3
         with:
           file: "Chickensoft.LogicBlocks.Generator/Chickensoft.LogicBlocks.Generator.csproj"
-          version:  ${{ steps.next-version.outputs.version }}
+          version: ${{ steps.next-version.outputs.version }}
 
       - name: ✍️ Commit Changes
         run: |
@@ -95,7 +93,6 @@ jobs:
           # Build local packages used as PackageReference with nuget.config
           dotnet restore
           dotnet build Chickensoft.LogicBlocks.Analyzers
-          dotnet build Chickensoft.Introspection
           dotnet build Chickensoft.LogicBlocks
 
           # build the package

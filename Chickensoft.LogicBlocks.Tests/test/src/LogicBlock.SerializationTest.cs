@@ -336,7 +336,7 @@ public partial class LogicBlockSerializationTest {
     deps ??= new Blackboard();
     return new JsonSerializerOptions {
       Converters = {
-        new IdentifiableTypeConverter(deps),
+        new SerializableTypeConverter(deps),
       },
       TypeInfoResolver = new SerializableTypeResolver(),
       WriteIndented = true

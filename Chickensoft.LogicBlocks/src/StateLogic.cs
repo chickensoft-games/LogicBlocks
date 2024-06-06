@@ -18,13 +18,13 @@ public abstract record StateLogic<TState> : StateBase
   /// <inheritdoc />
   internal override void OnEnter<TDerivedState>(Action<object?> handler)
     => InternalState.EnterCallbacks.Enqueue(
-      new((obj) => handler(obj as TState), (state) => state is TDerivedState)
+      new((obj) => handler(obj as TState), typeof(TDerivedState))
     );
 
   /// <inheritdoc />
   internal override void OnExit<TDerivedState>(Action<object?> handler)
     => InternalState.ExitCallbacks.Push(
-      new((obj) => handler(obj as TState), (state) => state is TDerivedState)
+      new((obj) => handler(obj as TState), typeof(TDerivedState))
     );
 
   /// <summary>
@@ -35,11 +35,28 @@ public abstract record StateLogic<TState> : StateBase
     CallOnEnterCallbacks(previous, this as TState);
 
   /// <summary>
+  /// Runs all of the registered entrance callbacks for the state. To facilitate
+  /// testing, only the type of the previous state needs to be specified.
+  /// </summary>
+  /// <typeparam name="TPreviousState">Type of the previous state, if any.
+  /// </typeparam>
+  public void Enter<TPreviousState>() where TPreviousState : TState =>
+    CallOnEnterCallbacks(typeof(TPreviousState), this as TState);
+
+  /// <summary>
   /// Runs all of the registered exit callbacks for the state.
   /// </summary>
   /// <param name="next">Next state, if any.</param>
   public void Exit(TState? next = default) =>
     CallOnExitCallbacks(this as TState, next);
+
+  /// <summary>
+  /// Runs all of the registered exit callbacks for the state. To facilitate
+  /// testing, only the type of the next state needs to be specified.
+  /// </summary>
+  /// <typeparam name="TNextState">Type of the next state, if any.</typeparam>
+  public void Exit<TNextState>() where TNextState : TState =>
+    CallOnExitCallbacks(this as TState, typeof(TNextState));
 
   /// <summary>
   /// Defines a transition to a state stored on the logic block's blackboard.
@@ -83,7 +100,7 @@ public abstract record StateLogic<TState> : StateBase
   /// <param name="e">Exception to add.</param>
   protected void AddError(Exception e) => Context.AddError(e);
 
-  private void CallOnEnterCallbacks(TState? previous, TState? next) {
+  private void CallOnEnterCallbacks(object? previous, TState? next) {
     if (next is StateLogic<TState> nextLogic) {
       foreach (var onEnter in nextLogic.InternalState.EnterCallbacks) {
         if (onEnter.IsType(previous)) {
@@ -95,7 +112,7 @@ public abstract record StateLogic<TState> : StateBase
     }
   }
 
-  private void CallOnExitCallbacks(TState? previous, TState? next) {
+  private void CallOnExitCallbacks(TState? previous, object? next) {
     if (previous is StateLogic<TState> previousLogic) {
       foreach (var onExit in previousLogic.InternalState.ExitCallbacks) {
         if (onExit.IsType(next)) {
@@ -108,7 +125,7 @@ public abstract record StateLogic<TState> : StateBase
   }
 
   private void RunSafe(
-    Action<TState?> callback, TState? stateArg
+    Action<object?> callback, object? stateArg
   ) {
     try { callback(stateArg); }
     catch (Exception e) {

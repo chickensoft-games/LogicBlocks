@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 using Chickensoft.Serialization;
 using Chickensoft.Introspection;
 
-public partial class LogicBlock<TState> : ISerializationAware {
+public partial class LogicBlock<TState> : ICustomSerializable {
   /// <summary>Json property name for the state.</summary>
   public const string STATE_PROPERTY = "state";
   /// <summary>Json property name for the blackboard.</summary>

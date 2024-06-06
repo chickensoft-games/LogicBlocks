@@ -58,6 +58,14 @@ public abstract partial class LogicBlock<TState> {
         // Serializable logic block.
         var stateMetadata = Graph.GetMetadata(type);
 
+        if (
+          stateMetadata is IIntrospectiveTypeMetadata iMetadata &&
+          iMetadata.Metatype.Attributes.ContainsKey(typeof(TestStateAttribute))
+        ) {
+          // Skip test states.
+          return;
+        }
+
         if (stateMetadata is IIdentifiableTypeMetadata idMetadata) {
           if (idMetadata is IConcreteTypeMetadata concreteMetadata) {
             cacheStateIfNeeded(type, concreteMetadata);
