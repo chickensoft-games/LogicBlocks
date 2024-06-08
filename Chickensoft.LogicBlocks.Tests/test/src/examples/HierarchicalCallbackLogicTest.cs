@@ -1,50 +1,44 @@
 namespace Chickensoft.LogicBlocks.Tests.Examples;
 
+using System.Collections.Generic;
 using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Moq;
 using Shouldly;
 using Xunit;
 
 public class HierarchicalCallbackLogicTest {
+  private static HierarchicalCallbackLogic.Output.Log Log(string message) =>
+    new(message);
+
   [Fact]
   public void StateCallsRelevantEntranceCallbacks() {
-    var log = new List<string>();
-    var callbackLogic = new HierarchicalCallbackLogic(log) {
-      InitialState =
-        () => new HierarchicalCallbackLogic.State.Substate()
-    };
+    var state = new HierarchicalCallbackLogic.State.Substate();
+    var context = state.CreateFakeContext();
 
-    var context = new Mock<IContext>();
-
-    callbackLogic.Value.Enter(
+    state.Enter(
       new Mock<HierarchicalCallbackLogic.State>().Object
     );
-    log.ShouldBe(new List<string> { "substate" });
+    context.Outputs.ShouldBe(new List<object> { Log("substate") });
 
-    log.Clear();
+    context.Reset();
 
-    callbackLogic.Value.Enter();
-    log.ShouldBe(new List<string> { "state", "substate" });
+    state.Enter();
+    context.Outputs.ShouldBe(new List<object> { Log("state"), Log("substate") });
   }
 
   [Fact]
   public void StateCallsRelevantExitCallbacks() {
-    var log = new List<string>();
-    var callbackLogic = new HierarchicalCallbackLogic(log) {
-      InitialState =
-        () => new HierarchicalCallbackLogic.State.Substate()
-    };
+    var state = new HierarchicalCallbackLogic.State.Substate();
+    var context = state.CreateFakeContext();
 
-    var context = new Mock<IContext>();
-
-    callbackLogic.Value.Exit(
+    state.Exit(
       new Mock<HierarchicalCallbackLogic.State>().Object
     );
-    log.ShouldBe(new List<string> { "substate" });
+    context.Outputs.ShouldBe(new List<object> { Log("substate") });
 
-    log.Clear();
+    context.Reset();
 
-    callbackLogic.Value.Exit();
-    log.ShouldBe(new List<string> { "substate", "state" });
+    state.Exit();
+    context.Outputs.ShouldBe(new List<object> { Log("substate"), Log("state") });
   }
 }

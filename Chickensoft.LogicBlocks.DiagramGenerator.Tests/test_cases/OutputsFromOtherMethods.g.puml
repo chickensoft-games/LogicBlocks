@@ -1,0 +1,6 @@
+@startuml OutputsFromOtherMethods
+state "OutputsFromOtherMethods State" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_OutputsFromOtherMethods_State
+Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_OutputsFromOtherMethods_State : Method1() → A
+
+[*] --> Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_OutputsFromOtherMethods_State
+@enduml

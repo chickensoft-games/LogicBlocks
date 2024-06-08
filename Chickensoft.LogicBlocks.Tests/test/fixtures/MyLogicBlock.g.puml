@@ -1,17 +1,16 @@
 @startuml MyLogicBlock
 state "MyLogicBlock State" as Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State {
-  state "SomeState" as Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeState {
-    Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeState : OnEnter → SomeOutput
-    Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeState : OnExit → SomeOutput
-    Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeState : OnSomeInput → SomeOutput
-  }
-  state "SomeOtherState" as Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeOtherState {
-    Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeOtherState : OnSomeOtherInput → SomeOtherOutput
-  }
+  state "SomeState" as Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeState
+  state "SomeOtherState" as Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeOtherState
 }
 
 Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeOtherState --> Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeState : SomeOtherInput
 Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeState --> Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeOtherState : SomeInput
+
+Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeOtherState : OnSomeOtherInput → SomeOtherOutput
+Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeState : OnEnter → SomeOutput
+Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeState : OnExit → SomeOutput
+Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeState : OnSomeInput → SomeOutput
 
 [*] --> Chickensoft_LogicBlocks_Tests_Fixtures_MyLogicBlock_State_SomeState
 @enduml

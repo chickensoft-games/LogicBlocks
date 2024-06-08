@@ -1,8 +1,10 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
-using Chickensoft.LogicBlocks.Generator;
+using System;
+using System.Collections.Generic;
+using Chickensoft.Introspection;
 
-[StateMachine]
+[Meta, Id("fake_logic_block")]
 public partial class FakeLogicBlock {
   public static class Input {
     public readonly record struct InputOne(int Value1, int Value2);
@@ -12,15 +14,16 @@ public partial class FakeLogicBlock {
     public readonly record struct InputUnknown;
     public readonly record struct GetString;
     public readonly record struct NoNewState;
-    public readonly record struct SelfInput(object Input);
+    public readonly record struct SelfInput(InputOne Input);
     public readonly record struct InputCallback(
       Action Callback,
-      Func<IContext, State> Next
+      Func<IContext, Transition> Next
     );
-    public readonly record struct Custom(Func<IContext, State> Next);
+    public readonly record struct Custom(Func<IContext, Transition> Next);
   }
 
-  public abstract record State : StateLogic,
+  [Meta]
+  public abstract partial record State : StateLogic<State>,
     IGet<Input.InputOne>,
     IGet<Input.InputTwo>,
     IGet<Input.InputThree>,
@@ -30,70 +33,115 @@ public partial class FakeLogicBlock {
     IGet<Input.GetString>,
     IGet<Input.SelfInput>,
     IGet<Input.Custom> {
-    public State On(Input.InputOne input) {
-      Context.Output(new Output.OutputOne(1));
-      return new StateA(input.Value1, input.Value2);
+    public Transition On(in Input.InputOne input) {
+      Output(new Output.OutputOne(1));
+      var value1 = input.Value1;
+      var value2 = input.Value2;
+      return To<StateA>().With(state => {
+        var a = (StateA)state;
+        a.Value1 = value1;
+        a.Value2 = value2;
+      });
     }
 
-    public State On(Input.InputTwo input) {
-      Context.Output(new Output.OutputTwo("2"));
-      return new StateB(input.Value1, input.Value2);
+    public Transition On(in Input.InputTwo input) {
+      Output(new Output.OutputTwo("2"));
+      var value1 = input.Value1;
+      var value2 = input.Value2;
+      return To<StateB>().With(state => {
+        var b = (StateB)state;
+        b.Value1 = value1;
+        b.Value2 = value2;
+      });
     }
 
-    public State On(Input.InputThree input) => new StateD(
-      input.Value1, input.Value2
-    );
+    public Transition On(in Input.InputThree input) {
+      var value1 = input.Value1;
+      var value2 = input.Value2;
 
-    public State On(Input.InputError input)
+      return To<StateD>().With(state => {
+        var d = (StateD)state;
+        d.Value1 = value1;
+        d.Value2 = value2;
+      });
+    }
+
+    public Transition On(in Input.InputError input)
       => throw new InvalidOperationException();
 
-    public State On(Input.NoNewState input) {
-      Context.Output(new Output.OutputOne(1));
-      return this;
+    public Transition On(in Input.NoNewState input) {
+      Output(new Output.OutputOne(1));
+      return ToSelf();
     }
 
-    public State On(Input.InputCallback input) {
+    public Transition On(in Input.InputCallback input) {
       input.Callback();
       return input.Next(Context);
     }
 
-    public State On(Input.Custom input) => input.Next(Context);
+    public Transition On(in Input.Custom input) => input.Next(Context);
 
-    public State On(Input.GetString input) => new StateC(
-      Context.Get<string>()
-    );
+    public Transition On(in Input.GetString input) => To<StateC>()
+      .With(state => ((StateC)state).Value = Get<string>());
 
-    public State On(Input.SelfInput input) {
-      Context.Input(input.Input);
-      return this;
+    public Transition On(in Input.SelfInput input) {
+      Input(input.Input);
+      return ToSelf();
     }
 
-    public record StateA(int Value1, int Value2) :
-      State;
-    public record StateB(string Value1, string Value2) :
-      State;
-    public record StateC(string Value) :
-      State;
-    public record StateD(string Value1, string Value2) :
-      State;
+    [Meta, Id("fake_logic_block_state_start")]
+    public partial record StartState : State;
 
-    public record NothingState : State;
+    [Meta, Id("fake_logic_block_state_a")]
+    public partial record StateA : State {
+      public int Value1 { get; set; }
+      public int Value2 { get; set; }
+    }
 
-    public record Custom : State {
-      public Custom(IContext context, Action<IContext> setupCallback) {
-        setupCallback(context);
+    [Meta, Id("fake_logic_block_state_b")]
+    public partial record StateB : State {
+      public string Value1 { get; set; } = default!;
+      public string Value2 { get; set; } = default!;
+    }
+
+    [Meta, Id("fake_logic_block_state_c")]
+    public partial record StateC : State {
+      public string Value { get; set; } = default!;
+    }
+
+    [Meta, Id("fake_logic_block_state_d")]
+    public partial record StateD : State {
+      public string Value1 { get; set; } = default!;
+      public string Value2 { get; set; } = default!;
+    }
+
+    [Meta, Id("fake_logic_block_state_nothing")]
+    public partial record NothingState : State;
+
+    [Meta, Id("fake_logic_block_state_on_enter")]
+    public partial record OnEnterState : State {
+      public Action<State?> Callback { get; set; } = default!;
+
+      public OnEnterState() {
+        this.OnEnter((State? previous) => Callback(previous));
       }
     }
 
-    public record OnEnterState : State {
-      public OnEnterState(IContext context, Action<State?> onEnter) {
-        OnEnter<OnEnterState>(onEnter);
+    [Meta, Id("fake_logic_block_state_on_exit")]
+    public partial record OnExitState : State {
+      public Action<State?> Callback { get; set; } = default!;
+
+      public OnExitState() {
+        this.OnExit((State? next) => Callback(next));
       }
     }
 
-    public record OnExitState : State {
-      public OnExitState(IContext context, Action<State?> onExit) {
-        OnExit<OnExitState>(onExit);
+    [Meta, Id("fake_logic_block_state_add_error")]
+    public partial record AddErrorOnEnterState : State {
+      public Exception E { get; set; } = default!;
+
+      public AddErrorOnEnterState() {
+        this.OnEnter(() => AddError(E));
       }
     }
   }
@@ -104,18 +152,14 @@ public partial class FakeLogicBlock {
   }
 }
 
+[LogicBlock(typeof(State), Diagram = true)]
 public partial class FakeLogicBlock : LogicBlock<FakeLogicBlock.State> {
-  public Func<State>? InitialState { get; init; }
+  public Func<Transition>? InitialState { get; set; }
 
   public List<Exception> Exceptions { get; } = new();
 
-  public void PublicSet<T>(T value) where T : notnull => Set(value);
-
-  public void PublicOverwrite<T>(T value) where T : notnull =>
-    Overwrite(value);
-
-  public override State GetInitialState() =>
-    InitialState?.Invoke() ?? new State.StateA(1, 2);
+  public override Transition GetInitialState() =>
+    InitialState?.Invoke() ?? To<State.StartState>();
 
   private readonly Action<Exception>? _onError;
 

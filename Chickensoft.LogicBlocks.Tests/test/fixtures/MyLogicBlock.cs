@@ -1,42 +1,35 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
-using Chickensoft.LogicBlocks.Generator;
+using Chickensoft.Introspection;
 
-public interface IMyLogicBlock : ILogicBlock<MyLogicBlock.IState> { }
+public interface IMyLogicBlock : ILogicBlock<MyLogicBlock.State>;
 
-[StateMachine]
-public partial class MyLogicBlock : LogicBlock<MyLogicBlock.IState>, IMyLogicBlock {
-  public override IState GetInitialState() => new State.SomeState();
+[LogicBlock(typeof(State), Diagram = true), Meta]
+public partial class MyLogicBlock : LogicBlock<MyLogicBlock.State>, IMyLogicBlock {
+  public override Transition GetInitialState() => To<State.SomeState>();
 
   public static class Input {
     public readonly record struct SomeInput;
     public readonly record struct SomeOtherInput;
   }
 
-  public interface IState : IStateLogic { }
-
-  public abstract record State : StateLogic, IState {
-    public record SomeState : State, IGet<Input.SomeInput> {
+  public abstract partial record State : StateLogic<State> {
+    public partial record SomeState : State, IGet<Input.SomeInput> {
       public SomeState() {
-        OnEnter<SomeState>(
-          (previous) => Context.Output(new Output.SomeOutput())
-        );
-        OnExit<SomeState>(
-          (previous) => Context.Output(new Output.SomeOutput())
-        );
+        this.OnEnter(() => Output(new Output.SomeOutput()));
+        this.OnExit(() => Output(new Output.SomeOutput()));
       }
 
-      public IState On(Input.SomeInput input) {
-        Context.Output(new Output.SomeOutput());
-        return new SomeOtherState();
+      public Transition On(in Input.SomeInput input) {
+        Output(new Output.SomeOutput());
+        return To<SomeOtherState>();
       }
     }
 
-    public record SomeOtherState : State,
-      IGet<Input.SomeOtherInput> {
-      public IState On(Input.SomeOtherInput input) {
-        Context.Output(new Output.SomeOtherOutput());
-        return new SomeState();
+    public partial record SomeOtherState : State, IGet<Input.SomeOtherInput> {
+      public Transition On(in Input.SomeOtherInput input) {
+        Output(new Output.SomeOtherOutput());
+        return To<SomeState>();
       }
     }
   }

@@ -1,0 +1,14 @@
+@startuml LightSwitch
+state "LightSwitch State" as Chickensoft_LogicBlocks_Tests_Examples_LightSwitch_State {
+  state "PoweredOn" as Chickensoft_LogicBlocks_Tests_Examples_LightSwitch_State_PoweredOn
+  state "PoweredOff" as Chickensoft_LogicBlocks_Tests_Examples_LightSwitch_State_PoweredOff
+}
+
+Chickensoft_LogicBlocks_Tests_Examples_LightSwitch_State_PoweredOff --> Chickensoft_LogicBlocks_Tests_Examples_LightSwitch_State_PoweredOn : Toggle
+Chickensoft_LogicBlocks_Tests_Examples_LightSwitch_State_PoweredOn --> Chickensoft_LogicBlocks_Tests_Examples_LightSwitch_State_PoweredOff : Toggle
+
+Chickensoft_LogicBlocks_Tests_Examples_LightSwitch_State_PoweredOff : OnEnter → StatusChanged
+Chickensoft_LogicBlocks_Tests_Examples_LightSwitch_State_PoweredOn : OnEnter → StatusChanged
+
+[*] --> Chickensoft_LogicBlocks_Tests_Examples_LightSwitch_State_PoweredOff
+@enduml

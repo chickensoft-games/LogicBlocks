@@ -1,0 +1,112 @@
+name: "📦 Release"
+on:
+  # Make a release whenever the developer wants.
+  workflow_dispatch:
+    inputs:
+      bump:
+        type: choice
+        description: "version bump method: major, minor, or patch"
+        required: true
+        default: "patch"
+        options:
+          - major
+          - minor
+          - patch
+jobs:
+  release:
+    name: "📦 Release"
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_NOLOGO: true
+    steps:
+      - name: 🧾 Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_BASIC }}
+          lfs: true
+          submodules: "recursive"
+          fetch-depth: 0 # So we can get all tags.
+
+      - name: 🔎 Read Current Project Version
+        id: current-version
+        uses: WyriHaximus/github-action-get-previous-tag@v1
+        with:
+          fallback: "0.0.0-devbuild"
+
+      - name: 🖨 Print Current Version
+        run: |
+          echo "Current Version: ${{ steps.current-version.outputs.tag }}"
+
+      - name: 🧮 Compute Next Version
+        uses: chickensoft-games/next-godot-csproj-version@v1
+        id: next-version
+        with:
+          project-version: ${{ steps.current-version.outputs.tag }}
+          # This action was designed to pin versions to Godot versions, but
+          # if you pass a stable version in it just bumps the project version
+          # that you give it.
+          godot-version: 1.0.0
+          bump: ${{ inputs.bump }}
+
+      - uses: actions/setup-dotnet@v4
+        name: 💽 Setup .NET SDK
+        with:
+          # Use the .NET SDK from global.json in the root of the repository.
+          global-json-file: global.json
+
+      # Write version to file so .NET will build correct version.
+      - name: 📝 Write Version to File
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          find: "0.0.0-devbuild"
+          replace: ${{ steps.next-version.outputs.version }}
+          regex: false
+          include: Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj
+
+      - name: 📝 Write Diagram Generator Version to File
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          find: "0.0.0-devbuild"
+          replace: ${{ steps.next-version.outputs.version }}
+          regex: false
+          include: Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj
+
+      - name: 📦 Build
+        run: |
+          dotnet build \
+            Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj -c Release
+          dotnet build \
+            Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj -c Release
+
+      - name: 🔎 Get Package Path
+        id: package-path
+        run: |
+          package=$(find Chickensoft.LogicBlocks/nupkg -type f -name "*.nupkg")
+          echo "package=$package" >> "$GITHUB_OUTPUT"
+          echo "📦 Found package: $package"
+
+      - name: 🔎 Get Generator Package Path
+        id: gen-package-path
+        run: |
+          package=$(find Chickensoft.LogicBlocks.DiagramGenerator/nupkg -type f -name "*.nupkg")
+          echo "package=$package" >> "$GITHUB_OUTPUT"
+          echo "📦 Found generator package: $package"
+
+      # - name: ✨ Create Release
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GH_BASIC }}
+      #   run: |
+      #     version="${{ steps.next-version.outputs.version }}"
+      #     gh release create --title "v$version" --generate-notes "$version" \
+      #       "${{ steps.package-path.outputs.package }}" "${{ steps.gen-package-path.outputs.package }}"
+
+      # - name: 🛜 Publish to Nuget
+      #   run: |
+      #     dotnet nuget push "${{ steps.package-path.outputs.package }}" \
+      #       --api-key "${{ secrets.NUGET_API_KEY }}" \
+      #       --source "https://api.nuget.org/v3/index.json" --skip-duplicate
+
+      #       dotnet nuget push "${{ steps.gen-package-path.outputs.package }}" \
+      #       --api-key "${{ secrets.NUGET_API_KEY }}" \
+      #       --source "https://api.nuget.org/v3/index.json" --skip-duplicate

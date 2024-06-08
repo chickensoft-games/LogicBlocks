@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# dotnet build-server shutdown; dotnet build --no-incremental
 dotnet build
 
 dotnet test \
@@ -10,7 +11,7 @@ dotnet test \
 reportgenerator \
   -reports:"./coverage/coverage.opencover.xml" \
   -targetdir:"./coverage/report" \
-  "-assemblyfilters:-*Chickensoft.LogicBlocks.Generator*" \
+  "-assemblyfilters:-*Chickensoft.Introspection*;-*Chickensoft.Serialization*;-*Chickensoft.LogicBlocks.DiagramGenerator*" \
   -reporttypes:"Html;Badges"
 
 # Copy badges into their own folder. The badges folder should be included in

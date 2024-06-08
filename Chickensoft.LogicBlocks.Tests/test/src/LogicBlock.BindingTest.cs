@@ -1,5 +1,6 @@
 namespace Chickensoft.LogicBlocks.Tests;
 
+using System;
 using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Chickensoft.LogicBlocks.Tests.TestUtils;
 using Moq;
@@ -10,12 +11,12 @@ public class BindingTest {
   public static bool WasFinalized { get; set; }
 
   [Fact]
-  public void UpdatesForEveryState() {
+  public void RespectsTypeHierarchyChangesAndOnlyRunsOnce() {
     var block = new FakeLogicBlock();
     using var binding = block.Bind();
 
     var called = 0;
-    binding.When<FakeLogicBlock.State>().Call((state) => called++);
+    binding.When<FakeLogicBlock.State>((state) => called++);
 
     block.Input(new FakeLogicBlock.Input.InputTwo("d", "e"));
 
@@ -23,91 +24,28 @@ public class BindingTest {
   }
 
   [Fact]
-  public void DoesNotUpdateIfSelectedDataIsSameObject() {
+  public void HandlesOutputs() {
     var block = new FakeLogicBlock();
     using var binding = block.Bind();
 
-    var count = 0;
-    var value1Count = 0;
-    binding.When<FakeLogicBlock.State.StateB>()
-      .Call(state => count++)
-      .Use(
-        data: (state) => state.Value1,
-        to: (value1) => value1Count++
-      );
+    var output1 = 0;
+    var output2 = 0;
 
-    var a = "a";
-    var b = "b";
-    block.Input(new FakeLogicBlock.Input.InputTwo(a, b));
-    block.Input(new FakeLogicBlock.Input.InputTwo(a, "c"));
-
-    count.ShouldBe(2);
-  }
-
-  [Fact]
-  public void UpdatesCorrectly() {
-    var block = new FakeLogicBlock();
-    using var binding = block.Bind();
-
-    var callA1 = 0;
-    var callA2 = 0;
-
-    var a1 = 3;
-    var a2 = 4;
-
-    binding.When<FakeLogicBlock.State.StateA>()
-      .Use(
-        data: (state) => state.Value1,
-        to: (value1) => { callA1++; value1.ShouldBe(a1); })
-      .Use(
-        data: (state) => state.Value2,
-        to: (value2) => { callA2++; value2.ShouldBe(a2); }
-      );
-
-    callA1.ShouldBe(0);
-    callA2.ShouldBe(0);
-
-    block.Input(new FakeLogicBlock.Input.InputOne(a1, a2));
-
-    callA1.ShouldBe(1);
-    callA2.ShouldBe(1);
-
-    // Make sure the same values don't trigger the actions again
-
-    a1 = 5;
-    block.Input(new FakeLogicBlock.Input.InputOne(a1, a2));
-
-    callA1.ShouldBe(2);
-    callA2.ShouldBe(1);
-
-    // Make sure unrelated events don't trigger the actions
-
-    block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
-
-    callA1.ShouldBe(2);
-    callA2.ShouldBe(1);
-
-    // Make sure that previous unrelated states cause actions for new state
-    // to be called
-
-    block.Input(new FakeLogicBlock.Input.InputOne(a1, a2));
-
-    callA1.ShouldBe(3);
-    callA2.ShouldBe(2);
-  }
-
-  [Fact]
-  public void HandlesEffects() {
-    var block = new FakeLogicBlock();
-    using var binding = block.Bind();
-
-    var callEffect1 = 0;
-    var callEffect2 = 0;
-
-    binding.Handle<FakeLogicBlock.Output.OutputOne>(
-      (effect) => { callEffect1++; effect.Value.ShouldBe(1); }
-    ).Handle<FakeLogicBlock.Output.OutputTwo>(
-      (effect) => { callEffect2++; effect.Value.ShouldBe("2"); }
+    binding.Handle(
+      (in FakeLogicBlock.Output.OutputOne effect) => {
+        output1++;
+        effect.Value.ShouldBe(1);
+      }
+    ).Handle(
+      (in FakeLogicBlock.Output.OutputOne effect) => {
+        output1++;
+        effect.Value.ShouldBe(1);
+      }
+    ).Handle(
+      (in FakeLogicBlock.Output.OutputTwo effect) => {
+        output2++;
+        effect.Value.ShouldBe("2");
+      }
     );
 
     // Effects should get handled each time, regardless of if they are
@@ -119,8 +57,8 @@ public class BindingTest {
     block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
     block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
 
-    callEffect1.ShouldBe(2);
-    callEffect2.ShouldBe(2);
+    output1.ShouldBe(4);
+    output2.ShouldBe(2);
   }
 
   [Fact]
@@ -132,15 +70,13 @@ public class BindingTest {
     var callStateA = 0;
     var callStateB = 0;
 
-    binding.When<FakeLogicBlock.State.StateA>()
-      .Call((state) => callStateA++);
-
-    binding.When<FakeLogicBlock.State.StateB>()
-      .Call((state) => callStateB++);
+    binding
+      .When<FakeLogicBlock.State.StateA>((state) => callStateA++)
+      .When<FakeLogicBlock.State.StateB>((state) => callStateB++);
 
     callStateA.ShouldBe(0);
     callStateB.ShouldBe(0);
-    block.Value.ShouldBe(block.GetInitialState());
+    block.Value.ShouldBe(block.GetInitialState().State);
 
     // State is StateA initially, so switch to State B
     block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
@@ -158,19 +94,19 @@ public class BindingTest {
     block.Input(new FakeLogicBlock.Input.InputTwo("c", "d"));
 
     callStateA.ShouldBe(0);
-    callStateB.ShouldBe(2);
+    callStateB.ShouldBe(1); // State B instance is reused, so no change
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
 
     block.Input(new FakeLogicBlock.Input.InputOne(1, 2));
 
     callStateA.ShouldBe(1);
-    callStateB.ShouldBe(2);
+    callStateB.ShouldBe(1);
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateA>();
 
     block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
 
     callStateA.ShouldBe(1);
-    callStateB.ShouldBe(3);
+    callStateB.ShouldBe(2);
     block.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
   }
 
@@ -182,14 +118,9 @@ public class BindingTest {
     var block = new FakeLogicBlock();
     var binding = block.Bind();
 
-    binding.When<FakeLogicBlock.State.StateA>()
-      .Use(
-        data: (state) => state.Value1,
-        to: (value1) => callStateUpdate++
-      );
-
-    binding.Handle<FakeLogicBlock.Output.OutputOne>(
-      (effect) => callSideEffectHandler++
+    binding.When<FakeLogicBlock.State.StateA>((value1) => callStateUpdate++)
+      .Handle(
+      (in FakeLogicBlock.Output.OutputOne effect) => callSideEffectHandler++
     );
 
     block.Input(new FakeLogicBlock.Input.InputOne(4, 5));
@@ -214,14 +145,15 @@ public class BindingTest {
     var inputTwo = 0;
 
     binding
-      .Watch<FakeLogicBlock.Input.InputOne>((input) => inputOne++)
-      .Watch<FakeLogicBlock.Input.InputTwo>((input) => inputTwo++);
+      .Watch((in FakeLogicBlock.Input.InputOne input) => inputOne++)
+      .Watch((in FakeLogicBlock.Input.InputOne input) => inputOne++)
+      .Watch((in FakeLogicBlock.Input.InputTwo input) => inputTwo++);
 
     block.Input(new FakeLogicBlock.Input.InputOne(1, 2));
     block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
     block.Input(new FakeLogicBlock.Input.InputOne(3, 4));
 
-    inputOne.ShouldBe(2);
+    inputOne.ShouldBe(4);
     inputTwo.ShouldBe(1);
   }
 
@@ -249,7 +181,7 @@ public class BindingTest {
     var binding = new Mock<FakeLogicBlock.IBinding>();
 
     var input = new FakeLogicBlock.Input.InputOne(1, 2);
-    var state = new FakeLogicBlock.State.StateA(1, 2);
+    var state = new FakeLogicBlock.State.StateA() { Value1 = 1, Value2 = 2 };
 
     logic.Setup(logic => logic.Bind()).Returns(binding.Object);
     logic.Setup(logic => logic.Input(input)).Returns(state);

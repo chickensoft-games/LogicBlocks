@@ -1,20 +1,16 @@
 @startuml FakeLogicBlock
 state "FakeLogicBlock State" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State {
+  state "StartState" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StartState
   state "StateA" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateA
   state "StateB" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateB
   state "StateC" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateC
   state "StateD" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateD
   state "NothingState" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_NothingState
-  state "Custom" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_Custom
   state "OnEnterState" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_OnEnterState
   state "OnExitState" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_OnExitState
-  Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State : OnInputOne → OutputOne
-  Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State : OnInputTwo → OutputTwo
-  Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State : OnNoNewState → OutputOne
+  state "AddErrorOnEnterState" as Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_AddErrorOnEnterState
 }
 
-Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State : Custom
-Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State : InputCallback
 Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State : NoNewState
 Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State : SelfInput
 Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateA : InputOne
@@ -22,6 +18,9 @@ Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State --> Chickensoft_Logi
 Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateC : GetString
 Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateD : InputThree
 
-[*] --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State
-[*] --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StateA
+Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State : OnInputOne → OutputOne
+Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State : OnInputTwo → OutputTwo
+Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State : OnNoNewState → OutputOne
+
+[*] --> Chickensoft_LogicBlocks_Tests_Fixtures_FakeLogicBlock_State_StartState
 @enduml

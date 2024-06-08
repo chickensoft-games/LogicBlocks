@@ -1,27 +1,29 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
-public class GreedyLogic : LogicBlock<GreedyLogic.State> {
-  public override State GetInitialState() => new State.A();
+using Chickensoft.Introspection;
+
+[LogicBlock(typeof(State)), Meta]
+public partial class GreedyLogic : LogicBlock<GreedyLogic.State> {
+  public override Transition GetInitialState() => To<State.A>();
 
   public static class Input {
     public readonly record struct GoToB;
     public readonly record struct GoToC;
   }
 
-  public abstract partial record State : StateLogic {
-    public record A : State, IGet<Input.GoToB>, IGet<Input.GoToC> {
+  public abstract partial record State : StateLogic<State> {
+    public partial record A : State, IGet<Input.GoToB>, IGet<Input.GoToC> {
       public A() {
         OnAttach(() => {
-          Context.Input(new Input.GoToB());
-          Context.Input(new Input.GoToC());
+          Input(new Input.GoToB());
+          Input(new Input.GoToC());
         });
       }
 
-      public State On(Input.GoToB input) => new B();
-      public State On(Input.GoToC input) => new C();
+      public Transition On(in Input.GoToB input) => To<B>();
+      public Transition On(in Input.GoToC input) => To<C>();
     }
-
-    public record B : State { }
-    public record C : State { }
+    public partial record B : State { }
+    public partial record C : State { }
   }
 }

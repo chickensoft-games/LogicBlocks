@@ -1,11 +1,15 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
-public class InternalsLogic : LogicBlock<InternalsLogic.State> {
-  public record State : StateLogic {
+using System;
+using Chickensoft.Introspection;
+
+[LogicBlock(typeof(State)), Meta]
+public partial class InternalsLogic : LogicBlock<InternalsLogic.State> {
+  public partial record State : StateLogic<State> {
     public Action? OnAttachAction { get; init; }
     public Action? OnDetachAction { get; init; }
 
-    public TDataType PublicGet<TDataType>() where TDataType : notnull =>
+    public TDataType PublicGet<TDataType>() where TDataType : class =>
       Get<TDataType>();
 
     public State() {
@@ -14,9 +18,9 @@ public class InternalsLogic : LogicBlock<InternalsLogic.State> {
     }
   }
 
-  public static class Input { }
+  public static class Input;
 
-  public static class Output { }
+  public static class Output;
 
-  public override State GetInitialState() => new();
+  public override Transition GetInitialState() => To<State>();
 }

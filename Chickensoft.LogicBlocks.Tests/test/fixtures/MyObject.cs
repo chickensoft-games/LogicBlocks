@@ -1,5 +1,7 @@
 namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
+using System;
+
 public class MyObject : IDisposable {
   public IMyLogicBlock Logic { get; }
   public MyLogicBlock.IBinding Binding { get; }
@@ -10,8 +12,8 @@ public class MyObject : IDisposable {
     Logic = logic;
     Binding = logic.Bind();
 
-    Binding.Handle<MyLogicBlock.Output.SomeOutput>(
-      (output) => SawSomeOutput = true
+    Binding.Handle(
+      (in MyLogicBlock.Output.SomeOutput output) => SawSomeOutput = true
     );
   }
 

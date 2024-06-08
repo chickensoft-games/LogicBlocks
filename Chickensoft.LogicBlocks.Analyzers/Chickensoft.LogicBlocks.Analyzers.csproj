@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <LangVersion>preview</LangVersion>
+    <RootNamespace>Chickensoft.LogicBlocks.Analyzers</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <NoWarn>NU5128</NoWarn>
+    <OutputPath>./nupkg</OutputPath>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <AnalyzerLanguage>cs</AnalyzerLanguage>
+    <DebugType>portable</DebugType>
+
+    <Title>LogicBlocks Analyzers</Title>
+    <Version>1.0.0</Version>
+    <Description>LogicBlocks analyzers.</Description>
+    <Copyright>© 2024 Chickensoft Games</Copyright>
+    <Authors>Chickensoft</Authors>
+    <Company>Chickensoft</Company>
+
+    <PackageId>Chickensoft.LogicBlocks.Analyzers</PackageId>
+    <PackageReleaseNotes>LogicBlocks Analyzers release.</PackageReleaseNotes>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>state management;bloc;godot;game;state machine</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/chickensoft-games/LogicBlocks</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Has to be in its own item group -->
+    <None Include="./README.md" Pack="true" PackagePath="\" />
+    <None Include="../LICENSE" Pack="true" PackagePath="\" />
+    <None Include="../Chickensoft.LogicBlocks/icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <!-- The following libraries include the types we need -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.4.0" PrivateAssets="all" />
+    <PackageReference Include="IsExternalInit" Version="1.0.3" PrivateAssets="all">
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- This ensures the library will be packaged as an analyzer when we use `dotnet pack` -->
+  <ItemGroup>
+    <None Include="$(OutputPath)/$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+</Project>

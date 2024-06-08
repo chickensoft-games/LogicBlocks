@@ -2,5 +2,8 @@
 state "HierarchicalCallbackLogic State" as Chickensoft_LogicBlocks_Tests_Fixtures_HierarchicalCallbackLogic_State {
   state "Substate" as Chickensoft_LogicBlocks_Tests_Fixtures_HierarchicalCallbackLogic_State_Substate
 }
-[*] --> Chickensoft_LogicBlocks_Tests_Fixtures_HierarchicalCallbackLogic_State
+Chickensoft_LogicBlocks_Tests_Fixtures_HierarchicalCallbackLogic_State : OnEnter → Log
+Chickensoft_LogicBlocks_Tests_Fixtures_HierarchicalCallbackLogic_State : OnExit → Log
+Chickensoft_LogicBlocks_Tests_Fixtures_HierarchicalCallbackLogic_State_Substate : OnEnter → Log
+Chickensoft_LogicBlocks_Tests_Fixtures_HierarchicalCallbackLogic_State_Substate : OnExit → Log
 @enduml

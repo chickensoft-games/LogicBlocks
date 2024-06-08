@@ -2,12 +2,17 @@ Chickensoft.LogicBlocks/nupkg/
 Chickensoft.LogicBlocks.Generator/nupkg/
 
 Chickensoft.LogicBlocks.Tests/coverage/*
-!Chickensoft.LogicBlocks.Tests/coverage/.gdignore
+Chickensoft.LogicBlocks.DiagramGenerator.Tests/coverage/*
+Chickensoft.Introspection.Generator.Tests/coverage/*
 
+nupkg/
 .godot/
 bin/
 obj/
+coverage/
+nupkg/
 .generated/
 .vs/
 .DS_Store
 *.DotSettings.user
+*.binlog
