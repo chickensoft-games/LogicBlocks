@@ -73,6 +73,7 @@ public partial class LogicBlockTest {
     block.SavedTypes.ShouldBe(
       [typeof(EmptyLogicBlock.State), typeof(TestObject)], ignoreOrder: true
     );
+    block.TypesToSave.ShouldBe([typeof(TestObject)]);
 
     // Can't change values once set.
     Should.Throw<DuplicateNameException>(() => block.Set("other"));

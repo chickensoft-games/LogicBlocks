@@ -6,12 +6,14 @@ dotnet build
 dotnet test \
   -p:CollectCoverage=true \
   -p:CoverletOutputFormat="opencover" \
-  -p:CoverletOutput=./coverage/
+  -p:CoverletOutput=./coverage/ \
+  -p:SkipAutoProps=true
 
 reportgenerator \
   -reports:"./coverage/coverage.opencover.xml" \
   -targetdir:"./coverage/report" \
-  "-assemblyfilters:-*Chickensoft.Introspection*;-*Chickensoft.Serialization*;-*Chickensoft.LogicBlocks.DiagramGenerator*" \
+  "-assemblyfilters:-*Chickensoft.Serialization*;-*Chickensoft.LogicBlocks;" \
+  "-classfilters:-TypeRegistry" \
   -reporttypes:"Html;Badges"
 
 # Copy badges into their own folder. The badges folder should be included in

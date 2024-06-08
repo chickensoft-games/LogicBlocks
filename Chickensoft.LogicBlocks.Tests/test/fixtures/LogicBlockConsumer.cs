@@ -8,10 +8,10 @@ public class LogicBlockConsumer {
   public bool SawState { get; private set; }
   public bool SawError { get; private set; }
 
-  public MyLogicBlock Logic { get; }
+  public IMyLogicBlock Logic { get; }
   public MyLogicBlock.IBinding Binding { get; }
 
-  public LogicBlockConsumer(MyLogicBlock logic) {
+  public LogicBlockConsumer(IMyLogicBlock logic) {
     Logic = logic;
     Binding = logic.Bind();
 

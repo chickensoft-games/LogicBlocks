@@ -15,7 +15,7 @@
     <DebugType>portable</DebugType>
 
     <Title>LogicBlocks Generator</Title>
-    <Version>4.2.2</Version>
+    <Version>0.0.0-devbuild</Version>
     <Description>See what your hierarchical state machine code looks like as a diagram!</Description>
     <Copyright>© 2024 Chickensoft Games</Copyright>
     <Authors>Chickensoft</Authors>

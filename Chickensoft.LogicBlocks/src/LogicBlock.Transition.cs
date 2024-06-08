@@ -11,7 +11,10 @@ public abstract partial class LogicBlock<TState> {
 
     /// <summary>Don't use.</summary>
     [ExcludeFromCodeCoverage]
-    [Obsolete("Do not instantiate transitions yourself.", true)]
+    [Obsolete(
+      "Do not instantiate transitions yourself. Use To<T> or ToSelf()",
+      error: true
+    )]
     public Transition() {
       throw new NotSupportedException(
         "Transition should not be instantiated without a state."

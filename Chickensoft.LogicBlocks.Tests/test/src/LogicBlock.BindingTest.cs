@@ -11,7 +11,7 @@ public class BindingTest {
   public static bool WasFinalized { get; set; }
 
   [Fact]
-  public void UpdatesForEveryState() {
+  public void RespectsTypeHierarchyChangesAndOnlyRunsOnce() {
     var block = new FakeLogicBlock();
     using var binding = block.Bind();
 
@@ -20,27 +20,7 @@ public class BindingTest {
 
     block.Input(new FakeLogicBlock.Input.InputTwo("d", "e"));
 
-    called.ShouldBe(2);
-  }
-
-  [Fact]
-  public void DoesNotUpdateIfSelectedDataIsSameObject() {
-    var block = new FakeLogicBlock();
-    using var binding = block.Bind();
-
-    var count = 0;
-    binding.When<FakeLogicBlock.State>(state => count++);
-
-    var a = "a";
-    var b = "b";
-    // Only one of each type is ever created, so these 2 inputs result in same
-    // state instance
-    block.Input(new FakeLogicBlock.Input.InputTwo(a, b));
-    block.Input(new FakeLogicBlock.Input.InputTwo(a, "c"));
-
-    block.Input(new FakeLogicBlock.Input.InputThree("c", "d"));
-
-    count.ShouldBe(3);
+    called.ShouldBe(1);
   }
 
   [Fact]

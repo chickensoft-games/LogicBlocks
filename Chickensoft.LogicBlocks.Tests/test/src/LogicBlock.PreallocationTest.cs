@@ -20,7 +20,7 @@ public partial class PreallocationTest {
     public record State : StateLogic<State>;
   }
 
-  [LogicBlock(typeof(State)), Meta]
+  [Meta]
   public partial class MissingLogic : LogicBlock<MissingLogic.State> {
     public override Transition GetInitialState() => To<State>();
 
@@ -41,6 +41,12 @@ public partial class PreallocationTest {
 
     [Meta, Id("preallocation_serializable_logic_block_state")]
     public partial record State : StateLogic<State>;
+
+    [Meta, TestState]
+    public partial record TestState : State;
+
+    [Meta]
+    public partial record OtherState : State;
   }
 
   [LogicBlock(typeof(State))]
@@ -58,16 +64,56 @@ public partial class PreallocationTest {
     public partial record Substate : State;
   }
 
+  [LogicBlock(typeof(State)), Meta, Id("not_introspective")]
+  public partial class NotIntrospective : LogicBlock<NotIntrospective.State> {
+    public override Transition GetInitialState() => To<State>();
+
+    [Meta, Id("not_introspective_state")]
+    public partial record State : StateLogic<State>;
+
+    // Needs to be introspective and have an id since it is concrete.
+    public partial record Substate : State;
+    [Meta]
+    public abstract partial record OtherSubstate : State;
+  }
+
+  [LogicBlock(typeof(State)), Meta, Id("not_identifiable")]
+  public partial class NotIdentifiable : LogicBlock<NotIdentifiable.State> {
+    public override Transition GetInitialState() => To<State>();
+
+    [Meta]
+    public partial record State : StateLogic<State>;
+  }
+
+
+  [Fact]
+  public void PreallocatesCorrectStates() {
+    var logic = new SerializableLogic();
+    logic.Has<SerializableLogic.State>().ShouldBeTrue();
+    logic.Has<SerializableLogic.OtherState>().ShouldBeTrue();
+
+    // Shouldn't allocate introspective states marked with TestState.
+    logic.Has<SerializableLogic.TestState>().ShouldBeFalse();
+  }
+
   [Fact]
   public void DoesNothingIfLogicBlockIsNotIntrospective() =>
     Should.NotThrow(() => new RegularLogic());
 
   [Fact]
-  public void DoesNothingIfMissingLogicBlockAttribute() =>
-    Should.NotThrow(() => new MissingLogic());
+  public void ThrowsIfMissingLogicBlockAttribute() =>
+    Should.Throw<LogicBlockException>(() => new MissingLogic());
 
   [Fact]
   public void
   ThrowsWhenConcreteStateIsMissingId() =>
     Should.Throw<LogicBlockException>(() => new ConcreteSubstateWithoutId());
+
+  [Fact]
+  public void ThrowsIfAStateIsNotIntrospective() =>
+    Should.Throw<LogicBlockException>(() => new NotIntrospective());
+
+  [Fact]
+  public void ThrowsIfAStateIsNotIdentifiable() =>
+    Should.Throw<LogicBlockException>(() => new NotIdentifiable());
 }

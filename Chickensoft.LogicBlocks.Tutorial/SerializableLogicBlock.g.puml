@@ -1,0 +1,11 @@
+@startuml SerializableLogicBlock
+state "SerializableLogicBlock State" as Chickensoft_LogicBlocks_Tutorial_SerializableLogicBlock_State {
+  state "PoweredOff" as Chickensoft_LogicBlocks_Tutorial_SerializableLogicBlock_State_PoweredOff
+  state "PoweredOn" as Chickensoft_LogicBlocks_Tutorial_SerializableLogicBlock_State_PoweredOn
+  state "VersionedState" as Chickensoft_LogicBlocks_Tutorial_SerializableLogicBlock_State_VersionedState {
+    state "Version1" as Chickensoft_LogicBlocks_Tutorial_SerializableLogicBlock_State_Version1
+    state "Version2" as Chickensoft_LogicBlocks_Tutorial_SerializableLogicBlock_State_Version2
+  }
+}
+[*] --> Chickensoft_LogicBlocks_Tutorial_SerializableLogicBlock_State_PoweredOff
+@enduml

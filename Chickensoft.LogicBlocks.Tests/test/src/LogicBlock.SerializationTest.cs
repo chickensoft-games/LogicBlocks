@@ -309,6 +309,150 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
+  public void ThrowsWhenStateHasUnknownType() {
+    var options = CreateOptions();
+
+    Should.Throw<JsonException>(
+      () => JsonSerializer.Deserialize<SerializableLogicBlock>(
+        """
+        {
+          "$type": "serializable_logic_block",
+          "$v": 1,
+          "state": {
+            "$type": "unknown_state_id",
+            "$v": 1
+          },
+          "blackboard": {
+            "$type": "blackboard",
+            "$v": 1,
+            "values": {}
+          }
+        }
+        """,
+        options
+      )
+    );
+  }
+
+  [Fact]
+  public void ThrowsWhenStateJsonIsNull() {
+    var options = CreateOptions();
+
+    Should.Throw<JsonException>(
+      () => JsonSerializer.Deserialize<SerializableLogicBlock>(
+        """
+        {
+          "$type": "serializable_logic_block",
+          "$v": 1,
+          "state": null,
+          "blackboard": {
+            "$type": "blackboard",
+            "$v": 1,
+            "values": {}
+          }
+        }
+        """,
+        options
+      )
+    );
+  }
+
+  [Fact]
+  public void ThrowsWhenStateIdIsNull() {
+    var options = CreateOptions();
+
+    Should.Throw<JsonException>(
+      () => JsonSerializer.Deserialize<SerializableLogicBlock>(
+        """
+        {
+          "$type": "serializable_logic_block",
+          "$v": 1,
+          "state": {
+            "$type": null,
+            "$v": 1
+          },
+          "blackboard": {
+            "$type": "blackboard",
+            "$v": 1,
+            "values": {}
+          }
+        }
+        """,
+        options
+      )
+    );
+  }
+
+  [Fact]
+  public void ThrowsWhenStateVersionIsNull() {
+    var options = CreateOptions();
+
+    Should.Throw<JsonException>(
+      () => JsonSerializer.Deserialize<SerializableLogicBlock>(
+        """
+        {
+          "$type": "serializable_logic_block",
+          "$v": 1,
+          "state": {
+            "$type": "serializable_logic_block_state",
+            "$v": null
+          },
+          "blackboard": {
+            "$type": "blackboard",
+            "values": {}
+          }
+        }
+        """,
+        options
+      )
+    );
+  }
+
+  [Fact]
+  public void ThrowsWhenBlackboardJsonIsNull() {
+    var options = CreateOptions();
+
+    Should.Throw<JsonException>(
+      () => JsonSerializer.Deserialize<SerializableLogicBlock>(
+        """
+        {
+          "$type": "serializable_logic_block",
+          "$v": 1,
+          "state": {
+            "$type": "serializable_logic_block_state",
+            "$v": 1
+          },
+          "blackboard": null
+        }
+        """,
+        options
+      )
+    );
+  }
+
+  [Fact]
+  public void ThrowsWhenBlackboardDeserializationFails() {
+    var options = CreateOptions();
+
+    Should.Throw<JsonException>(
+      () => JsonSerializer.Deserialize<SerializableLogicBlock>(
+        """
+        {
+          "$type": "serializable_logic_block",
+          "$v": 1,
+          "state": {
+            "$type": "serializable_logic_block_state",
+            "$v": 1
+          },
+          "blackboard": {}
+        }
+        """,
+        options
+      )
+    );
+  }
+
+  [Fact]
   public void UpgradesOutdatedStates() {
     // Pass it some upgrade dependencies.
     var deps = new Blackboard();

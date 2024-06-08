@@ -48,9 +48,7 @@ public partial class LogicBlock<TState> : ICustomSerializable {
     var blackboard = JsonSerializer.Deserialize<SerializableBlackboard>(
       blackboardJson,
       options
-    ) ?? throw new JsonException(
-      $"Failed to deserialize blackboard for logic block {metadata.Id}."
-    );
+    )!; // Blackboard deserialization will throw on its own if invalid.
 
     // Rather than replace our blackboard, we simply overwrite any values that
     // we found in the deserialized blackboard. Preserving our blackboard
@@ -93,17 +91,13 @@ public partial class LogicBlock<TState> : ICustomSerializable {
     var stateJson = new JsonObject();
 
     var stateType = Value.GetType();
-    var stateMetadata = graph.GetMetadata(stateType);
 
-    if (stateMetadata is not IdentifiableTypeMetadata stateIdMetadata) {
-      throw new JsonException(
-        $"Logic block `{GetType()}` with id `{metadata.Id}` has an unknown " +
-        $"identifiable state `{stateType}`."
-      );
-    }
+    // Serializable logic blocks validate that concrete states are identifiable
+    // during preallocation.
+    var stateMetadata = (IdentifiableTypeMetadata)graph.GetMetadata(stateType)!;
 
-    stateJson[Serializer.TYPE_PROPERTY] = stateIdMetadata.Id;
-    stateJson[Serializer.VERSION_PROPERTY] = stateIdMetadata.Version;
+    stateJson[Serializer.TYPE_PROPERTY] = stateMetadata.Id;
+    stateJson[Serializer.VERSION_PROPERTY] = stateMetadata.Version;
 
     json[STATE_PROPERTY] = stateJson;
 

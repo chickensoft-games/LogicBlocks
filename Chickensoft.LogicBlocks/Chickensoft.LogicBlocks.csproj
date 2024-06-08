@@ -20,7 +20,7 @@
     <IlcDisableReflection>true</IlcDisableReflection>
 
     <Title>LogicBlocks</Title>
-    <Version>4.2.2</Version>
+    <Version>0.0.0-devbuild</Version>
     <Description>Human-friendly, hierarchical state machines for games and apps in C#.</Description>
     <Copyright>© 2024 Chickensoft</Copyright>
     <Authors>Chickensoft</Authors>
@@ -54,8 +54,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.Text.Json" Version="8.0.3" />
-    <PackageReference Include="Chickensoft.Collections" Version="1.6.0" />
-    <PackageReference Include="Chickensoft.Introspection" Version="1.1.0" />
+    <PackageReference Include="Chickensoft.Collections" Version="1.7.0" />
+    <PackageReference Include="Chickensoft.Introspection" Version="1.2.0" />
     <PackageReference Include="Chickensoft.Serialization" Version="1.0.0" />
   </ItemGroup>
 

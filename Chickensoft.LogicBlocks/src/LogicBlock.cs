@@ -137,7 +137,7 @@ where TState : StateLogic<TState> {
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
 public abstract partial class LogicBlock<TState> : LogicBlockBase,
-ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
+ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
   // We do want static members on generic types here since it makes for a
   // really ergonomic API.
   /// <summary>
@@ -177,7 +177,7 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
 
   private TState? _value;
   private int _isProcessing;
-  private readonly InputQueue _inputs;
+  private readonly BoxlessQueue _inputs;
   private readonly HashSet<ILogicBlockBinding<TState>> _bindings = new();
 
   /// <summary>
@@ -386,11 +386,11 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
     // We can always process the first input directly.
     // This keeps single inputs off the heap.
     if (input.HasValue) {
-      (this as IInputHandler).HandleInput(input.Value);
+      (this as IBoxlessValueHandler).HandleValue(input.Value);
     }
 
-    while (_inputs.HasInputs) {
-      _inputs.HandleInput();
+    while (_inputs.HasValues) {
+      _inputs.Dequeue();
     }
 
     _isProcessing--;
@@ -398,7 +398,7 @@ ILogicBlock<TState>, IInputHandler where TState : StateLogic<TState> {
     return _value!;
   }
 
-  void IInputHandler.HandleInput<TInputType>(in TInputType input)
+  void IBoxlessValueHandler.HandleValue<TInputType>(in TInputType input)
   where TInputType : struct {
     if (_value is not IGet<TInputType> stateWithInputHandler) {
       return;

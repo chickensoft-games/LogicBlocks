@@ -1,4 +1,4 @@
-namespace Chickensoft.LogicBlocks.Tests.Examples;
+namespace Chickensoft.LogicBlocks.Tutorial;
 
 using System;
 using Chickensoft.Introspection;
@@ -14,9 +14,10 @@ public interface IClock {
   event Action<double> TimeElapsed;
 }
 
-[Meta, Id("timer")]
-[LogicBlock(typeof(State), Diagram = true)]
-public partial class Timer : LogicBlock<Timer.State> {
+public interface ITimer : ILogicBlock<Timer.State>;
+
+[Meta, LogicBlock(typeof(State), Diagram = true)]
+public partial class Timer : LogicBlock<Timer.State>, ITimer {
   public override Transition GetInitialState() => To<State.PoweredOff>();
 
   /// <summary>Blackboard data for our hierarchical state machine.</summary>
@@ -34,43 +35,42 @@ public partial class Timer : LogicBlock<Timer.State> {
 
   public static class Input {
     public readonly record struct PowerButtonPressed;
-    public readonly record struct StartStopButtonPressed;
-    public readonly record struct ResetButtonPressed;
     /// <summary>Change the duration of the timer.</summary>
     /// <param name="Duration">Number of seconds to countdown.</param>
     public readonly record struct ChangeDuration(double Duration);
+    public readonly record struct StartStopButtonPressed;
     /// <summary>Tells the timer that time has passed.</summary>
     /// <param name="Delta">Number of seconds that have passed.</param>
     public readonly record struct TimeElapsed(double Delta);
   }
 
-  [Meta]
-  public abstract partial record State : StateLogic<State> {
-    [Meta, Id("timer_state_powered_off")]
-    public partial record PoweredOff : State, IGet<Input.PowerButtonPressed> {
+  public static class Output {
+    public readonly record struct PlayBeepingSound;
+    public readonly record struct StopBeepingSound;
+  }
+
+  public abstract record State : StateLogic<State> {
+    public record PoweredOff : State, IGet<Input.PowerButtonPressed> {
       public Transition On(in Input.PowerButtonPressed input) =>
         To<PoweredOn.Idle>();
     }
 
-    [Meta]
-    public abstract partial record PoweredOn : State, IGet<Input.PowerButtonPressed> {
+    public abstract record PoweredOn : State, IGet<Input.PowerButtonPressed> {
       public Transition On(in Input.PowerButtonPressed input) => To<PoweredOff>();
 
-      [Meta, Id("timer_state_powered_on_idle")]
-      public partial record Idle : PoweredOn, IGet<Input.StartStopButtonPressed> {
+      public record Idle : PoweredOn, IGet<Input.StartStopButtonPressed>, IGet<Input.ChangeDuration> {
         public Transition On(in Input.ChangeDuration input) {
           Get<Data>().Duration = input.Duration;
           return ToSelf();
         }
 
         public Transition On(in Input.StartStopButtonPressed input) =>
-          To<Running>();
+          To<Countdown>();
       }
 
-      [Meta, Id("timer_state_powered_on_running")]
-      public partial record Running : PoweredOn,
+      public record Countdown : PoweredOn,
           IGet<Input.TimeElapsed>, IGet<Input.StartStopButtonPressed> {
-        public Running() {
+        public Countdown() {
           OnAttach(() => Get<IClock>().TimeElapsed += OnTimeElapsed);
           OnDetach(() => Get<IClock>().TimeElapsed -= OnTimeElapsed);
         }
@@ -87,18 +87,15 @@ public partial class Timer : LogicBlock<Timer.State> {
         public Transition On(in Input.StartStopButtonPressed input) => To<Idle>();
       }
 
-      [Meta, Id("timer_state_powered_on_beeping")]
-      public partial record Beeping : PoweredOn {
+      public record Beeping : PoweredOn, IGet<Input.StartStopButtonPressed> {
         public Beeping() {
           this.OnEnter(() => Output(new Output.PlayBeepingSound()));
           this.OnExit(() => Output(new Output.StopBeepingSound()));
         }
-      }
-    }
 
-    public static class Output {
-      public readonly record struct PlayBeepingSound;
-      public readonly record struct StopBeepingSound;
+        public Transition On(in Input.StartStopButtonPressed input) =>
+          To<Idle>();
+      }
     }
   }
 }

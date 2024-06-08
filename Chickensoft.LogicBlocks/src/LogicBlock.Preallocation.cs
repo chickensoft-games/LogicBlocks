@@ -20,13 +20,20 @@ public abstract partial class LogicBlock<TState> {
     var type = logic.GetType();
     var metadata = Graph.GetMetadata(type);
 
+    if (metadata is not IIntrospectiveTypeMetadata introspectiveMetadata) {
+      // No preallocation for non-introspective types.
+      return;
+    }
+
     if (
-      metadata is not IIntrospectiveTypeMetadata introspectiveMetadata ||
       Graph.GetAttribute<LogicBlockAttribute>(type) is not { } logicAttribute
     ) {
-      // Not an introspective type, or we're missing the logic block
-      // attribute.
-      return;
+      // We're missing the logic block attribute. Introspective types must
+      // have the [LogicBlock] attribute.
+      throw new LogicBlockException(
+        $"Logic block `{type}` is missing the " +
+        $"[{nameof(LogicBlockAttribute)}] attribute."
+      );
     }
 
     // See if logic block is an identifiable, introspective type (serializable).
@@ -90,9 +97,7 @@ public abstract partial class LogicBlock<TState> {
           // when we throw an error later.
           stateTypesNeedingAttention!.Add(type);
         }
-        else if (
-          stateMetadata is IIntrospectiveTypeMetadata and IConcreteTypeMetadata
-        ) {
+        else if (stateMetadata is IConcreteTypeMetadata) {
           // Concrete introspective types on serializable logic blocks MUST
           // be identifiable types.
           stateTypesNeedingAttention!.Add(type);

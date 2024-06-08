@@ -110,6 +110,8 @@ public abstract partial class LogicBlock<TState> {
     // binding when a particular type of error is encountered.
     internal readonly List<Action<Exception>> _exceptionRunners;
 
+    private object? _previousState;
+
     internal BindingBase() {
       _inputRunners = new();
       _outputRunners = new();
@@ -135,7 +137,10 @@ public abstract partial class LogicBlock<TState> {
     /// <inheritdoc />
     public IBinding When<TStateType>(Action<TStateType> handler)
       where TStateType : TState {
-      _stateCheckers.Add((state) => state is TStateType);
+      // Only run the binding if the state was not already this type of state.
+      _stateCheckers.Add(
+        (state) => state is TStateType && _previousState is not TStateType
+      );
       _stateRunners.Add((state) => handler((TStateType)state));
 
       return this;
@@ -187,6 +192,7 @@ public abstract partial class LogicBlock<TState> {
           runner(state);
         }
       }
+      _previousState = state;
     }
 
     protected override void ReceiveOutput<TOutputType>(in TOutputType output)

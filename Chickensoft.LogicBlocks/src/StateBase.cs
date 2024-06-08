@@ -16,6 +16,8 @@ public abstract record StateBase {
     InternalState = new(contextAdapter);
   }
 
+  internal bool IsAttached => InternalState.ContextAdapter.Context is not null;
+
   /// <summary>
   /// Creates a fake context and assigns it internally to be the state's
   /// underlying context object. Fake contexts facilitate testing of logic
@@ -71,7 +73,7 @@ public abstract record StateBase {
   /// Runs all of the registered detach callbacks for the state.
   /// </summary>
   public void Detach() {
-    if (InternalState.ContextAdapter.Context is null) {
+    if (!IsAttached) {
       return;
     }
 
