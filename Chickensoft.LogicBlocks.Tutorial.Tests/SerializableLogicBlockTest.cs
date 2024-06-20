@@ -1,6 +1,7 @@
 namespace Chickensoft.LogicBlocks.Tutorial.Tests;
 
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Chickensoft.Serialization;
 using Shouldly;
 using Xunit;
@@ -19,10 +20,10 @@ public class SerializableLogicBlockTest {
 
     var logic = new SerializableLogicBlock();
 
-    var json = JsonSerializer.Serialize(logic, options);
+    var jsonText = JsonSerializer.Serialize(logic, options);
+    var jsonNode = JsonNode.Parse(jsonText);
 
-    json.ShouldBe(
-      /*language=json*/
+    var jsonExpectedText = /*language=json*/
       """
       {
         "$type": "serializable_logic",
@@ -37,8 +38,10 @@ public class SerializableLogicBlockTest {
           "values": {}
         }
       }
-      """
-    );
+      """;
+    var jsonExpectedNode = JsonNode.Parse(jsonExpectedText);
+
+    JsonNode.DeepEquals(jsonNode, jsonExpectedNode).ShouldBeTrue();
   }
 
   [Fact]
