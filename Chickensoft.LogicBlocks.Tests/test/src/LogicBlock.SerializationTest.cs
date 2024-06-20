@@ -1,6 +1,7 @@
 namespace Chickensoft.LogicBlocks.Tests.Serialization;
 
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Chickensoft.Collections;
 using Chickensoft.Introspection;
 using Chickensoft.LogicBlocks.Tests.Fixtures;
@@ -31,10 +32,10 @@ public partial class LogicBlockSerializationTest {
 
     var options = CreateOptions();
 
-    var json = JsonSerializer.Serialize(logic, options);
+    var jsonText = JsonSerializer.Serialize(logic, options);
+    var jsonNode = JsonNode.Parse(jsonText);
 
-    json.ShouldBe(
-      /*lang=json,strict*/
+    var jsonExpectedText = /*lang=json,strict*/
       """
       {
         "$type": "serializable_logic_block",
@@ -60,8 +61,9 @@ public partial class LogicBlockSerializationTest {
           }
         }
       }
-      """
-    );
+      """;
+    var jsonExpectedNode = JsonNode.Parse(jsonExpectedText);
+    JsonNode.DeepEquals(jsonNode, jsonExpectedNode).ShouldBeTrue();
   }
 
   [Fact]
