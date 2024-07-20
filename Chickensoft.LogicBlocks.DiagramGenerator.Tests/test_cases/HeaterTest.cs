@@ -75,8 +75,10 @@ public class HeaterTest {
       "Heater turned off",
       "Heater is powered",
       "Heater is idling",
+      "Heater is powered",
       "Heater is heating",
       "Finished heating :)",
+      "Heater is powered",
       "Heater is idling"
     ]);
   }
