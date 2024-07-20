@@ -11,7 +11,7 @@ public class BindingTest {
   public static bool WasFinalized { get; set; }
 
   [Fact]
-  public void RespectsTypeHierarchyChangesAndOnlyRunsOnce() {
+  public void MatchingStateRunsAgainIfNonEquivalent() {
     var block = new FakeLogicBlock();
     using var binding = block.Bind();
 
@@ -20,7 +20,22 @@ public class BindingTest {
 
     block.Input(new FakeLogicBlock.Input.InputTwo("d", "e"));
 
-    called.ShouldBe(1);
+    called.ShouldBe(2);
+  }
+
+  [Fact]
+  public void MatchingStateDoesNotRunAgainIfEquivalent() {
+    var block = new FakeLogicBlock();
+    using var binding = block.Bind();
+
+    var called = 0;
+    block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
+
+    binding.When<FakeLogicBlock.State>((state) => called++);
+
+    block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
+
+    called.ShouldBe(0);
   }
 
   [Fact]
