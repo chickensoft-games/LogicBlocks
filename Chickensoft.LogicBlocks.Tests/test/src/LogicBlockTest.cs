@@ -605,10 +605,11 @@ public partial class LogicBlockTest {
     }
 
     [Fact]
-    public void RestoreFromThrowsIfNotSameTypeOfLogicBlock() {
+    public void RestoreFromThrowsIfOtherIsNotStarted() {
       var logic = new MyLogicBlock();
-      var other = new FakeLogicBlock();
+      var other = new MyLogicBlock();
 
+      // Other is not yet started, so nothing to restore.
       Should.Throw<LogicBlockException>(() => logic.RestoreFrom(other));
     }
 
