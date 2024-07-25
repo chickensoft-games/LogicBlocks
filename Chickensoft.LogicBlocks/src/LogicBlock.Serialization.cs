@@ -55,7 +55,7 @@ public partial class LogicBlock<TState> : ICustomSerializable {
     // enables us to respect new persisted values or non-persisted values that
     // have already been added to the blackboard during construction.
     foreach (var objType in blackboard.Types) {
-      _blackboard.OverwriteObject(objType, blackboard.GetObject(objType));
+      Blackboard.OverwriteObject(objType, blackboard.GetObject(objType));
     }
 
     if (
@@ -71,7 +71,7 @@ public partial class LogicBlock<TState> : ICustomSerializable {
     // Load the state from the logic block's blackboard, since we have
     // preallocated states during construction, and deserialization has
     // overwritten any preallocated states with the deserialized state.
-    var state = _blackboard.GetObject(stateType);
+    var state = Blackboard.GetObject(stateType);
 
     // Set the state to be used (instead of the logic block's initial state)
     // whenever the logic block is started.
@@ -102,7 +102,7 @@ public partial class LogicBlock<TState> : ICustomSerializable {
     json[STATE_PROPERTY] = stateJson;
 
     json[BLACKBOARD_PROPERTY] = JsonSerializer.SerializeToNode(
-      _blackboard,
+      Blackboard,
       options
     );
   }

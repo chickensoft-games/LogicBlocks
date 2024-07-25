@@ -22,8 +22,8 @@ using Chickensoft.Serialization;
 /// </para>
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
-public interface ILogicBlock<TState> : ISerializableBlackboard
-where TState : StateLogic<TState> {
+public interface ILogicBlock<TState> :
+ILogicBlockBase, ISerializableBlackboard where TState : StateLogic<TState> {
   /// <summary>
   /// Logic block execution context.
   /// </summary>
@@ -104,7 +104,7 @@ where TState : StateLogic<TState> {
   /// Restores the logic block from a deserialized logic block.
   /// </summary>
   /// <param name="logic">Other logic block.</param>
-  void RestoreFrom(LogicBlockBase logic);
+  void RestoreFrom(ILogicBlock<TState> logic);
 
   /// <summary>
   /// Adds a binding to the logic block. This is used internally by the standard
@@ -161,7 +161,7 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
 
   #region LogicBlockBase
   /// <inheritdoc />
-  internal override object? ValueAsObject => _value;
+  public override object? ValueAsObject => _value;
 
   /// <inheritdoc />
   public override void RestoreState(object state) {
@@ -171,7 +171,7 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
       );
     }
 
-    _restoredState = (TState)state;
+    RestoredState = (TState)state;
   }
   #endregion LogicBlockBase
 
@@ -313,63 +313,63 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
 
   #region IReadOnlyBlackboard
   /// <inheritdoc />
-  public IReadOnlySet<Type> Types => _blackboard.Types;
+  public IReadOnlySet<Type> Types => Blackboard.Types;
 
   /// <inheritdoc />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public TData Get<TData>() where TData : class => _blackboard.Get<TData>();
+  public TData Get<TData>() where TData : class => Blackboard.Get<TData>();
 
   /// <inheritdoc />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public object GetObject(Type type) => _blackboard.GetObject(type);
+  public object GetObject(Type type) => Blackboard.GetObject(type);
 
   /// <inheritdoc />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public bool Has<TData>() where TData : class => _blackboard.Has<TData>();
+  public bool Has<TData>() where TData : class => Blackboard.Has<TData>();
 
   /// <inheritdoc />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public bool HasObject(Type type) => _blackboard.HasObject(type);
+  public bool HasObject(Type type) => Blackboard.HasObject(type);
   #endregion IReadOnlyBlackboard
 
   #region IBlackboard
   /// <inheritdoc cref="IBlackboard.Set{TData}(TData)" />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public void Set<TData>(TData data) where TData : class =>
-    _blackboard.Set(data);
+    Blackboard.Set(data);
 
   /// <inheritdoc cref="IBlackboard.SetObject(Type, object)" />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public void SetObject(Type type, object data) =>
-    _blackboard.SetObject(type, data);
+    Blackboard.SetObject(type, data);
 
   /// <inheritdoc cref="IBlackboard.Overwrite{TData}(TData)" />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public void Overwrite<TData>(TData data) where TData : class =>
-    _blackboard.Overwrite(data);
+    Blackboard.Overwrite(data);
 
   /// <inheritdoc cref="IBlackboard.OverwriteObject(Type, object)" />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public void OverwriteObject(Type type, object data) =>
-    _blackboard.OverwriteObject(type, data);
+    Blackboard.OverwriteObject(type, data);
   #endregion IBlackboard
 
   #region ISerializableBlackboard
   /// <inheritdoc cref="ISerializableBlackboard.SavedTypes" />
-  public IEnumerable<Type> SavedTypes => _blackboard.SavedTypes;
+  public IEnumerable<Type> SavedTypes => Blackboard.SavedTypes;
 
   /// <inheritdoc cref="ISerializableBlackboard.TypesToSave" />
-  public IEnumerable<Type> TypesToSave => _blackboard.TypesToSave;
+  public IEnumerable<Type> TypesToSave => Blackboard.TypesToSave;
 
   /// <inheritdoc cref="ISerializableBlackboard.Save{TData}(Func{TData})" />
   public void Save<TData>(Func<TData> factory)
-    where TData : class, IIdentifiable => _blackboard.Save(factory);
+    where TData : class, IIdentifiable => Blackboard.Save(factory);
 
   /// <inheritdoc
   /// cref="ISerializableBlackboard.SaveObject(Type, Func{object}, object?)" />
   public void SaveObject(
     Type type, Func<object> factory, object? referenceValue
-  ) => _blackboard.SaveObject(type, factory, referenceValue);
+  ) => Blackboard.SaveObject(type, factory, referenceValue);
   #endregion ISerializableBlackboard
 
   internal TState ProcessInputs<TInputType>(
@@ -379,8 +379,8 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
 
     if (_value is null) {
       // No state yet. Let's get the first state going!
-      ChangeState(_restoredState as TState ?? GetInitialState().State);
-      _restoredState = null;
+      ChangeState(RestoredState as TState ?? GetInitialState().State);
+      RestoredState = null;
     }
 
     // We can always process the first input directly.
@@ -489,7 +489,7 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   private TState Flush() {
     if (_value is null) {
-      _blackboard.InstantiateAnyMissingSavedData();
+      Blackboard.InstantiateAnyMissingSavedData();
     }
 
     return ProcessInputs<int>();
@@ -518,16 +518,16 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
     }
 
     // Ensure blackboard entries are equal.
-    var types = _blackboard.Types;
-    var otherTypes = logic._blackboard.Types;
+    var types = Blackboard.Types;
+    var otherTypes = logic.Blackboard.Types;
 
     if (types.Count != otherTypes.Count) { return false; }
 
     foreach (var type in types) {
       if (!otherTypes.Contains(type)) { return false; }
 
-      var obj1 = _blackboard.GetObject(type);
-      var obj2 = logic._blackboard.GetObject(type);
+      var obj1 = Blackboard.GetObject(type);
+      var obj2 = logic.Blackboard.GetObject(type);
 
       if (SerializationUtilities.IsEquivalent(obj1, obj2)) {
         continue;
@@ -545,15 +545,15 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
   public override int GetHashCode() => base.GetHashCode();
 
   /// <inheritdoc />
-  public void RestoreFrom(LogicBlockBase logic) {
-    if ((logic.ValueAsObject ?? logic._restoredState) is not TState state) {
-      throw new LogicBlockException($"Cannot restore from logic block {logic}");
+  public void RestoreFrom(ILogicBlock<TState> logic) {
+    if ((logic.ValueAsObject ?? logic.RestoredState) is not TState state) {
+      throw new LogicBlockException($"Cannot restore from logic block {logic}.");
     }
 
     Stop();
 
-    foreach (var type in logic._blackboard.Types) {
-      _blackboard.OverwriteObject(type, logic._blackboard.GetObject(type));
+    foreach (var type in logic.Blackboard.Types) {
+      Blackboard.OverwriteObject(type, logic.Blackboard.GetObject(type));
     }
 
     var stateType = state.GetType();
