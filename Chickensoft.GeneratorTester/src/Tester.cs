@@ -88,55 +88,6 @@ public static class Tester {
       .DescendantNodes()
       .First(node => node is T);
 
-  /// <summary>
-  /// Parses the given code and returns the first node of the given type within
-  /// the syntax tree and the semantic model for the code.
-  /// </summary>
-  /// <param name="code">Source code string.</param>
-  /// <param name="symbol">Symbol for the node found in the tree.</param>
-  /// <typeparam name="TNode">Type of the node to find in the tree.</typeparam>
-  /// <typeparam name="TSymbol">Type of symbol to find.</typeparam>
-  /// <returns>First matching node within the tree of type
-  /// <typeparamref name="TNode" />.</returns>
-  public static TNode Parse<TNode, TSymbol>(string code, out TSymbol symbol)
-    where TNode : SyntaxNode
-    where TSymbol : ISymbol {
-    var tree = CSharpSyntaxTree.ParseText(code);
-    var node = (TNode)tree
-      .GetRoot()
-      .DescendantNodes()
-      .First(node => node is TNode);
-
-    symbol = GetSymbol<TNode, TSymbol>(tree, node);
-
-    return node;
-  }
-
-  /// <summary>
-  /// Given a syntax tree and a node of a given type, returns the symbol for
-  /// that node.
-  /// </summary>
-  /// <param name="tree">Syntax tree.</param>
-  /// <param name="node">Syntax node within the tree.</param>
-  /// <typeparam name="TNode">Type of the syntax node given.</typeparam>
-  /// <typeparam name="TSymbol">Type of the symbol to get.</typeparam>
-  /// <returns>Symbol associated with the syntax tree node.</returns>
-  public static TSymbol GetSymbol<TNode, TSymbol>(SyntaxTree tree, TNode node)
-    where TNode : SyntaxNode
-    where TSymbol : ISymbol {
-    var references = AppDomain.CurrentDomain.GetAssemblies()
-      .Where(assembly => !assembly.IsDynamic)
-      .Select(assembly => MetadataReference.CreateFromFile(assembly.Location))
-      .Cast<MetadataReference>();
-
-    return (TSymbol)CSharpCompilation
-    .Create("AssemblyName")
-    .AddReferences(references)
-    .AddSyntaxTrees(tree)
-    .GetSemanticModel(tree)
-    .GetDeclaredSymbol(node)!;
-  }
-
   public static string LoadFixture(
     string relativePathInProject,
     [CallerFilePath] string? callerFilePath = null
