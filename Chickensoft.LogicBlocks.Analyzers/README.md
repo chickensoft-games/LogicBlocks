@@ -1,3 +1,3 @@
 # Logic Blocks Analyzer
 
-Provides an analyzer and code fix for LogicBlocks.
+Provides an analyzer for LogicBlocks.
