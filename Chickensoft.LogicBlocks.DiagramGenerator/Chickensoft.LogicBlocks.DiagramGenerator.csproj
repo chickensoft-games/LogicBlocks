@@ -8,7 +8,8 @@
     <LangVersion>preview</LangVersion>
     <RootNamespace>Chickensoft.LogicBlocks.DiagramGenerator</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <NoWarn>NU5128</NoWarn>
+    <!-- RS1035: We're deliberately doing file output in an analyzer -->
+    <NoWarn>NU5128;RS1035</NoWarn>
     <OutputPath>./nupkg</OutputPath>
     <IsRoslynComponent>true</IsRoslynComponent>
     <AnalyzerLanguage>cs</AnalyzerLanguage>
