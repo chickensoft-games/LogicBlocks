@@ -1,11 +1,11 @@
-namespace Chickensoft.LogicBlocks.Analyzers;
+namespace Chickensoft.LogicBlocks.CodeFixes;
 
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Chickensoft.LogicBlocks.Analyzers.Utils;
+using Chickensoft.LogicBlocks.CodeFixes.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;

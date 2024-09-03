@@ -3,31 +3,30 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks", "Chickensoft.LogicBlocks\Chickensoft.LogicBlocks.csproj", "{B3B047A2-6F61-416C-8F46-3B6E3E8F35F9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chickensoft.LogicBlocks", "Chickensoft.LogicBlocks\Chickensoft.LogicBlocks.csproj", "{B3B047A2-6F61-416C-8F46-3B6E3E8F35F9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.Tests", "Chickensoft.LogicBlocks.Tests\Chickensoft.LogicBlocks.Tests.csproj", "{00414FB6-7CE0-4CE5-AEF5-A963FD93EE6D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chickensoft.LogicBlocks.Tests", "Chickensoft.LogicBlocks.Tests\Chickensoft.LogicBlocks.Tests.csproj", "{00414FB6-7CE0-4CE5-AEF5-A963FD93EE6D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.Example", "Chickensoft.LogicBlocks.Example\Chickensoft.LogicBlocks.Example.csproj", "{B1161A42-CC61-4238-9E34-007A37C84841}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chickensoft.LogicBlocks.Example", "Chickensoft.LogicBlocks.Example\Chickensoft.LogicBlocks.Example.csproj", "{B1161A42-CC61-4238-9E34-007A37C84841}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.DiagramGenerator", "Chickensoft.LogicBlocks.DiagramGenerator\Chickensoft.LogicBlocks.DiagramGenerator.csproj", "{D6C4E778-70FF-461C-A59C-F3668C175602}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chickensoft.LogicBlocks.DiagramGenerator", "Chickensoft.LogicBlocks.DiagramGenerator\Chickensoft.LogicBlocks.DiagramGenerator.csproj", "{D6C4E778-70FF-461C-A59C-F3668C175602}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.DiagramGenerator.Tests", "Chickensoft.LogicBlocks.DiagramGenerator.Tests\Chickensoft.LogicBlocks.DiagramGenerator.Tests.csproj", "{D8CB5FA1-4748-4BAF-BB93-88B4C5CF272A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chickensoft.LogicBlocks.DiagramGenerator.Tests", "Chickensoft.LogicBlocks.DiagramGenerator.Tests\Chickensoft.LogicBlocks.DiagramGenerator.Tests.csproj", "{D8CB5FA1-4748-4BAF-BB93-88B4C5CF272A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.GeneratorTester", "Chickensoft.GeneratorTester\Chickensoft.GeneratorTester.csproj", "{33A2BAAC-5FAC-4869-B901-45286A1B54A8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chickensoft.GeneratorTester", "Chickensoft.GeneratorTester\Chickensoft.GeneratorTester.csproj", "{33A2BAAC-5FAC-4869-B901-45286A1B54A8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.Analyzers", "Chickensoft.LogicBlocks.Analyzers\Chickensoft.LogicBlocks.Analyzers.csproj", "{FC526459-EB9E-4B81-B0BA-C3B3FD1BCAF7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chickensoft.LogicBlocks.Analyzers", "Chickensoft.LogicBlocks.Analyzers\Chickensoft.LogicBlocks.Analyzers.csproj", "{FC526459-EB9E-4B81-B0BA-C3B3FD1BCAF7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.Tutorial", "Chickensoft.LogicBlocks.Tutorial\Chickensoft.LogicBlocks.Tutorial.csproj", "{16494DAA-416E-47C5-9A31-A9D27C6DAD21}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chickensoft.LogicBlocks.Tutorial", "Chickensoft.LogicBlocks.Tutorial\Chickensoft.LogicBlocks.Tutorial.csproj", "{16494DAA-416E-47C5-9A31-A9D27C6DAD21}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chickensoft.LogicBlocks.Tutorial.Tests", "Chickensoft.LogicBlocks.Tutorial.Tests\Chickensoft.LogicBlocks.Tutorial.Tests.csproj", "{791115C7-7CFA-46D6-AD17-E8A276E6BF9B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chickensoft.LogicBlocks.Tutorial.Tests", "Chickensoft.LogicBlocks.Tutorial.Tests\Chickensoft.LogicBlocks.Tutorial.Tests.csproj", "{791115C7-7CFA-46D6-AD17-E8A276E6BF9B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chickensoft.LogicBlocks.CodeFixes", "Chickensoft.LogicBlocks.CodeFixes\Chickensoft.LogicBlocks.CodeFixes.csproj", "{80917C18-73A5-4032-96C5-AC40A7E0DD3A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{B3B047A2-6F61-416C-8F46-3B6E3E8F35F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -66,5 +65,12 @@ Global
 		{791115C7-7CFA-46D6-AD17-E8A276E6BF9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{791115C7-7CFA-46D6-AD17-E8A276E6BF9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{791115C7-7CFA-46D6-AD17-E8A276E6BF9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80917C18-73A5-4032-96C5-AC40A7E0DD3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80917C18-73A5-4032-96C5-AC40A7E0DD3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80917C18-73A5-4032-96C5-AC40A7E0DD3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80917C18-73A5-4032-96C5-AC40A7E0DD3A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal
