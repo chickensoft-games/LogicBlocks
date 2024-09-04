@@ -14,7 +14,7 @@
       "groupName": "all dependencies",
       "groupSlug": "all-deps",
       "automerge": true,
-      "allowedVersions": "!/preview/"
+      "allowedVersions": "!/(preview|final)/"
     },
     {
       "matchPackagePrefixes": [
