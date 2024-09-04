@@ -66,11 +66,18 @@
           <OutputItemType>Content</OutputItemType>
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </ProjectReference>
+    <ProjectReference Include="..\Chickensoft.LogicBlocks.CodeFixes\Chickensoft.LogicBlocks.CodeFixes.csproj" Pack="false">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <OutputItemType>Content</OutputItemType>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
     <None Remove="$(OutputPath)/Chickensoft.LogicBlocks.Analyzers.dll" />
     <None Include="$(OutputPath)/Chickensoft.LogicBlocks.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Remove="$(OutputPath)/Chickensoft.LogicBlocks.CodeFixes.dll" />
+    <None Include="$(OutputPath)/Chickensoft.LogicBlocks.CodeFixes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
 
   <!-- Include the stuff inside ./buildTransitive so our props get picked up by consuming packages -->

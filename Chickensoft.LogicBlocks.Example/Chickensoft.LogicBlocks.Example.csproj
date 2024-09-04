@@ -21,6 +21,7 @@
 
     <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
     <ProjectReference Include="../Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
+    <ProjectReference Include="../Chickensoft.LogicBlocks.CodeFixes/Chickensoft.LogicBlocks.CodeFixes.csproj" PrivateAssets="all" OutputItemType="analyzer" />
     <ProjectReference Include="../Chickensoft.LogicBlocks.Analyzers/Chickensoft.LogicBlocks.Analyzers.csproj" PrivateAssets="all" OutputItemType="analyzer" />
   </ItemGroup>
 
