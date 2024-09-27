@@ -13,6 +13,17 @@ coverage/
 nupkg/
 .generated/
 .vs/
+.idea/
 .DS_Store
 *.DotSettings.user
 *.binlog
+
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# User-specific files (MonoDevelop/Xamarin Studio)
+*.userprefs
