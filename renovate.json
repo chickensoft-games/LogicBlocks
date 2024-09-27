@@ -1,38 +1,22 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base",
-    ":semanticCommits"
-  ],
+  "extends": ["config:recommended", ":semanticCommits"],
   "prHourlyLimit": 2,
-  "versioning": "loose",
   "packageRules": [
     {
-      "matchPackagePatterns": [
-        "*"
-      ],
       "groupName": "all dependencies",
       "groupSlug": "all-deps",
       "automerge": true,
-      "allowedVersions": "!/(preview|final)/"
+      "matchPackageNames": ["*"]
     },
     {
-      "matchPackagePrefixes": [
-        "dotnet-sdk"
-      ],
-      "allowedVersions": "/^$/"
+      "matchPackageNames": ["dotnet-sdk{/,}**"]
     },
     {
-      "matchPackagePrefixes": [
-        "GodotSharp",
-        "Godot.NET.Sdk"
-      ],
-      "allowedVersions": "/^$/"
+      "matchPackageNames": ["GodotSharp{/,}**", "Godot.NET.Sdk{/,}**"]
     },
     {
-      "matchPackagePrefixes": [
-        "Chickensoft"
-      ],
+      "matchPackageNames": ["Chickensoft{/,}**"],
       "allowedVersions": "/^(\\d+\\.\\d+\\.\\d+)(-godot(\\d+\\.)+\\d+(-.*)?)?$/"
     }
   ]
