@@ -62,7 +62,6 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
     // --------------------------------------------------------------------- //
 
     var options = context.AnalyzerConfigOptionsProvider
-
       .Select((options, _) => {
         var disabled = options.GlobalOptions.TryGetValue(
           $"build_property.{Constants.DISABLE_CSPROJ_PROP}", out var value
@@ -222,6 +221,11 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
       (type) => CodeService.GetAllBaseTypes(type).Any(
           (baseType) => SymbolEqualityComparer.Default.Equals(
             baseType, concreteState
+          ) || (
+            concreteState.IsGenericType &&
+            SymbolEqualityComparer.Default.Equals(
+              baseType, concreteState.OriginalDefinition
+            )
           )
         )
       );
@@ -341,7 +345,7 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
       FilePath: destFile,
       Id: CodeService.GetNameFullyQualified(symbol, symbol.Name),
       Name: symbol.Name,
-      InitialStateIds: initialStateIds.ToImmutableHashSet(),
+      InitialStateIds: [.. initialStateIds],
       Graph: root,
       StatesById: stateGraphsById.ToImmutableDictionary()
     );

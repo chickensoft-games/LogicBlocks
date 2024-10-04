@@ -30,10 +30,16 @@ public sealed record LogicBlockGraph(
     string baseId
   ) : this(id, name, baseId, new()) { }
 
+  /// <summary>
+  /// UML-friendly identifier for the logic block graph.
+  /// </summary>
   public string UmlId => Id
     .Replace("global::", "")
     .Replace(':', '_')
-    .Replace('.', '_');
+    .Replace('.', '_')
+    .Replace('<', '_')
+    .Replace('>', '_')
+    .Replace(',', '_');
 
   public override string ToString() => Describe(0);
 
