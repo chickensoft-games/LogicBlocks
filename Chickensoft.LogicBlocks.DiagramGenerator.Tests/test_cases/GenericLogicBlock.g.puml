@@ -1,0 +1,6 @@
+@startuml GenericLogicBlock
+state "GenericLogicBlock State" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_MyGenericType___GenericLogicBlock_State {
+  state "StateOne" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_MyGenericType_GenericLogicBlock_StateOne
+  state "StateTwo" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_MyGenericType_GenericLogicBlock_StateTwo
+}
+@enduml
