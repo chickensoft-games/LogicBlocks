@@ -232,7 +232,9 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
 
     // Base state becomes the root
     var root = new LogicBlockGraph(
-      id: CodeService.GetNameFullyQualified(concreteState, concreteState.Name),
+      id: CodeService.GetNameFullyQualifiedWithoutGenerics(
+        concreteState, concreteState.Name
+      ),
       name: concreteState.Name,
       baseId: CodeService.GetNameFullyQualifiedWithoutGenerics(
         concreteState, concreteState.Name

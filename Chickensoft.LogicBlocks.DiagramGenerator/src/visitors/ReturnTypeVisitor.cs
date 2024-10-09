@@ -18,7 +18,7 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
   public INamedTypeSymbol StateType { get; }
   private readonly HashSet<string> _returnTypes = new();
 
-  public ImmutableHashSet<string> ReturnTypes => _returnTypes.ToImmutableHashSet();
+  public ImmutableHashSet<string> ReturnTypes => [.. _returnTypes];
 
   public ReturnTypeVisitor(
     SemanticModel model,
