@@ -96,9 +96,8 @@ Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_LightSwitch_State_Power
 
 Generated UML diagrams are placed alongside the code for your logic block with the `*.g.puml` extension. You can use [PlantUML] (and/or the [PlantUML VSCode Extension]) to visualize the generated diagram code.
 
-:::tip
-A diagram explains all of the high level behavior of a state machine in a single picture. Without a diagram, you would have to read and scroll through all the relevant code files to understand the machine (especially if you weren't the author, or forgot how it worked since you had written it).
-:::
+> [!TIP]
+> A diagram explains all of the high level behavior of a state machine in a single picture. Without a diagram, you would have to read and scroll through all the relevant code files to understand the machine (especially if you weren't the author, or forgot how it worked since you had written it).
 
 ## 🤫 Differences from Statecharts
 
