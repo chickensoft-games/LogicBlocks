@@ -547,17 +547,17 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
       }
 
       var onTypeItself = interfaces.Contains(handledInputInterface);
-      var isOverride = methodSymbol.IsOverride;
 
-      if (!onTypeItself && !isOverride) {
-        // type is not on the current type (so it's a base type) and it's
-        // not an override.
+      if (!onTypeItself) {
+        // method is not on the current type (so it must be implemented on a
+        // base type) and it's not an override.
         //
-        // we have to check for this case since Roslyn doesn't return the
-        // overridden method on the derived type when asking for an interface's
-        // member implementation method, so we look up the override ourselves.
+        // we have to check for this case since Roslyn doesn't return
+        // overridden methods on the derived type when asking for an interface's
+        // member implementation method — we have to look up the overrides
+        // ourselves :/
 
-        // find overridden method on current derived type
+        // find any equivalent, overridden method on the current derived type
         methodSymbol = type.GetMembers()
           .OfType<IMethodSymbol>()
           .FirstOrDefault(
