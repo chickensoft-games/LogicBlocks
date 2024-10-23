@@ -25,21 +25,21 @@
     <PackageReleaseNotes>LogicBlocks CodeFixes release.</PackageReleaseNotes>
     <PackageIcon>icon.png</PackageIcon>
     <PackageTags>state management;bloc;godot;game;state machine</PackageTags>
-     <PackageReadmeFile>README.md</PackageReadmeFile> 
+     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/chickensoft-games/LogicBlocks</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- Has to be in its own item group -->
-     <None Include="./README.md" Pack="true" PackagePath="\" /> 
+     <None Include="./README.md" Pack="true" PackagePath="\" />
     <None Include="../LICENSE" Pack="true" PackagePath="\" />
     <None Include="../Chickensoft.LogicBlocks/icon.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <!-- The following libraries include the types we need -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.10.0" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- This ensures the library will be packaged as an analyzer when we use `dotnet pack` -->
