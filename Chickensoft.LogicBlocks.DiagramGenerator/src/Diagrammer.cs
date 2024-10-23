@@ -550,7 +550,7 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
 
       if (!onTypeItself) {
         // method is not on the current type (so it must be implemented on a
-        // base type) and it's not an override.
+        // base type).
         //
         // we have to check for this case since Roslyn doesn't return
         // overridden methods on the derived type when asking for an interface's
