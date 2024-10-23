@@ -499,12 +499,16 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
     // Get all of the handled inputs by looking at the implemented input
     // handler interfaces.
 
-    var handledInputInterfaces = type.Interfaces.Where(
+    var handledInputInterfaces = type.AllInterfaces.Where(
       (interfaceType) => CodeService.GetNameFullyQualifiedWithoutGenerics(
         interfaceType, interfaceType.Name
       ) is
         Constants.LOGIC_BLOCK_INPUT_INTERFACE_ID &&
         interfaceType.TypeArguments.Length == 1
+    );
+
+    var interfaces = new HashSet<INamedTypeSymbol>(
+      type.Interfaces, SymbolEqualityComparer.Default
     );
 
     // Get all syntax nodes comprising this type declaration.
@@ -542,15 +546,36 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
         continue;
       }
 
+      var onTypeItself = interfaces.Contains(handledInputInterface);
+
+      if (!onTypeItself) {
+        // method is not on the current type (so it must be implemented on a
+        // base type).
+        //
+        // we have to check for this case since Roslyn doesn't return
+        // overridden methods on the derived type when asking for an interface's
+        // member implementation method — we have to look up the overrides
+        // ourselves :/
+
+        // find any equivalent, overridden method on the current derived type
+        methodSymbol = type.GetMembers()
+          .OfType<IMethodSymbol>()
+          .FirstOrDefault(
+            member => SymbolEqualityComparer.Default.Equals(
+              member.OverriddenMethod, methodSymbol
+            )
+          );
+
+        if (methodSymbol is null) {
+          continue;
+        }
+      }
+
       var handlerMethodSyntaxes = methodSymbol
         .DeclaringSyntaxReferences
         .Select(syntaxRef => syntaxRef.GetSyntax(token))
         .OfType<MethodDeclarationSyntax>()
         .ToImmutableArray();
-
-      if (handlerMethodSyntaxes.Length == 0) {
-        continue;
-      }
 
       foreach (var methodSyntax in handlerMethodSyntaxes) {
         inputHandlerMethods.Add(methodSyntax);
