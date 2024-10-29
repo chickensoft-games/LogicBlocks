@@ -13,7 +13,8 @@
       "matchPackageNames": ["dotnet-sdk{/,}**"]
     },
     {
-      "matchPackageNames": ["Microsoft.CodeAnalysis.CSharp.Workspaces"]
+      "matchPackageNames": ["Microsoft.CodeAnalysis.CSharp.Workspaces"],
+      "enabled": false
     },
     {
       "matchPackageNames": ["GodotSharp{/,}**", "Godot.NET.Sdk{/,}**"]
