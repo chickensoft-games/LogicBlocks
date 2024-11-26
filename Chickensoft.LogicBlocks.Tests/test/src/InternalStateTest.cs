@@ -34,7 +34,7 @@ public class InternalSharedStateTest {
 
   [Fact]
   public void EqualsAnythingElse() {
-    var state = new InternalState();
+    var state = new InternalState(new FakeLogicBlock.ContextAdapter());
     state.Equals(new object()).ShouldBeTrue();
   }
 }

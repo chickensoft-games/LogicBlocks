@@ -503,6 +503,8 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
   /// <param name="obj">Other logic block.</param>
   /// <returns>True if</returns>
   public override bool Equals(object? obj) {
+    if (ReferenceEquals(this, obj)) { return true; }
+
     if (obj is not LogicBlockBase logic) { return false; }
 
     if (GetType() != logic.GetType()) {

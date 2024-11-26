@@ -7,7 +7,7 @@ using System.Collections.Generic;
 /// Internal state stored in each logic block state. This is used to store
 /// entrance and exit callbacks without tripping up equality checking.
 /// </summary>
-internal readonly struct InternalState {
+internal class InternalState {
   /// <summary>
   /// Callbacks to be invoked when the state is entered.
   /// </summary>
