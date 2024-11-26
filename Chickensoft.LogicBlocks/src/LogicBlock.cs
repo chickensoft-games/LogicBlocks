@@ -104,7 +104,9 @@ ILogicBlockBase, ISerializableBlackboard where TState : StateLogic<TState> {
   /// Restores the logic block from a deserialized logic block.
   /// </summary>
   /// <param name="logic">Other logic block.</param>
-  void RestoreFrom(ILogicBlock<TState> logic);
+  /// <param name="shouldCallOnEnter">Whether or not to call OnEnter callbacks
+  /// when entering the restored state.</param>
+  void RestoreFrom(ILogicBlock<TState> logic, bool shouldCallOnEnter = true);
 
   /// <summary>
   /// Adds a binding to the logic block. This is used internally by the standard
@@ -179,6 +181,11 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
   private int _isProcessing;
   private readonly BoxlessQueue _inputs;
   private readonly HashSet<ILogicBlockBinding<TState>> _bindings = new();
+
+  // Sometimes, it is preferable not to call OnEnter callbacks when starting
+  // a logic block, such as when restoring from a saved / serialized logic
+  // block.
+  private bool _shouldCallOnEnter = true;
 
   /// <summary>
   /// <para>Creates a new LogicBlock.</para>
@@ -395,6 +402,8 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
 
     _isProcessing--;
 
+    _shouldCallOnEnter = true;
+
     return _value!;
   }
 
@@ -433,7 +442,11 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
 
     if (state is not null) {
       state.Attach(Context);
-      state.Enter(previous);
+
+      if (_shouldCallOnEnter) {
+        state.Enter(previous);
+      }
+
       if (stateIsDifferent) {
         AnnounceState(state);
       }
@@ -503,6 +516,8 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
   /// <param name="obj">Other logic block.</param>
   /// <returns>True if</returns>
   public override bool Equals(object? obj) {
+    if (ReferenceEquals(this, obj)) { return true; }
+
     if (obj is not LogicBlockBase logic) { return false; }
 
     if (GetType() != logic.GetType()) {
@@ -545,9 +560,16 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
   public override int GetHashCode() => base.GetHashCode();
 
   /// <inheritdoc />
-  public void RestoreFrom(ILogicBlock<TState> logic) {
+  public void RestoreFrom(
+    ILogicBlock<TState> logic, bool shouldCallOnEnter = true
+  ) {
+    _shouldCallOnEnter = shouldCallOnEnter;
+
     if ((logic.ValueAsObject ?? logic.RestoredState) is not TState state) {
-      throw new LogicBlockException($"Cannot restore from logic block {logic}.");
+      throw new LogicBlockException(
+        $"Cannot restore from an uninitialized logic block ({logic}). Please " +
+        "make sure you've called Start() on it first."
+      );
     }
 
     Stop();

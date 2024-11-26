@@ -192,11 +192,9 @@ public partial class LogicBlockTest {
   [Fact]
   public void CallsEnterAndExitOnStatesInProperOrder() {
     var logic = new TestMachine();
+
     using var listener = Listen(logic);
-    var context = new TestMachine.DefaultContext(logic);
-
     var outputs = new List<object>();
-
     void onOutput(object output) => outputs.Add(output);
 
     listener.OnOutput += onOutput;
@@ -522,6 +520,13 @@ public partial class LogicBlockTest {
     private sealed record TestValue(int Value);
 
     [Fact]
+    public void EqualToItself() {
+      var logic = new FakeLogicBlock();
+
+      logic.Equals(logic).ShouldBeTrue();
+    }
+
+    [Fact]
     public void NotEqualToNonLogicBlock() {
       var logic = new FakeLogicBlock();
       var obj = new object();
@@ -628,6 +633,67 @@ public partial class LogicBlockTest {
 
       other.Value.ShouldBeOfType<FakeLogicBlock.State.StateB>();
       other.Get<string>().ShouldBe(data);
+    }
+
+    [Fact]
+    public void RestoreFromCallsOnEnter() {
+      var logic = new SerializableLogicBlockWithOnEnter();
+      logic.Input(new SerializableLogicBlockWithOnEnter.Input.GoToA());
+
+      var other = new SerializableLogicBlockWithOnEnter();
+
+      using var listener = Listen(other);
+      var outputs = new List<object>();
+      void onOutput(object output) => outputs.Add(output);
+
+      listener.OnOutput += onOutput;
+
+      other.RestoreFrom(logic, shouldCallOnEnter: true);
+
+      other
+        .Get<SerializableLogicBlockWithOnEnter.Data>()
+        .AutomaticallyLeaveAOnEnter = true;
+
+      other.Start();
+
+      outputs.ShouldBe(new object[] {
+        new SerializableLogicBlockWithOnEnter.Output.StateEntered(),
+        new SerializableLogicBlockWithOnEnter.Output.StateAEntered(),
+        new SerializableLogicBlockWithOnEnter.Output.StateBEntered()
+      });
+
+      other
+        .Value
+        .ShouldBeOfType<SerializableLogicBlockWithOnEnter.StateB>();
+    }
+
+    [Fact]
+    public void RestoreFromDoesNotCallOnEnter() {
+      var logic = new SerializableLogicBlockWithOnEnter();
+      logic.Input(new SerializableLogicBlockWithOnEnter.Input.GoToA());
+
+      var other = new SerializableLogicBlockWithOnEnter();
+
+      using var listener = Listen(other);
+      var outputs = new List<object>();
+      void onOutput(object output) => outputs.Add(output);
+
+      listener.OnOutput += onOutput;
+
+      other.RestoreFrom(logic, shouldCallOnEnter: false);
+
+      other
+        .Get<SerializableLogicBlockWithOnEnter.Data>()
+        .AutomaticallyLeaveAOnEnter = true;
+
+      other.Start();
+
+      outputs.ShouldBeEmpty();
+
+      // Should be in StateA, since OnEnter was not called.
+      other
+        .Value
+        .ShouldBeOfType<SerializableLogicBlockWithOnEnter.StateA>();
     }
   }
 }
