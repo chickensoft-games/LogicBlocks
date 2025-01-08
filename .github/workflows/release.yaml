@@ -23,7 +23,6 @@ jobs:
       - name: 🧾 Checkout
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_BASIC }}
           lfs: true
           submodules: "recursive"
           fetch-depth: 0 # So we can get all tags.
