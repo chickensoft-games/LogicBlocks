@@ -56,7 +56,7 @@
     <PackageReference Include="System.Text.Json" Version="9.0.0" />
     <PackageReference Include="Chickensoft.Collections" Version="1.12.6" />
     <PackageReference Include="Chickensoft.Introspection" Version="2.2.0" />
-    <PackageReference Include="Chickensoft.Serialization" Version="2.1.0" />
+    <PackageReference Include="Chickensoft.Serialization" Version="2.2.0" />
   </ItemGroup>
 
   <!-- Include analyzers as part of logic blocks -->

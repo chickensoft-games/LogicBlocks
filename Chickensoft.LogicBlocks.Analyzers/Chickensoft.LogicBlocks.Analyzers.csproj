@@ -39,7 +39,7 @@
 
   <!-- The following libraries include the types we need -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- This ensures the library will be packaged as an analyzer when we use `dotnet pack` -->
