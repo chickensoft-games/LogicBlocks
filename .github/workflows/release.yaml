@@ -30,9 +30,8 @@ jobs:
 
       - name: 🔎 Read Current Project Version
         id: current-version
-        uses: WyriHaximus/github-action-get-previous-tag@v1
-        with:
-          fallback: "0.0.0-devbuild"
+        run: |
+          echo "tag=$(git tag --sort=v:refname | grep -E '^[^v]' | tail -1)" >> "$GITHUB_OUTPUT"
 
       - name: 🖨 Print Current Version
         run: |
