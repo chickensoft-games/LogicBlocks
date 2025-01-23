@@ -156,6 +156,10 @@ public partial class FakeLogicBlock {
 public partial class FakeLogicBlock : LogicBlock<FakeLogicBlock.State> {
   public Func<Transition>? InitialState { get; set; }
 
+  public Action? OnStartCalled { get; set; }
+
+  public Action? OnStopCalled { get; set; }
+
   public List<Exception> Exceptions { get; } = new();
 
   public override Transition GetInitialState() =>
@@ -166,6 +170,10 @@ public partial class FakeLogicBlock : LogicBlock<FakeLogicBlock.State> {
   public FakeLogicBlock(Action<Exception>? onError = null) {
     _onError = onError;
   }
+
+  public override void OnStart() => OnStartCalled?.Invoke();
+
+  public override void OnStop() => OnStopCalled?.Invoke();
 
   ~FakeLogicBlock() { }
 
