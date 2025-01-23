@@ -226,9 +226,17 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
     Flush();
   }
 
+  /// <summary>
+  /// Called when the logic block is started. Override this method to
+  /// perform any initialization logic.
+  /// </summary>
+  public virtual void OnStart() { }
+
   /// <inheritdoc />
   public void Stop() {
     if (IsProcessing || _value is null) { return; }
+
+    OnStop();
 
     // Repeatedly exit and detach the current state until there is none.
     ChangeState(null);
@@ -238,6 +246,12 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
     // A state finally exited and detached without queuing additional inputs.
     _value = null;
   }
+
+  /// <summary>
+  /// Called when the logic block is stopped. Override this method to
+  /// perform any cleanup logic.
+  /// </summary>
+  public virtual void OnStop() { }
 
   /// <inheritdoc />
   public TState ForceReset(TState state) {
@@ -386,6 +400,8 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
 
     if (_value is null) {
       // No state yet. Let's get the first state going!
+      OnStart();
+      Blackboard.InstantiateAnyMissingSavedData();
       ChangeState(RestoredState as TState ?? GetInitialState().State);
       RestoredState = null;
     }
@@ -500,13 +516,7 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
   /// </summary>
   /// <returns>The resting state.</returns>
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private TState Flush() {
-    if (_value is null) {
-      Blackboard.InstantiateAnyMissingSavedData();
-    }
-
-    return ProcessInputs<int>();
-  }
+  private TState Flush() => ProcessInputs<int>();
 
   /// <summary>
   /// Determines if two logic blocks are equivalent. Logic blocks are equivalent

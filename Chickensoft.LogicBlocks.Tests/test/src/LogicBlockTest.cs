@@ -327,20 +327,24 @@ public partial class LogicBlockTest {
   [Fact]
   public void StartEntersState() {
     var enterCalled = false;
+    var onStartCalled = false;
     var context = new FakeContext();
     var block = new FakeLogicBlock() {
       InitialState = () =>
         new FakeLogicBlock.Transition(new FakeLogicBlock.State.OnEnterState() {
           Callback = (previous) => enterCalled = true
-        })
+        }),
+      OnStartCalled = () => onStartCalled = true
     };
 
     enterCalled.ShouldBeFalse();
+    onStartCalled.ShouldBeFalse();
 
     block.Start();
     block.Start(); // Should do nothing.
 
     enterCalled.ShouldBeTrue();
+    onStartCalled.ShouldBeTrue();
   }
 
   [Fact]
@@ -358,30 +362,49 @@ public partial class LogicBlockTest {
   }
 
   [Fact]
+  public void ImplicitStartCallsOnStart() {
+    var onStartCalled = false;
+    var logic = new FakeLogicBlock() {
+      OnStartCalled = () => onStartCalled = true
+    };
+
+    logic.Input(new FakeLogicBlock.Input.InputOne(2, 3));
+
+    onStartCalled.ShouldBeTrue();
+  }
+
+  [Fact]
   public void StopExitsState() {
     var exitCalled = false;
+    var onStopCalled = false;
     var context = new FakeContext();
     var block = new FakeLogicBlock() {
       InitialState = () => new FakeLogicBlock.Transition(
         new FakeLogicBlock.State.OnExitState() {
           Callback = (previous) => exitCalled = true
         }
-      )
+      ),
+      OnStopCalled = () => onStopCalled = true
     };
 
     exitCalled.ShouldBeFalse();
+    onStopCalled.ShouldBeFalse();
 
     block.Start();
     block.Stop();
     block.Stop(); // Should do nothing.
 
     exitCalled.ShouldBeTrue();
+    onStopCalled.ShouldBeTrue();
   }
 
   [Fact]
   public void StopDoesNothingIfProcessing() {
+    var onStopCalled = false;
     var context = new FakeContext();
-    var logic = new FakeLogicBlock();
+    var logic = new FakeLogicBlock() {
+      OnStopCalled = () => onStopCalled = true
+    };
     logic.InitialState = () => new FakeLogicBlock.Transition(
       new FakeLogicBlock.State.OnExitState() {
         Callback = (previous) => logic.Stop()
@@ -390,6 +413,8 @@ public partial class LogicBlockTest {
 
     logic.Input(new FakeLogicBlock.Input.InputOne(2, 3));
     logic.IsStarted.ShouldBeTrue();
+
+    onStopCalled.ShouldBeFalse();
   }
 
   [Fact]
