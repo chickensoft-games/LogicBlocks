@@ -53,7 +53,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Text.Json" Version="9.0.1" />
+    <PackageReference Include="System.Text.Json" Version="9.0.2" />
     <PackageReference Include="Chickensoft.Collections" Version="1.12.12" />
     <PackageReference Include="Chickensoft.Introspection" Version="2.2.0" />
     <PackageReference Include="Chickensoft.Serialization" Version="2.2.0" />
