@@ -54,7 +54,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.Text.Json" Version="9.0.3" />
-    <PackageReference Include="Chickensoft.Collections" Version="1.13.1" />
+    <PackageReference Include="Chickensoft.Collections" Version="1.13.2" />
     <PackageReference Include="Chickensoft.Introspection" Version="2.2.0" />
     <PackageReference Include="Chickensoft.Serialization" Version="2.2.0" />
   </ItemGroup>
