@@ -400,10 +400,10 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
 
     if (_value is null) {
       // No state yet. Let's get the first state going!
-      OnStart();
       Blackboard.InstantiateAnyMissingSavedData();
       ChangeState(RestoredState as TState ?? GetInitialState().State);
       RestoredState = null;
+      OnStart();
     }
 
     // We can always process the first input directly.
