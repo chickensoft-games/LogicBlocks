@@ -374,6 +374,27 @@ public partial class LogicBlockTest {
   }
 
   [Fact]
+  public void OnStartDoesNotCauseInfiniteLoopWithInput() {
+    var onStartCalled = false;
+    var looped = false;
+    var logic = new FakeLogicBlock();
+    logic.OnStartCalled += () => {
+      if (onStartCalled) {
+        looped = true;
+        return;
+      }
+
+      onStartCalled = true;
+      logic.Input(new FakeLogicBlock.Input.InputOne(2, 3));
+    };
+
+    logic.Start();
+
+    onStartCalled.ShouldBeTrue();
+    looped.ShouldBeFalse();
+  }
+
+  [Fact]
   public void StopExitsState() {
     var exitCalled = false;
     var onStopCalled = false;
