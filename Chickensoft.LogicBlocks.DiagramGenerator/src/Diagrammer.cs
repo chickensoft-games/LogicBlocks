@@ -458,7 +458,7 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
       lines.Add($"{Tab(t)}state \"{graph.Name}\" as {graph.UmlId}");
     }
 
-    foreach (var child in graph.Children) {
+    foreach (var child in graph.Children.OrderBy(child => child.Name)) {
       lines.AddRange(
         WriteGraph(child, impl, stateDescriptions, t + 1)
       );
