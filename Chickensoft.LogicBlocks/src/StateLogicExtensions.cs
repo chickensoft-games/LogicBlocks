@@ -47,7 +47,7 @@ public static class StateLogicExtensions {
     Action<TBaseState?> handler
   )
   where TBaseState : StateBase
-  where TDerivedState : TBaseState =>
+  where TDerivedState : StateBase, TBaseState =>
     state.OnEnter<TDerivedState>((previous) => handler(previous as TBaseState));
 
   /// <summary>
@@ -91,6 +91,6 @@ public static class StateLogicExtensions {
     Action<TBaseState?> handler
   )
   where TBaseState : StateBase
-  where TDerivedState : TBaseState =>
+  where TDerivedState : StateBase, TBaseState =>
     state.OnExit<TDerivedState>((next) => handler(next as TBaseState));
 }
