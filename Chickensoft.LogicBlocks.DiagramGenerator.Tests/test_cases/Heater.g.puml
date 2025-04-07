@@ -1,10 +1,10 @@
 @startuml Heater
 state "Heater State" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_Heater_State {
-  state "Powered" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_Heater_State_Powered {
-    state "Idle" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_Heater_State_Idle
-    state "Heating" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_Heater_State_Heating
-  }
   state "Off" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_Heater_State_Off
+  state "Powered" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_Heater_State_Powered {
+    state "Heating" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_Heater_State_Heating
+    state "Idle" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_Heater_State_Idle
+  }
 }
 
 Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_Heater_State --> Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_Heater_State : TargetTempChanged

@@ -1,10 +1,10 @@
 @startuml ToasterOven
 state "ToasterOven State" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_ToasterOven_State {
-  state "Heating" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_ToasterOven_State_Heating {
-    state "Toasting" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_ToasterOven_State_Toasting
-    state "Baking" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_ToasterOven_State_Baking
-  }
   state "DoorOpen" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_ToasterOven_State_DoorOpen
+  state "Heating" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_ToasterOven_State_Heating {
+    state "Baking" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_ToasterOven_State_Baking
+    state "Toasting" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_ToasterOven_State_Toasting
+  }
 }
 
 Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_ToasterOven_State_Baking --> Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_ToasterOven_State_Toasting : StartToasting

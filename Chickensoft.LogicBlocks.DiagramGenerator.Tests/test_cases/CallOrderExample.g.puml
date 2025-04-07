@@ -1,8 +1,8 @@
 @startuml CallOrderExample
 state "CallOrderExample State" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_CallOrderExample_State {
   state "Active" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_CallOrderExample_Active {
-    state "Walking" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_CallOrderExample_Walking
     state "Running" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_CallOrderExample_Running
+    state "Walking" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_CallOrderExample_Walking
   }
   state "Inactive" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_CallOrderExample_Inactive {
     state "Standing" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_CallOrderExample_Standing
