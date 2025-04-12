@@ -24,6 +24,6 @@
   <ItemGroup>
     <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
     <ProjectReference Include="../Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
-    <PackageReference Include="Chickensoft.Introspection.Generator" Version="2.2.0" PrivateAssets="all" OutputItemType="analyzer" />
+    <PackageReference Include="Chickensoft.Introspection.Generator" Version="3.0.0" PrivateAssets="all" OutputItemType="analyzer" />
   </ItemGroup>
 </Project>
