@@ -129,14 +129,14 @@ LogicBlocks also uses different terms for some of the statechart concepts to mak
 
 Looking for more? **Read the ✨ [docs]! ✨**
 
---- 
+---
 🐣 Package generated from a 🐤 Chickensoft Template — <https://chickensoft.games>
 
-[chickensoft-badge]: https://raw.githubusercontent.com/chickensoft-games/chickensoft_site/main/static/img/badges/chickensoft_badge.svg
+[chickensoft-badge]: https://chickensoft.games/img/badges/chickensoft_badge.svg
 [chickensoft-website]: https://chickensoft.games
-[discord-badge]: https://raw.githubusercontent.com/chickensoft-games/chickensoft_site/main/static/img/badges/discord_badge.svg
+[discord-badge]: https://chickensoft.games/img/badges/discord_badge.svg
 [discord]: https://discord.gg/gSjaPgMmYW
-[read-the-docs-badge]: https://raw.githubusercontent.com/chickensoft-games/chickensoft_site/main/static/img/badges/read_the_docs_badge.svg
+[read-the-docs-badge]: https://chickensoft.games/img/badges/read_the_docs_badge.svg
 [docs]: https://chickensoft.games/docs/logic_blocks
 [branch-coverage]: Chickensoft.LogicBlocks.Tests/badges/branch_coverage.svg
 [line-coverage]: Chickensoft.LogicBlocks.Tests/badges/line_coverage.svg
