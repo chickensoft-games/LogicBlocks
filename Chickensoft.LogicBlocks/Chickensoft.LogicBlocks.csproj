@@ -55,7 +55,7 @@
     </PackageReference>
     <PackageReference Include="System.Text.Json" Version="9.0.4" />
     <PackageReference Include="Chickensoft.Collections" Version="1.13.4" />
-    <PackageReference Include="Chickensoft.Introspection" Version="3.0.0" />
+    <PackageReference Include="Chickensoft.Introspection" Version="3.0.1" />
     <PackageReference Include="Chickensoft.Serialization" Version="3.0.0" />
   </ItemGroup>
 
