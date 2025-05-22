@@ -2,9 +2,9 @@
 state "Timer State" as Chickensoft_LogicBlocks_Tutorial_Timer_State {
   state "PoweredOff" as Chickensoft_LogicBlocks_Tutorial_Timer_State_PoweredOff
   state "PoweredOn" as Chickensoft_LogicBlocks_Tutorial_Timer_State_PoweredOn {
-    state "Idle" as Chickensoft_LogicBlocks_Tutorial_Timer_State_PoweredOn_Idle
-    state "Countdown" as Chickensoft_LogicBlocks_Tutorial_Timer_State_PoweredOn_Countdown
     state "Beeping" as Chickensoft_LogicBlocks_Tutorial_Timer_State_PoweredOn_Beeping
+    state "Countdown" as Chickensoft_LogicBlocks_Tutorial_Timer_State_PoweredOn_Countdown
+    state "Idle" as Chickensoft_LogicBlocks_Tutorial_Timer_State_PoweredOn_Idle
   }
 }
 

@@ -28,7 +28,7 @@ public sealed record LogicBlockGraph(
     string id,
     string name,
     string baseId
-  ) : this(id, name, baseId, new()) { }
+  ) : this(id, name, baseId, []) { }
 
   /// <summary>
   /// UML-friendly identifier for the logic block graph.

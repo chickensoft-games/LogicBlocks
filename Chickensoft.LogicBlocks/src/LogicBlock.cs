@@ -124,7 +124,8 @@ ILogicBlockBase, ISerializableBlackboard where TState : StateLogic<TState> {
   /// observe a logic block's inputs, states, outputs, and exceptions.
   /// </summary>
   /// <param name="binding">Logic block binding.</param>
-  void RemoveBinding(ILogicBlockBinding<TState> binding);
+  /// <returns>True if the binding was removed, false otherwise.</returns>
+  bool RemoveBinding(ILogicBlockBinding<TState> binding);
 }
 
 /// <summary>
@@ -180,7 +181,21 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
   private TState? _value;
   private int _isProcessing;
   private readonly BoxlessQueue _inputs;
-  private readonly HashSet<ILogicBlockBinding<TState>> _bindings = new();
+  private List<ILogicBlockBinding<TState>> _bindings = [];
+  private int _bindingsInvocationCount;
+  private bool IsInvokingBindings => _bindingsInvocationCount > 0;
+  private readonly HashSet<ILogicBlockBinding<TState>> _bindingsToRemove = [];
+  private void StartBindingInvocation() => _bindingsInvocationCount++;
+  private void EndBindingInvocation() {
+    _bindingsInvocationCount--;
+
+    if (_bindingsInvocationCount == 0) {
+      _bindings = [.. _bindings.Where(
+        binding => !_bindingsToRemove.Contains(binding)
+      )];
+      _bindingsToRemove.Clear();
+    }
+  }
 
   // Sometimes, it is preferable not to call OnEnter callbacks when starting
   // a logic block, such as when restoring from a saved / serialized logic
@@ -269,13 +284,23 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
 
   /// <inheritdoc />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public void AddBinding(ILogicBlockBinding<TState> binding) =>
+  public void AddBinding(ILogicBlockBinding<TState> binding) {
+    if (_bindings.Contains(binding)) {
+      return;
+    }
+
     _bindings.Add(binding);
+  }
 
   /// <inheritdoc />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public void RemoveBinding(ILogicBlockBinding<TState> binding) =>
-    _bindings.Remove(binding);
+  public bool RemoveBinding(ILogicBlockBinding<TState> binding) {
+    if (IsInvokingBindings) {
+
+    }
+
+    return _bindings.Remove(binding);
+  }
 
   /// <summary>
   /// <para>
@@ -470,35 +495,52 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
     _isProcessing--;
   }
 
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private void AnnounceInput<TInputType>(in TInputType input)
-  where TInputType : struct {
-    foreach (var binding in _bindings) {
-      binding.MonitorInput(in input);
+  internal void InvokeBindings(Action<ILogicBlockBinding<TState>> callback) {
+    StartBindingInvocation();
+    var i = 0;
+    while (i < _bindings.Count) {
+      var binding = _bindings[i];
+      callback(binding);
+      i++;
     }
+    EndBindingInvocation();
   }
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private void AnnounceState(TState state) {
-    foreach (var binding in _bindings) {
-      binding.MonitorState(state);
+  private void AnnounceInput<TInputType>(in TInputType input)
+  where TInputType : struct {
+    StartBindingInvocation();
+    var i = 0;
+    while (i < _bindings.Count) {
+      var binding = _bindings[i];
+      binding.MonitorInput(in input);
+      i++;
     }
+    EndBindingInvocation();
   }
+
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
+  private void AnnounceState(TState state) => InvokeBindings(
+    binding => binding.MonitorState(state)
+  );
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   private void AnnounceOutput<TOutputType>(TOutputType output)
   where TOutputType : struct {
-    foreach (var binding in _bindings) {
+    StartBindingInvocation();
+    var i = 0;
+    while (i < _bindings.Count) {
+      var binding = _bindings[i];
       binding.MonitorOutput(in output);
+      i++;
     }
+    EndBindingInvocation();
   }
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private void AnnounceException(Exception exception) {
-    foreach (var binding in _bindings) {
-      binding.MonitorException(exception);
-    }
-  }
+  private void AnnounceException(Exception exception) => InvokeBindings(
+    binding => binding.MonitorException(exception)
+  );
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   private TState RunInputHandler<TInputType>(

@@ -18,9 +18,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 public class LogicBlockAttributeCodeFixProvider : CodeFixProvider {
   public sealed override ImmutableArray<string> FixableDiagnosticIds {
     get;
-  } = ImmutableArray.Create(
-    Diagnostics.MissingLogicBlockAttributeDescriptor.Id
-  );
+  } = [Diagnostics.MissingLogicBlockAttributeDescriptor.Id];
 
   public sealed override FixAllProvider GetFixAllProvider() =>
     WellKnownFixAllProviders.BatchFixer;

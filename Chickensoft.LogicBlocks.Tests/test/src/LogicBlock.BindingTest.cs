@@ -213,6 +213,53 @@ public class BindingTest {
     Utils.ClearWeakReference(weakRef);
   }
 
+  [Fact]
+  public void CanAddAndRemoveBindingsFromInputHandler() {
+    var block = new FakeLogicBlock();
+    var binding = block.Bind();
+
+    var listener1 = LogicBlockTest.Listen(block);
+    var listener2 = LogicBlockTest.Listen(block);
+    var listener3 = LogicBlockTest.Listen(block);
+    var listener4 = LogicBlockTest.Listen(block);
+
+    var called = 0;
+
+    binding
+      .Watch(
+        (in FakeLogicBlock.Input.InputOne _) => {
+          block.AddBinding(listener2);
+          block.RemoveBinding(listener1);
+          called++;
+        }
+      )
+      .Handle(
+        (in FakeLogicBlock.Output.OutputOne _) => {
+          block.AddBinding(listener1);
+          block.RemoveBinding(listener2);
+          called++;
+        }
+      )
+      .When<FakeLogicBlock.State>((state) => {
+        block.AddBinding(listener3);
+        block.RemoveBinding(listener4);
+        called++;
+      })
+      .Catch<Exception>((e) => {
+        block.AddBinding(listener4);
+        block.RemoveBinding(listener3);
+        called++;
+      });
+
+    Should.NotThrow(() => {
+      block.Input(new FakeLogicBlock.Input.InputOne(1, 2));
+      block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
+      block.Input(new FakeLogicBlock.Input.InputError());
+    });
+
+    called.ShouldBe(6);
+  }
+
   public static WeakReference CreateWeakFakeLogicBlockBindingReference() =>
     new(new FakeLogicBlock().Bind());
 }

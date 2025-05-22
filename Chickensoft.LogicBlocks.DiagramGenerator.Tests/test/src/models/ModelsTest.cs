@@ -29,9 +29,9 @@ public class ModelsTest {
         "file",
         "id",
         "name",
-        System.Array.Empty<string>().ToImmutableHashSet(),
+        [],
         new LogicBlockGraph(
-          "id", "name", "baseId", new List<LogicBlockGraph>()
+          "id", "name", "baseId", []
         ),
         new Dictionary<string, LogicBlockGraph>().ToImmutableDictionary()
       );
@@ -40,9 +40,9 @@ public class ModelsTest {
         "file",
         "id",
         "name",
-        System.Array.Empty<string>().ToImmutableHashSet(),
+        [],
         new LogicBlockGraph(
-          "id", "name", "baseId", new List<LogicBlockGraph>()
+          "id", "name", "baseId", []
         ),
         new Dictionary<string, LogicBlockGraph>().ToImmutableDictionary()
       );
@@ -51,9 +51,9 @@ public class ModelsTest {
         "file",
         "id_other",
         "name",
-        System.Array.Empty<string>().ToImmutableHashSet(),
+        [],
         new LogicBlockGraph(
-          "id", "name", "baseId", new List<LogicBlockGraph>()
+          "id", "name", "baseId", []
         ),
         new Dictionary<string, LogicBlockGraph>().ToImmutableDictionary()
       );
@@ -62,9 +62,9 @@ public class ModelsTest {
         "file",
         "id",
         "name_other",
-        System.Array.Empty<string>().ToImmutableHashSet(),
+        [],
         new LogicBlockGraph(
-          "id", "name", "baseId", new List<LogicBlockGraph>()
+          "id", "name", "baseId", []
         ),
         new Dictionary<string, LogicBlockGraph>().ToImmutableDictionary()
       );
@@ -73,11 +73,11 @@ public class ModelsTest {
         "file",
         "id",
         "name_other",
-        System.Array.Empty<string>().ToImmutableHashSet(),
+        [],
         new LogicBlockGraph(
-          "id", "name", "baseId", new List<LogicBlockGraph>() {
-            new("id", "name", "baseId", new List<LogicBlockGraph>())
-          }
+          "id", "name", "baseId", [
+            new("id", "name", "baseId", [])
+          ]
         ),
         new Dictionary<string, LogicBlockGraph>().ToImmutableDictionary()
       );
