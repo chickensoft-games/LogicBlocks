@@ -116,7 +116,7 @@ public class OutputVisitor : CSharpSyntaxWalker {
 
   private void AddOutput(string id, string name) {
     if (!_outputTypes.TryGetValue(OutputContext, out var outputs)) {
-      outputs = new HashSet<LogicBlockOutput>();
+      outputs = [];
       _outputTypes.Add(OutputContext, outputs);
     }
 

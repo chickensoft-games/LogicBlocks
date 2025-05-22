@@ -7,20 +7,20 @@ using Shouldly;
 using Xunit;
 
 public class SerializableLogicBlockTest {
+  private readonly JsonSerializerOptions _options = new() {
+    WriteIndented = true,
+    // Use the type resolver and converter from the
+    // Chickensoft.Serialization package. You can combine these with other
+    // type resolvers and converters.
+    TypeInfoResolver = new SerializableTypeResolver(),
+    Converters = { new SerializableTypeConverter() }
+  };
+
   [Fact]
   public void Serializes() {
-    var options = new JsonSerializerOptions {
-      WriteIndented = true,
-      // Use the type resolver and converter from the
-      // Chickensoft.Serialization package. You can combine these with other
-      // type resolvers and converters.
-      TypeInfoResolver = new SerializableTypeResolver(),
-      Converters = { new SerializableTypeConverter() }
-    };
-
     var logic = new SerializableLogicBlock();
 
-    var jsonText = JsonSerializer.Serialize(logic, options);
+    var jsonText = JsonSerializer.Serialize(logic, _options);
     var jsonNode = JsonNode.Parse(jsonText);
 
     var jsonExpectedText = /*language=json*/
@@ -46,14 +46,6 @@ public class SerializableLogicBlockTest {
 
   [Fact]
   public void Deserializes() {
-    var options = new JsonSerializerOptions {
-      // Use the type resolver and converter from the
-      // Chickensoft.Serialization package. You can combine these with other
-      // type resolvers and converters.
-      TypeInfoResolver = new SerializableTypeResolver(),
-      Converters = { new SerializableTypeConverter() }
-    };
-
     var json =
       /*language=json*/
       """
@@ -73,7 +65,7 @@ public class SerializableLogicBlockTest {
       """;
 
     var logic = JsonSerializer.Deserialize<SerializableLogicBlock>(
-      json, options
+      json, _options
     );
 
     logic.ShouldNotBeNull();

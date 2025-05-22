@@ -160,7 +160,7 @@ public partial class FakeLogicBlock : LogicBlock<FakeLogicBlock.State> {
 
   public Action? OnStopCalled { get; set; }
 
-  public List<Exception> Exceptions { get; } = new();
+  public List<Exception> Exceptions { get; } = [];
 
   public override Transition GetInitialState() =>
     InitialState?.Invoke() ?? To<State.StartState>();

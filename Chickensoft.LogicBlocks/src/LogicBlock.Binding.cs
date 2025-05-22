@@ -51,7 +51,7 @@ public abstract partial class LogicBlock<TState> {
     /// <typeparam name="TStateType">Type of state to bind to.</typeparam>
     /// <param name="handler">Handler invoked when the state changes.</param>
     /// <returns>The new binding group.</returns>
-    public IBinding When<TStateType>(Action<TStateType> handler)
+    IBinding When<TStateType>(Action<TStateType> handler)
       where TStateType : TState;
 
     /// <summary>
@@ -111,12 +111,12 @@ public abstract partial class LogicBlock<TState> {
     internal readonly List<Action<Exception>> _exceptionRunners;
 
     internal BindingBase() {
-      _inputRunners = new();
-      _outputRunners = new();
-      _stateCheckers = new();
-      _stateRunners = new();
-      _exceptionCheckers = new();
-      _exceptionRunners = new();
+      _inputRunners = [];
+      _outputRunners = [];
+      _stateCheckers = [];
+      _stateRunners = [];
+      _exceptionCheckers = [];
+      _exceptionRunners = [];
     }
 
     /// <inheritdoc />
@@ -126,7 +126,7 @@ public abstract partial class LogicBlock<TState> {
         runners.Add(handler);
       }
       else {
-        _inputRunners[typeof(TInputType)] = new List<object> { handler };
+        _inputRunners[typeof(TInputType)] = [handler];
       }
 
       return this;
@@ -151,7 +151,7 @@ public abstract partial class LogicBlock<TState> {
         runners.Add(handler);
       }
       else {
-        _outputRunners[typeof(TOutputType)] = new List<object> { handler };
+        _outputRunners[typeof(TOutputType)] = [handler];
       }
 
       return this;

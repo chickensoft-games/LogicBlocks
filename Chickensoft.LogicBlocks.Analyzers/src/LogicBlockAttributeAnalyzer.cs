@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 public class LogicBlockAttributeAnalyzer : DiagnosticAnalyzer {
   public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics {
     get;
-  } = ImmutableArray.Create(Diagnostics.MissingLogicBlockAttributeDescriptor);
+  } = [Diagnostics.MissingLogicBlockAttributeDescriptor];
 
   public override void Initialize(AnalysisContext context) {
     context.EnableConcurrentExecution();

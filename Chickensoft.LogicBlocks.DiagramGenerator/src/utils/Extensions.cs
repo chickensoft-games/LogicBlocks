@@ -35,7 +35,7 @@ public static class Extensions {
     newLine ??= Environment.NewLine;
     var value = text.NormalizeLineEndings();
 
-    var lines = value.Split(new[] { newLine }, StringSplitOptions.None);
+    var lines = value.Split([newLine], StringSplitOptions.None);
     for (var i = 0; i < lines.Length; i++) {
       lines[i] = string.IsNullOrWhiteSpace(lines[i]) ? "" : lines[i];
     }

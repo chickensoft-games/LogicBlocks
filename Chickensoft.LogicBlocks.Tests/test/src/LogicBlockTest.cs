@@ -395,6 +395,12 @@ public partial class LogicBlockTest {
   }
 
   [Fact]
+  public void OnStopDefaultDoesNothing() {
+    var block = new MyLogicBlock();
+    Should.NotThrow(() => block.OnStop());
+  }
+
+  [Fact]
   public void StopExitsState() {
     var exitCalled = false;
     var onStopCalled = false;

@@ -34,12 +34,12 @@ public interface IFakeContext : IContext {
 /// <summary>Fake logic block context used when testing LogicBlocks.</summary>
 internal readonly struct FakeContext : IFakeContext {
   public IEnumerable<object> Inputs => _inputs.AsEnumerable();
-  private readonly List<object> _inputs = new();
+  private readonly List<object> _inputs = [];
   public IEnumerable<object> Outputs => _outputs.AsEnumerable();
-  private readonly List<object> _outputs = new();
-  private readonly Dictionary<Type, object> _blackboard = new();
+  private readonly List<object> _outputs = [];
+  private readonly Dictionary<Type, object> _blackboard = [];
   public IEnumerable<Exception> Errors => _errors.AsEnumerable();
-  private readonly List<Exception> _errors = new();
+  private readonly List<Exception> _errors = [];
 
   public FakeContext() { }
 

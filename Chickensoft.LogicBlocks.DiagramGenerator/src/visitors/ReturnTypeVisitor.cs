@@ -16,7 +16,7 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
   public INamedTypeSymbol StateBaseType { get; }
   /// <summary>Type of the current state.</summary>
   public INamedTypeSymbol StateType { get; }
-  private readonly HashSet<string> _returnTypes = new();
+  private readonly HashSet<string> _returnTypes = [];
 
   public ImmutableHashSet<string> ReturnTypes => [.. _returnTypes];
 

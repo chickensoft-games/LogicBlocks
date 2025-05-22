@@ -1,4 +1,5 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
+
 [LogicBlock(typeof(State), Diagram = true)]
 public partial class PartialLogic : LogicBlock<PartialLogic.State> {
   public override Transition GetInitialState() => To<State.A>();

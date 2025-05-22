@@ -73,9 +73,9 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
       });
 
     var logicBlockCandidates = context.SyntaxProvider.CreateSyntaxProvider(
-      predicate: static (SyntaxNode node, CancellationToken _) =>
+      predicate: static (node, _) =>
         IsLogicBlockCandidate(node),
-      transform: (GeneratorSyntaxContext context, CancellationToken token) =>
+      transform: (context, token) =>
         GetStateGraph(
           (ClassDeclarationSyntax)context.Node, context.SemanticModel, token
         )
@@ -94,8 +94,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
     context.RegisterImplementationSourceOutput(
       source: logicBlockCandidates,
       action: (
-        SourceProductionContext context,
-        GenerationData data
+        context,
+        data
       ) => {
         var disabled = data.Options.LogicBlocksDiagramGeneratorDisabled;
         if (disabled) { return; }
@@ -268,7 +268,7 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
       );
 
       if (!subtypesByBaseType.ContainsKey(baseTypeId)) {
-        subtypesByBaseType[baseTypeId] = new List<INamedTypeSymbol>();
+        subtypesByBaseType[baseTypeId] = [];
       }
 
       subtypesByBaseType[baseTypeId].Add(subtype);
@@ -281,7 +281,7 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
           member.Name == Constants.LOGIC_BLOCK_GET_INITIAL_STATE
       );
 
-    HashSet<string> initialStateIds = new();
+    HashSet<string> initialStateIds = [];
 
     if (
       getInitialStateMethod is IMethodSymbol initialStateMethod &&
@@ -321,7 +321,7 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
 
       var subtypes = subtypesByBaseType.ContainsKey(typeId)
         ? subtypesByBaseType[typeId]
-        : new List<INamedTypeSymbol>();
+        : [];
 
       foreach (var subtype in subtypes) {
         graph.Children.Add(buildGraph(subtype, type));

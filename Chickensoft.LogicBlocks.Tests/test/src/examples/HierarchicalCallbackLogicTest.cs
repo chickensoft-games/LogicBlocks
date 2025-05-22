@@ -1,6 +1,5 @@
 namespace Chickensoft.LogicBlocks.Tests.Examples;
 
-using System.Collections.Generic;
 using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Moq;
 using Shouldly;
@@ -18,12 +17,12 @@ public class HierarchicalCallbackLogicTest {
     state.Enter(
       new Mock<HierarchicalCallbackLogic.State>().Object
     );
-    context.Outputs.ShouldBe(new List<object> { Log("substate") });
+    context.Outputs.ShouldBe([Log("substate")]);
 
     context.Reset();
 
     state.Enter();
-    context.Outputs.ShouldBe(new List<object> { Log("state"), Log("substate") });
+    context.Outputs.ShouldBe([Log("state"), Log("substate")]);
   }
 
   [Fact]
@@ -34,11 +33,11 @@ public class HierarchicalCallbackLogicTest {
     state.Exit(
       new Mock<HierarchicalCallbackLogic.State>().Object
     );
-    context.Outputs.ShouldBe(new List<object> { Log("substate") });
+    context.Outputs.ShouldBe([Log("substate")]);
 
     context.Reset();
 
     state.Exit();
-    context.Outputs.ShouldBe(new List<object> { Log("substate"), Log("state") });
+    context.Outputs.ShouldBe([Log("substate"), Log("state")]);
   }
 }
