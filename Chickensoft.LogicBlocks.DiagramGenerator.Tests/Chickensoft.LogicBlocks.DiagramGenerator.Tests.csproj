@@ -46,7 +46,7 @@
     <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
     <ProjectReference Include="../Chickensoft.GeneratorTester/Chickensoft.GeneratorTester.csproj" />
 
-    <PackageReference Include="Chickensoft.Introspection.Generator" Version="3.0.1" PrivateAssets="all" OutputItemType="analyzer" />
+    <PackageReference Include="Chickensoft.Introspection.Generator" Version="3.0.2" PrivateAssets="all" OutputItemType="analyzer" />
   </ItemGroup>
 
 </Project>
