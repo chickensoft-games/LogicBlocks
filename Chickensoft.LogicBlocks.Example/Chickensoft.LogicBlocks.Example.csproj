@@ -16,8 +16,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Chickensoft.Introspection" Version="3.0.1" />
-    <PackageReference Include="Chickensoft.Introspection.Generator" Version="3.0.1" PrivateAssets="all" OutputItemType="analyzer" />
+    <PackageReference Include="Chickensoft.Introspection" Version="3.0.2" />
+    <PackageReference Include="Chickensoft.Introspection.Generator" Version="3.0.2" PrivateAssets="all" OutputItemType="analyzer" />
 
     <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
     <ProjectReference Include="../Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
