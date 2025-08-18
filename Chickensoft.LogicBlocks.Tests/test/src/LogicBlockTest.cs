@@ -82,6 +82,12 @@ public partial class LogicBlockTest {
   }
 
   [Fact]
+  public void ThrowsWithInformativeMessageIfStateNotInBlackboard() {
+    var block = new MissingMetaLogicBlock();
+    Should.Throw<InvalidOperationException>(block.Start, "Could not retrieve state MissingMetaLogicBlock+State. You may need to add the Meta attribute to your LogicBlock, or add the states to the blackboard manually.");
+  }
+
+  [Fact]
   public void InvokesInputEvent() {
     var block = new FakeLogicBlock();
     using var listener = Listen(block);

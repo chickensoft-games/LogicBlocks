@@ -355,7 +355,18 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
   /// </summary>
   /// <typeparam name="TStateType">Type of state to transition to.</typeparam>
   protected Transition To<TStateType>()
-    where TStateType : TState => new(Context.Get<TStateType>());
+      where TStateType : TState {
+    try {
+      return new(Context.Get<TStateType>());
+    }
+    catch (Exception e) {
+      throw new InvalidOperationException(
+        $"Could not retrieve state {typeof(TStateType)}. You may need to add the Meta attribute to your LogicBlock, or add the states to the blackboard manually.",
+        e
+      );
+    }
+  }
+
 
   #region IReadOnlyBlackboard
   /// <inheritdoc />
