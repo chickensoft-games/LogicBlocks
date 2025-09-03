@@ -59,6 +59,13 @@ ILogicBlockBase, ISerializableBlackboard where TState : StateLogic<TState> {
   TState Input<TInputType>(in TInputType input) where TInputType : struct;
 
   /// <summary>
+  /// Produces a logic block output value.
+  /// </summary>
+  /// <typeparam name="TOutputType">Type of output to produce.</typeparam>
+  /// <param name="output">Output value.</param>
+  void Output<TOutputType>(in TOutputType output) where TOutputType : struct;
+
+  /// <summary>
   /// Creates a binding to a logic block.
   /// </summary>
   /// <returns>Logic block binding.</returns>
@@ -233,6 +240,12 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
     }
     return ProcessInputs<TInputType>(input);
   }
+
+  /// <inheritdoc />
+  public virtual void Output<TOutputType>(
+    in TOutputType output
+  ) where TOutputType : struct =>
+    AnnounceOutput(output);
 
   /// <inheritdoc />
   public void Start() {
