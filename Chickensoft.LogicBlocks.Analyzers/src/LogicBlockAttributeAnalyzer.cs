@@ -32,13 +32,27 @@ public class LogicBlockAttributeAnalyzer : DiagnosticAnalyzer {
     var classDeclaration = (ClassDeclarationSyntax)context.Node;
 
     if (
-      !(
-        classDeclaration.BaseList?.Types.FirstOrDefault()?.Type
-        is GenericNameSyntax genericName &&
-        genericName.Identifier.ValueText.EndsWith("LogicBlock")
-      )
+        classDeclaration.BaseList?.Types.FirstOrDefault()?.Type is not GenericNameSyntax baseLogicBlock ||
+        !baseLogicBlock.Identifier.ValueText.EndsWith("LogicBlock")
     ) {
       // Only analyze types that appear to be logic blocks.
+      return;
+    }
+
+    // We can't apply the LogicBlock attribute to generic LogicBlock types
+    // if one of the generics is the state type
+    if (
+      classDeclaration.TypeParameterList is not null
+        && classDeclaration.TypeParameterList.Parameters.Count > 0
+        && classDeclaration.TypeParameterList.Parameters.Any(
+          parameter =>
+            baseLogicBlock.TypeArgumentList.Arguments.Any(
+              argument =>
+                argument is IdentifierNameSyntax identifierArg
+                  && identifierArg.Identifier.ValueText == parameter.Identifier.ValueText
+            )
+        )
+    ) {
       return;
     }
 
