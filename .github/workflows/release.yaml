@@ -47,7 +47,7 @@ jobs:
           godot-version: 1.0.0
           bump: ${{ inputs.bump }}
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         name: 💽 Setup .NET SDK
         with:
           # Use the .NET SDK from global.json in the root of the repository.
