@@ -140,7 +140,16 @@ ILogicBlockBase, ISerializableBlackboard where TState : StateLogic<TState> {
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
 public abstract partial class LogicBlock<TState> : LogicBlockBase,
-ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
+ILogicBlock<TState> where TState : StateLogic<TState> {
+  private readonly struct InputPassthrough : IBoxlessValueHandler {
+    public required LogicBlock<TState> LogicBlock { get; init; }
+
+    void IBoxlessValueHandler<ValueType>.HandleValue<TValue>(in TValue value) {
+      LogicBlock.HandleInput(in value);
+    }
+  }
+
+
   // We do want static members on generic types here since it makes for a
   // really ergonomic API.
   /// <summary>
@@ -212,7 +221,7 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
   /// </para>
   /// </summary>
   protected LogicBlock() {
-    _inputs = new(this);
+    _inputs = new();
     Context = new DefaultContext(this);
     PreallocateStates(this);
   }
@@ -445,11 +454,13 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
     // We can always process the first input directly.
     // This keeps single inputs off the heap.
     if (input.HasValue) {
-      (this as IBoxlessValueHandler).HandleValue(input.Value);
+      HandleInput(input.Value);
     }
 
+    var passthrough = new InputPassthrough() { LogicBlock = this };
+
     while (_inputs.HasValues) {
-      _inputs.Dequeue();
+      _inputs.Dequeue(passthrough);
     }
 
     _isProcessing--;
@@ -459,9 +470,8 @@ ILogicBlock<TState>, IBoxlessValueHandler where TState : StateLogic<TState> {
     return _value!;
   }
 
-  void IBoxlessValueHandler.HandleValue<TInputType>(in TInputType input)
-  where TInputType : struct {
-    if (_value is not IGet<TInputType> stateWithInputHandler) {
+  private void HandleInput<TInput>(in TInput input) where TInput : struct {
+    if (_value is not IGet<TInput> stateWithInputHandler) {
       return;
     }
 
