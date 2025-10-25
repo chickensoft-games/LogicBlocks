@@ -6,11 +6,13 @@ public interface ISerializableLogicBlock : ILogicBlock<SerializableLogicBlock.St
 
 [Meta, LogicBlock(typeof(State), Diagram = true), Id("serializable_logic")]
 public partial class SerializableLogicBlock :
-LogicBlock<SerializableLogicBlock.State>, ISerializableLogicBlock {
+LogicBlock<SerializableLogicBlock.State>, ISerializableLogicBlock
+{
   public override Transition GetInitialState() => To<State.PoweredOff>();
 
   [Meta]
-  public abstract partial record State : StateLogic<State> {
+  public abstract partial record State : StateLogic<State>
+  {
     [Meta, Id("serializable_logic_state_off")]
     public partial record PoweredOff : State;
 

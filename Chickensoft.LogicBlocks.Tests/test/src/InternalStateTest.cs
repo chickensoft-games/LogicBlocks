@@ -4,13 +4,16 @@ using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Shouldly;
 using Xunit;
 
-public class InternalSharedStateTest {
+public class InternalSharedStateTest
+{
   [Fact]
-  public void InteractsWithUnderlyingContext() {
+  public void InteractsWithUnderlyingContext()
+  {
     var attachCalled = false;
     var detachCalled = false;
 
-    var state = new InternalsLogic.State() {
+    var state = new InternalsLogic.State()
+    {
       OnAttachAction = () => attachCalled = true,
       OnDetachAction = () => detachCalled = true
     };
@@ -33,7 +36,8 @@ public class InternalSharedStateTest {
   }
 
   [Fact]
-  public void EqualsAnythingElse() {
+  public void EqualsAnythingElse()
+  {
     var state = new InternalState(new FakeLogicBlock.ContextAdapter());
     state.Equals(new object()).ShouldBeTrue();
   }

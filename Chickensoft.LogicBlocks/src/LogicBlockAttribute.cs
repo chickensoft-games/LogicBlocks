@@ -9,7 +9,8 @@ using System;
 /// state machine that the logic block represents.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-public sealed class LogicBlockAttribute : Attribute {
+public sealed class LogicBlockAttribute : Attribute
+{
   /// <summary>
   /// State type. If the state type is an interface, this should be the single
   /// base state record from which all other states are derived, not the
@@ -32,7 +33,8 @@ public sealed class LogicBlockAttribute : Attribute {
   /// <param name="stateType">State type. If the state is an interface,
   /// specify the single base state record from which all other states are
   /// derived, not the interface.</param>
-  public LogicBlockAttribute(Type stateType) {
+  public LogicBlockAttribute(Type stateType)
+  {
     StateType = stateType;
   }
 }

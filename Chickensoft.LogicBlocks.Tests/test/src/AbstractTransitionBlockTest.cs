@@ -5,9 +5,11 @@ using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Shouldly;
 using Xunit;
 
-public class AbstractTransitionBlockTest {
+public class AbstractTransitionBlockTest
+{
   [Fact]
-  public void DoesNotTransitionToAbstractState() {
+  public void DoesNotTransitionToAbstractState()
+  {
     var block = new AbstractTransitionBlock();
 
     Should.Throw<KeyNotFoundException>(

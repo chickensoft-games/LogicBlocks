@@ -5,19 +5,23 @@ using Moq;
 using Shouldly;
 using Xunit;
 
-public class StateBaseTest {
+public class StateBaseTest
+{
   private interface ITestLogic : ILogicBlock<TestLogic.State>;
 
   [LogicBlock(typeof(State))]
-  private sealed class TestLogic : LogicBlock<TestLogic.State> {
+  private sealed class TestLogic : LogicBlock<TestLogic.State>
+  {
     public required Func<Transition> InitialState { get; init; }
 
     public override Transition GetInitialState() => InitialState();
 
     public Action<Exception>? ErrorHandler { get; init; }
 
-    public sealed record State : StateLogic<State> {
-      public State(Action callback) {
+    public sealed record State : StateLogic<State>
+    {
+      public State(Action callback)
+      {
         OnAttach(callback);
       }
     }
@@ -25,7 +29,8 @@ public class StateBaseTest {
   }
 
   [Fact]
-  public void AttachmentCallbackErrorsRethrow() {
+  public void AttachmentCallbackErrorsRethrow()
+  {
     var adapter = new TestLogic.ContextAdapter();
     var context = new Mock<IContext>();
 
@@ -38,9 +43,11 @@ public class StateBaseTest {
   }
 
   [Fact]
-  public void AttachmentCallbackErrorsGetHandled() {
+  public void AttachmentCallbackErrorsGetHandled()
+  {
     var called = false;
-    var logic = new TestLogic() {
+    var logic = new TestLogic()
+    {
       InitialState =
         () => new(
           new TestLogic.State(() => throw new InvalidOperationException())
@@ -48,7 +55,7 @@ public class StateBaseTest {
       ErrorHandler = e => called = true
     };
 
-    Should.NotThrow(() => logic.Start());
+    Should.NotThrow(logic.Start);
 
     called.ShouldBeTrue();
   }

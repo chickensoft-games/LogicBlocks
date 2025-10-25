@@ -6,13 +6,15 @@ using System;
 /// Logic block state base class. Used internally by LogicBlocks.
 /// Prefer <see cref="StateLogic{TState}"/> over this for user-defined states.
 /// </summary>
-public abstract record StateBase {
+public abstract record StateBase
+{
   /// <inheritdoc />
   internal IContext Context => InternalState.ContextAdapter;
 
   internal InternalState InternalState { get; }
 
-  internal StateBase(IContextAdapter contextAdapter) {
+  internal StateBase(IContextAdapter contextAdapter)
+  {
     InternalState = new(contextAdapter);
   }
 
@@ -25,8 +27,10 @@ public abstract record StateBase {
   /// be captured and verified more easily.
   /// </summary>
   /// <returns>Fake logic block context.</returns>
-  public IFakeContext CreateFakeContext() {
-    if (InternalState.ContextAdapter.Context is FakeContext fakeContext) {
+  public IFakeContext CreateFakeContext()
+  {
+    if (InternalState.ContextAdapter.Context is FakeContext fakeContext)
+    {
       fakeContext.Reset();
       return fakeContext;
     }
@@ -64,7 +68,8 @@ public abstract record StateBase {
   /// Runs all of the registered attach callbacks for the state.
   /// </summary>
   /// <param name="context">Logic block context.</param>
-  public void Attach(IContext context) {
+  public void Attach(IContext context)
+  {
     InternalState.ContextAdapter.Adapt(context);
     CallAttachCallbacks();
   }
@@ -72,8 +77,10 @@ public abstract record StateBase {
   /// <summary>
   /// Runs all of the registered detach callbacks for the state.
   /// </summary>
-  public void Detach() {
-    if (!IsAttached) {
+  public void Detach()
+  {
+    if (!IsAttached)
+    {
       return;
     }
 
@@ -81,22 +88,30 @@ public abstract record StateBase {
     InternalState.ContextAdapter.Clear();
   }
 
-  private void CallAttachCallbacks() {
-    foreach (var onAttach in InternalState.AttachCallbacks) {
+  private void CallAttachCallbacks()
+  {
+    foreach (var onAttach in InternalState.AttachCallbacks)
+    {
       RunSafe(onAttach);
     }
   }
 
-  private void CallDetachCallbacks() {
-    foreach (var onDetach in InternalState.DetachCallbacks) {
+  private void CallDetachCallbacks()
+  {
+    foreach (var onDetach in InternalState.DetachCallbacks)
+    {
       RunSafe(onDetach);
     }
   }
 
-  private void RunSafe(Action callback) {
-    try { callback(); }
-    catch (Exception e) {
-      if (InternalState.ContextAdapter.OnError is { } onError) {
+  private void RunSafe(Action callback)
+  {
+    try
+    { callback(); }
+    catch (Exception e)
+    {
+      if (InternalState.ContextAdapter.OnError is { } onError)
+      {
         onError(e);
         return;
       }

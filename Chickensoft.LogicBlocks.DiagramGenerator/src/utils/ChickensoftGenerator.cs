@@ -3,7 +3,8 @@ namespace Chickensoft.SourceGeneratorUtils;
 using System.Collections.Generic;
 using System.Linq;
 
-public abstract class ChickensoftGenerator {
+public abstract class ChickensoftGenerator
+{
   /// <summary>
   /// Produces whitespace for the required number of tabs.
   /// </summary>

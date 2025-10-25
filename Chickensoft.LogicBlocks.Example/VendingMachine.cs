@@ -4,10 +4,12 @@ using System.Collections.Generic;
 using Chickensoft.Introspection;
 
 [LogicBlock(typeof(State), Diagram = true), Meta]
-public partial class VendingMachine : LogicBlock<VendingMachine.State> {
+public partial class VendingMachine : LogicBlock<VendingMachine.State>
+{
   // Data shared between states
 
-  public partial record Data {
+  public partial record Data
+  {
     public ItemType Type { get; set; }
 
     public int Price { get; set; }
@@ -20,7 +22,8 @@ public partial class VendingMachine : LogicBlock<VendingMachine.State> {
 
   // Inputs
 
-  public static class Input {
+  public static class Input
+  {
     public readonly record struct SelectionEntered(ItemType Type);
     public readonly record struct PaymentReceived(int Amount);
     public readonly record struct TransactionTimedOut;
@@ -29,7 +32,8 @@ public partial class VendingMachine : LogicBlock<VendingMachine.State> {
 
   // Side effects
 
-  public static class Output {
+  public static class Output
+  {
     public readonly record struct Dispensed(ItemType Type);
     public readonly record struct TransactionStarted;
     public readonly record struct TransactionCompleted(
@@ -43,7 +47,8 @@ public partial class VendingMachine : LogicBlock<VendingMachine.State> {
 
   // Feature-specific stuff
 
-  public static readonly Dictionary<ItemType, int> Prices = new() {
+  public static readonly Dictionary<ItemType, int> Prices = new()
+  {
     [ItemType.Juice] = 4,
     [ItemType.Water] = 2,
     [ItemType.Candy] = 6
@@ -51,16 +56,19 @@ public partial class VendingMachine : LogicBlock<VendingMachine.State> {
 
   public override Transition GetInitialState() => To<Idle>();
 
-  public VendingMachine() {
+  public VendingMachine()
+  {
     Set(new Data());
   }
 }
 
 // Just a domain layer repository that manages the stock for a vending machine.
-public class VendingMachineStock {
+public class VendingMachineStock
+{
   public Dictionary<ItemType, int> Stock { get; }
 
-  public VendingMachineStock(Dictionary<ItemType, int> stock) {
+  public VendingMachineStock(Dictionary<ItemType, int> stock)
+  {
     Stock = stock;
   }
 

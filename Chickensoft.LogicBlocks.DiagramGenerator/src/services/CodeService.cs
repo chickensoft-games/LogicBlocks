@@ -7,7 +7,8 @@ using Microsoft.CodeAnalysis;
 /// <summary>
 /// Common code operations for syntax nodes and semantic model symbols.
 /// </summary>
-public interface ICodeService {
+public interface ICodeService
+{
   /// <summary>
   /// Determines the fully qualified name of a named type symbol.
   /// </summary>
@@ -51,7 +52,8 @@ public interface ICodeService {
 /// <summary>
 /// Common code operations for syntax nodes and semantic model symbols.
 /// </summary>
-public class CodeService : ICodeService {
+public class CodeService : ICodeService
+{
   public string GetNameFullyQualified(
     INamedTypeSymbol? symbol, string fallbackName
   ) => symbol?.ToDisplayString(
@@ -68,21 +70,28 @@ public class CodeService : ICodeService {
   public IEnumerable<INamedTypeSymbol> GetAllNestedTypesRecursively(
     INamedTypeSymbol symbol,
     Func<INamedTypeSymbol, bool>? predicate = null
-  ) {
+  )
+  {
     predicate ??= (_) => true;
-    foreach (var type in @symbol.GetTypeMembers()) {
-      if (predicate(type)) { yield return type; }
-      foreach (var nestedType in GetAllNestedTypesRecursively(type, predicate)) {
-        if (predicate(nestedType)) {
+    foreach (var type in @symbol.GetTypeMembers())
+    {
+      if (predicate(type))
+      { yield return type; }
+      foreach (var nestedType in GetAllNestedTypesRecursively(type, predicate))
+      {
+        if (predicate(nestedType))
+        {
           yield return nestedType;
         }
       }
     }
   }
 
-  public IEnumerable<INamedTypeSymbol> GetAllBaseTypes(INamedTypeSymbol type) {
+  public IEnumerable<INamedTypeSymbol> GetAllBaseTypes(INamedTypeSymbol type)
+  {
     var current = type;
-    while (current.BaseType != null) {
+    while (current.BaseType != null)
+    {
       yield return current.BaseType;
       current = current.BaseType;
     }

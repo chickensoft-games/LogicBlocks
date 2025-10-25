@@ -5,7 +5,8 @@ using System;
 /// <summary>
 /// State entrance and exit registration extensions.
 /// </summary>
-public static class StateLogicExtensions {
+public static class StateLogicExtensions
+{
   /// <summary>
   /// Adds a callback that will be invoked when the state is entered. The
   /// callback will receive the previous state as an argument.

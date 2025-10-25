@@ -22,7 +22,8 @@ using System;
 /// <typeparam name="TState">State type.</typeparam>
 public abstract class LogicBlockListenerBase<TState> :
 ILogicBlockBinding<TState>, IDisposable
-where TState : StateLogic<TState> {
+where TState : StateLogic<TState>
+{
   /// <summary>
   /// <para>
   /// Creates a new logic block listener.
@@ -40,7 +41,8 @@ where TState : StateLogic<TState> {
   /// <typeparam name="TInputType">Input type.</typeparam>
   /// <param name="input">Input object.</param>
   protected virtual void ReceiveInput<TInputType>(in TInputType input)
-    where TInputType : struct { }
+    where TInputType : struct
+  { }
 
   /// <summary>
   /// Called whenever the logic block transitions to a new state.
@@ -54,7 +56,8 @@ where TState : StateLogic<TState> {
   /// <typeparam name="TOutputType">Output type.</typeparam>
   /// <param name="output">Output.</param>
   protected virtual void ReceiveOutput<TOutputType>(in TOutputType output)
-    where TOutputType : struct { }
+    where TOutputType : struct
+  { }
 
   /// <summary>
   /// Called whenever the logic block encounters an exception.
@@ -84,32 +87,38 @@ where TState : StateLogic<TState> {
   protected abstract void Cleanup();
 
   /// <inheritdoc />
-  public void Dispose() {
+  public void Dispose()
+  {
     Dispose(true);
     GC.SuppressFinalize(this);
   }
 
-  private void Dispose(bool disposing) {
-    if (disposing) {
+  private void Dispose(bool disposing)
+  {
+    if (disposing)
+    {
       Cleanup();
     }
   }
 
   /// <summary>Binding finalizer.</summary>
-  ~LogicBlockListenerBase() {
+  ~LogicBlockListenerBase()
+  {
     Dispose(false);
   }
 }
 
 /// <inheritdoc />
 public class LogicBlockListener<TState> : LogicBlockListenerBase<TState>
-where TState : StateLogic<TState> {
+where TState : StateLogic<TState>
+{
   /// <summary>Logic block being listened to.</summary>
   public ILogicBlock<TState> LogicBlock { get; }
 
   /// <inheritdoc cref="LogicBlockListenerBase{TState}" />
   /// <param name="logicBlock">Logic block to listen to.</param>
-  public LogicBlockListener(ILogicBlock<TState> logicBlock) {
+  public LogicBlockListener(ILogicBlock<TState> logicBlock)
+  {
     LogicBlock = logicBlock;
     LogicBlock.AddBinding(this);
   }

@@ -7,18 +7,21 @@ using Chickensoft.Introspection;
 /// Temperature sensor that presumably communicates with actual hardware
 /// (not shown here).
 /// </summary>
-public interface ITemperatureSensor {
+public interface ITemperatureSensor
+{
   /// <summary>Last recorded air temperature.</summary>
   double AirTemp { get; }
   /// <summary>Invoked whenever a change in temperature is noticed.</summary>
   event Action<double>? OnTemperatureChanged;
 }
 
-public record TemperatureSensor : ITemperatureSensor {
+public record TemperatureSensor : ITemperatureSensor
+{
   public double AirTemp { get; set; } = 72.0d;
   public event Action<double>? OnTemperatureChanged;
 
-  public void UpdateReading(double airTemp) {
+  public void UpdateReading(double airTemp)
+  {
     AirTemp = airTemp;
     OnTemperatureChanged?.Invoke(airTemp);
   }
@@ -26,11 +29,13 @@ public record TemperatureSensor : ITemperatureSensor {
 
 [Meta, Id("heater")]
 [LogicBlock(typeof(State), Diagram = true)]
-public partial class Heater : LogicBlock<Heater.State> {
+public partial class Heater : LogicBlock<Heater.State>
+{
   public override Transition GetInitialState() =>
     To<State.Off>().With(off => off.TargetTemp = 72.0);
 
-  public static class Input {
+  public static class Input
+  {
     public readonly record struct TurnOn;
     public readonly record struct TurnOff;
     public readonly record struct TargetTempChanged(double Temp);
@@ -38,17 +43,21 @@ public partial class Heater : LogicBlock<Heater.State> {
   }
   [Meta]
   public abstract partial record State :
-    StateLogic<State>, IGet<Input.TargetTempChanged> {
+    StateLogic<State>, IGet<Input.TargetTempChanged>
+  {
     public double TargetTemp { get; set; }
 
-    public Transition On(in Input.TargetTempChanged input) {
+    public Transition On(in Input.TargetTempChanged input)
+    {
       var temp = input.Temp;
       return ToSelf().With(state => state.TargetTemp = temp);
     }
 
     [Meta]
-    public abstract partial record Powered : State, IGet<Input.TurnOff> {
-      public Powered() {
+    public abstract partial record Powered : State, IGet<Input.TurnOff>
+    {
+      public Powered()
+      {
         // Whenever a Powered state is entered, play a chime to
         // alert the user that the heater is on. Subsequent states that
         // inherit from Powered will not play a chime until a different
@@ -79,12 +88,15 @@ public partial class Heater : LogicBlock<Heater.State> {
     }
 
     [Meta, Id("heater_state_off")]
-    public partial record Off : State, IGet<Input.TurnOn> {
-      public Transition On(in Input.TurnOn input) {
+    public partial record Off : State, IGet<Input.TurnOn>
+    {
+      public Transition On(in Input.TurnOn input)
+      {
         // Get the temperature sensor from the blackboard.
         var tempSensor = Get<ITemperatureSensor>();
 
-        if (tempSensor.AirTemp >= TargetTemp) {
+        if (tempSensor.AirTemp >= TargetTemp)
+        {
           // Room is already hot enough.
           return To<Idle>().With(idle => idle.TargetTemp = TargetTemp);
         }
@@ -95,9 +107,12 @@ public partial class Heater : LogicBlock<Heater.State> {
     }
 
     [Meta, Id("heater_state_powered_idle")]
-    public partial record Idle : Powered, IGet<Input.AirTempSensorChanged> {
-      public Transition On(in Input.AirTempSensorChanged input) {
-        if (input.AirTemp < TargetTemp - 3.0d) {
+    public partial record Idle : Powered, IGet<Input.AirTempSensorChanged>
+    {
+      public Transition On(in Input.AirTempSensorChanged input)
+      {
+        if (input.AirTemp < TargetTemp - 3.0d)
+        {
           // Temperature has fallen too far below target temp — start heating.
           return To<Heating>()
             .With(heating => heating.TargetTemp = TargetTemp);
@@ -108,9 +123,12 @@ public partial class Heater : LogicBlock<Heater.State> {
     }
 
     [Meta, Id("heater_state_powered_heating")]
-    public partial record Heating : Powered, IGet<Input.AirTempSensorChanged> {
-      public Transition On(in Input.AirTempSensorChanged input) {
-        if (input.AirTemp >= TargetTemp) {
+    public partial record Heating : Powered, IGet<Input.AirTempSensorChanged>
+    {
+      public Transition On(in Input.AirTempSensorChanged input)
+      {
+        if (input.AirTemp >= TargetTemp)
+        {
           // We're done heating!
           Output(new Output.FinishedHeating());
           return To<Idle>().With(idle => idle.TargetTemp = TargetTemp);
@@ -121,7 +139,8 @@ public partial class Heater : LogicBlock<Heater.State> {
     }
   }
 
-  public static class Output {
+  public static class Output
+  {
     public readonly record struct FinishedHeating;
     public readonly record struct Chime;
   }
