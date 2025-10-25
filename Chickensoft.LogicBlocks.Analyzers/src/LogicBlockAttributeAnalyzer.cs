@@ -9,12 +9,15 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public class LogicBlockAttributeAnalyzer : DiagnosticAnalyzer {
-  public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics {
+public class LogicBlockAttributeAnalyzer : DiagnosticAnalyzer
+{
+  public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
+  {
     get;
   } = [Diagnostics.MissingLogicBlockAttributeDescriptor];
 
-  public override void Initialize(AnalysisContext context) {
+  public override void Initialize(AnalysisContext context)
+  {
     context.EnableConcurrentExecution();
 
     context.ConfigureGeneratedCodeAnalysis(
@@ -28,7 +31,8 @@ public class LogicBlockAttributeAnalyzer : DiagnosticAnalyzer {
     );
   }
 
-  private void AnalyzeClassDeclaration(SyntaxNodeAnalysisContext context) {
+  private void AnalyzeClassDeclaration(SyntaxNodeAnalysisContext context)
+  {
     var classDeclaration = (ClassDeclarationSyntax)context.Node;
 
     if (
@@ -37,7 +41,8 @@ public class LogicBlockAttributeAnalyzer : DiagnosticAnalyzer {
         is GenericNameSyntax genericName &&
         genericName.Identifier.ValueText.EndsWith("LogicBlock")
       )
-    ) {
+    )
+    {
       // Only analyze types that appear to be logic blocks.
       return;
     }
@@ -48,7 +53,8 @@ public class LogicBlockAttributeAnalyzer : DiagnosticAnalyzer {
       attribute => attribute.Name.ToString() == "LogicBlock"
     );
 
-    if (!attributes.Any()) {
+    if (!attributes.Any())
+    {
       context.ReportDiagnostic(
         Diagnostics.MissingLogicBlockAttribute(
           classDeclaration.GetLocation(),

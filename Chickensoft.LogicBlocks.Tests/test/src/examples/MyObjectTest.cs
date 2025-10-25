@@ -5,9 +5,11 @@ using Moq;
 using Shouldly;
 using Xunit;
 
-public class MyObjectTest {
+public class MyObjectTest
+{
   [Fact]
-  public void DoSomethingDoesSomething() {
+  public void DoSomethingDoesSomething()
+  {
     // Our unit test follows the AAA pattern: Arrange, Act, Assert.
     // Or Setup, Execute, and Verify, if you prefer.
 
@@ -28,7 +30,8 @@ public class MyObjectTest {
   }
 
   [Fact]
-  public void HandlesSomeOutput() {
+  public void HandlesSomeOutput()
+  {
     // Setup — make a fake binding and return that from our mock logic block
     using var binding = MyLogicBlock.CreateFakeBinding();
 

@@ -6,10 +6,13 @@ using Chickensoft.LogicBlocks.DiagramGenerator.Models;
 using Shouldly;
 using Xunit;
 
-public class ModelsTest {
-  public class LogicBlockSubclassTest {
+public class ModelsTest
+{
+  public class LogicBlockSubclassTest
+  {
     [Fact]
-    public void Initializes() {
+    public void Initializes()
+    {
       var id = "id";
       var name = "name";
       var baseId = "baseId";
@@ -22,9 +25,11 @@ public class ModelsTest {
     }
   }
 
-  public class LogicBlockImplementationTest {
+  public class LogicBlockImplementationTest
+  {
     [Fact]
-    public void Equality() {
+    public void Equality()
+    {
       var impl = new LogicBlockImplementation(
         "file",
         "id",
@@ -93,9 +98,11 @@ public class ModelsTest {
     }
   }
 
-  public class OutputContextsTest {
+  public class OutputContextsTest
+  {
     [Fact]
-    public void InitializesContexts() {
+    public void InitializesContexts()
+    {
       OutputContexts.None.DisplayName.ShouldBe(nameof(OutputContexts.None));
       OutputContexts.OnEnter.DisplayName.ShouldBe(nameof(OutputContexts.OnEnter));
       OutputContexts.OnExit.DisplayName.ShouldBe(nameof(OutputContexts.OnExit));

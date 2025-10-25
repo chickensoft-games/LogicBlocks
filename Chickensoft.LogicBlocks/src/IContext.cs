@@ -3,7 +3,8 @@ namespace Chickensoft.LogicBlocks;
 using System;
 
 /// <summary>Logic block context provided to each logic block state.</summary>
-public interface IContext {
+public interface IContext
+{
   /// <summary>
   /// Adds an input value to the logic block's internal input queue and
   /// returns the current state.
@@ -35,7 +36,8 @@ public interface IContext {
   void AddError(Exception e);
 }
 
-internal interface IContextAdapter : IContext {
+internal interface IContextAdapter : IContext
+{
   IContext? Context { get; }
 
   void Adapt(IContext context);

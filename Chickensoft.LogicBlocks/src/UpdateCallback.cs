@@ -3,7 +3,8 @@ namespace Chickensoft.LogicBlocks;
 using System;
 
 /// <summary>Update lifecycle callback.</summary>
-internal readonly struct UpdateCallback {
+internal readonly struct UpdateCallback
+{
   /// <summary>Update callback function.</summary>
   public Action<object?> Callback { get; }
   /// <summary>Predicate that determines if the given instance is the expected
@@ -13,7 +14,8 @@ internal readonly struct UpdateCallback {
   /// <summary>Create a new update callback.</summary>
   /// <param name="callback">Callback to invoke.</param>
   /// <param name="type">Expected type of the object.</param>
-  public UpdateCallback(Action<object?> callback, Type type) {
+  public UpdateCallback(Action<object?> callback, Type type)
+  {
     Callback = callback;
     Type = type;
   }

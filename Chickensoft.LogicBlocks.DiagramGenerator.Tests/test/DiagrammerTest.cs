@@ -5,9 +5,11 @@ using Chickensoft.GeneratorTester;
 using Shouldly;
 using Xunit;
 
-public class LogicBlocksDiagramGeneratorTest {
+public class LogicBlocksDiagramGeneratorTest
+{
   [Fact]
-  public void GeneratesUml() {
+  public void GeneratesUml()
+  {
     // This is a type of golden testing for generator outputs.
     // First point of testing: we let the generator run on our actual test
     // cases in this project. If it fails, we can fix the generator and rebuild.
@@ -21,11 +23,13 @@ public class LogicBlocksDiagramGeneratorTest {
     // saying "the generator should do what the generator should do." However,
     // since the PUML files are committed to source control, any changes to them
     // has to be approved by a developer, making this a form of golden testing.
-    foreach (var file in Directory.GetFiles(Tester.CurrentDir("../test_cases"), "*.cs")) {
+    foreach (var file in Directory.GetFiles(Tester.CurrentDir("../test_cases"), "*.cs"))
+    {
       var pumlFile = file.Replace(".cs", ".g.puml");
       var hasPumlFile = File.Exists(pumlFile);
 
-      if (!hasPumlFile) {
+      if (!hasPumlFile)
+      {
         continue;
       }
 

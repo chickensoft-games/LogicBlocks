@@ -15,15 +15,18 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 [Shared, ExportCodeFixProvider(
   LanguageNames.CSharp, Name = nameof(LogicBlockAttributeCodeFixProvider)
 )]
-public class LogicBlockAttributeCodeFixProvider : CodeFixProvider {
-  public sealed override ImmutableArray<string> FixableDiagnosticIds {
+public class LogicBlockAttributeCodeFixProvider : CodeFixProvider
+{
+  public sealed override ImmutableArray<string> FixableDiagnosticIds
+  {
     get;
   } = [Diagnostics.MissingLogicBlockAttributeDescriptor.Id];
 
   public sealed override FixAllProvider GetFixAllProvider() =>
     WellKnownFixAllProviders.BatchFixer;
 
-  public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context) {
+  public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
+  {
     var root = await context
       .Document
       .GetSyntaxRootAsync(context.CancellationToken)
@@ -39,7 +42,8 @@ public class LogicBlockAttributeCodeFixProvider : CodeFixProvider {
       .OfType<ClassDeclarationSyntax>()
       .FirstOrDefault();
 
-    if (classDeclaration == null) {
+    if (classDeclaration == null)
+    {
       return;
     }
 
@@ -61,7 +65,8 @@ public class LogicBlockAttributeCodeFixProvider : CodeFixProvider {
     Document document,
     ClassDeclarationSyntax classDeclaration,
     CancellationToken cancellationToken
-  ) {
+  )
+  {
     if (
       !(
         classDeclaration.Identifier.ValueText is { } identifier &&
@@ -76,18 +81,21 @@ public class LogicBlockAttributeCodeFixProvider : CodeFixProvider {
             .FirstOrDefault()
             ?.NormalizeWhitespace().ToString() is { } stateType
       )
-    ) {
+    )
+    {
       // Unable to retrieve the state type.
       return document;
     }
 
-    if (stateType.StartsWith(identifier + ".")) {
+    if (stateType.StartsWith(identifier + "."))
+    {
       // Attributes are scoped inside nested classes, interestingly enough,
       // so we can simplify the type.
       stateType = stateType.Substring(identifier.Length + 1);
     }
 
-    if (stateType.StartsWith("I")) {
+    if (stateType.StartsWith("I"))
+    {
       // If it's an interface, drop the I in hopes they've named their concrete
       // state class consistently. If they have, this will save the developer
       // time and trouble.

@@ -8,7 +8,8 @@ using Chickensoft.Introspection;
 /// <summary>
 /// Fake logic block context — provided for your testing convenience.
 /// </summary>
-public interface IFakeContext : IContext {
+public interface IFakeContext : IContext
+{
   /// <summary>Inputs added to the logic block.</summary>
   IEnumerable<object> Inputs { get; }
 
@@ -32,7 +33,8 @@ public interface IFakeContext : IContext {
 }
 
 /// <summary>Fake logic block context used when testing LogicBlocks.</summary>
-internal readonly struct FakeContext : IFakeContext {
+internal readonly struct FakeContext : IFakeContext
+{
   public IEnumerable<object> Inputs => _inputs.AsEnumerable();
   private readonly List<object> _inputs = [];
   public IEnumerable<object> Outputs => _outputs.AsEnumerable();
@@ -43,9 +45,11 @@ internal readonly struct FakeContext : IFakeContext {
 
   public FakeContext() { }
 
-  public TDataType Get<TDataType>() where TDataType : class {
+  public TDataType Get<TDataType>() where TDataType : class
+  {
     var type = typeof(TDataType);
-    if (_blackboard.TryGetValue(type, out var value)) {
+    if (_blackboard.TryGetValue(type, out var value))
+    {
       return (TDataType)value;
     }
 
@@ -59,7 +63,8 @@ internal readonly struct FakeContext : IFakeContext {
       Types.Graph
         .GetDescendantSubtypes(typeof(StateBase))
         .Contains(type)
-    ) {
+    )
+    {
       var state = concreteMetadata.Factory();
       _blackboard[type] = state;
       return (TDataType)state;
@@ -81,7 +86,8 @@ internal readonly struct FakeContext : IFakeContext {
 
   public void AddError(Exception e) => _errors.Add(e);
 
-  public void Reset() {
+  public void Reset()
+  {
     _inputs.Clear();
     _outputs.Clear();
     _errors.Clear();

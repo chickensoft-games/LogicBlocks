@@ -6,8 +6,10 @@ using Chickensoft.Serialization;
 using Shouldly;
 using Xunit;
 
-public class SerializableLogicBlockTest {
-  private readonly JsonSerializerOptions _options = new() {
+public class SerializableLogicBlockTest
+{
+  private readonly JsonSerializerOptions _options = new()
+  {
     WriteIndented = true,
     // Use the type resolver and converter from the
     // Chickensoft.Serialization package. You can combine these with other
@@ -17,7 +19,8 @@ public class SerializableLogicBlockTest {
   };
 
   [Fact]
-  public void Serializes() {
+  public void Serializes()
+  {
     var logic = new SerializableLogicBlock();
 
     var jsonText = JsonSerializer.Serialize(logic, _options);
@@ -45,7 +48,8 @@ public class SerializableLogicBlockTest {
   }
 
   [Fact]
-  public void Deserializes() {
+  public void Deserializes()
+  {
     var json =
       /*language=json*/
       """

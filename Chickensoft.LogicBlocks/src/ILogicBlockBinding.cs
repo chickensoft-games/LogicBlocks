@@ -5,7 +5,8 @@ using System;
 /// <summary>Represents a logic block binding.</summary>
 /// <typeparam name="TState">Logic block state type.</typeparam>
 public interface ILogicBlockBinding<TState>
-where TState : StateLogic<TState> {
+where TState : StateLogic<TState>
+{
   /// <summary>Called when the logic block receives an input.</summary>
   /// <param name="input">Input received.</param>
   /// <typeparam name="TInput">Type of the input.</typeparam>

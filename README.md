@@ -50,24 +50,30 @@ _Logic blocks enable you to efficiently model complex behaviors_[^1].
 using Chickensoft.Introspection;
 
 [Meta, LogicBlock(typeof(State), Diagram = true)]
-public class LightSwitch : LogicBlock<LightSwitch.State> {
+public class LightSwitch : LogicBlock<LightSwitch.State>
+{
   public override Transition GetInitialState() => To<State.PoweredOff>();
 
-  public static class Input {
+  public static class Input
+  {
     public readonly record struct Toggle;
   }
 
-  public abstract record State : StateLogic<State> {
-    public record PoweredOn : State, IGet<Input.Toggle> {
+  public abstract record State : StateLogic<State>
+  {
+    public record PoweredOn : State, IGet<Input.Toggle>
+    {
       public Transition On(in Input.Toggle input) => To<PoweredOff>();
     }
 
-    public record PoweredOff : State, IGet<Input.Toggle> {
+    public record PoweredOff : State, IGet<Input.Toggle>
+    {
       public Transition On(in Input.Toggle input) => To<PoweredOn>();
     }
   }
 
-  public static class Output {
+  public static class Output
+  {
     public readonly record struct StatusChanged(bool IsOn);
   }
 }

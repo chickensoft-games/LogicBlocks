@@ -1,12 +1,14 @@
 namespace Chickensoft.LogicBlocks.Example;
 
-public enum ItemType {
+public enum ItemType
+{
   Juice,
   Water,
   Candy
 }
 
-public enum TransactionStatus {
+public enum TransactionStatus
+{
   Success,
   OutOfStockFailure
 }

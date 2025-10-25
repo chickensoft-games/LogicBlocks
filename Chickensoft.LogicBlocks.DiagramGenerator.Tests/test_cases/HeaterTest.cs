@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using Shouldly;
 using Xunit;
 
-public class HeaterTest {
+public class HeaterTest
+{
   [Fact]
-  public void Runs() {
+  public void Runs()
+  {
     var tempSensor = new TemperatureSensor();
     var heater = new Heater();
     heater.Set<ITemperatureSensor>(tempSensor);
@@ -37,7 +39,8 @@ public class HeaterTest {
   }
 
   [Fact]
-  public static void BindingsRespondToHeater() {
+  public static void BindingsRespondToHeater()
+  {
     var tempSensor = new TemperatureSensor();
     var heater = new Heater();
     heater.Set<ITemperatureSensor>(tempSensor);

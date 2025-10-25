@@ -3,7 +3,8 @@ namespace Chickensoft.SourceGeneratorUtils;
 using System;
 using System.Text.RegularExpressions;
 
-public static class Extensions {
+public static class Extensions
+{
   /// <summary>
   /// Normalizes line endings to '\n' or your endings.
   /// Borrowed from https://github.com/HavenDV/H.Generators.Extensions (MIT)
@@ -15,7 +16,8 @@ public static class Extensions {
   public static string NormalizeLineEndings(
     this string text,
     string? newLine = null
-  ) {
+  )
+  {
     newLine ??= Environment.NewLine;
     return text
       .Replace("\r\n", "\n")
@@ -31,12 +33,14 @@ public static class Extensions {
   /// <param name="newLine">Newline character. Leave blank for environment
   /// default.</param>
   /// <returns>Cleaned string.</returns>
-  public static string Clean(this string text, string? newLine = null) {
+  public static string Clean(this string text, string? newLine = null)
+  {
     newLine ??= Environment.NewLine;
     var value = text.NormalizeLineEndings();
 
     var lines = value.Split([newLine], StringSplitOptions.None);
-    for (var i = 0; i < lines.Length; i++) {
+    for (var i = 0; i < lines.Length; i++)
+    {
       lines[i] = string.IsNullOrWhiteSpace(lines[i]) ? "" : lines[i];
     }
 
