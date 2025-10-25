@@ -8,7 +8,8 @@ using System;
 /// </summary>
 /// <typeparam name="TState">State type inheriting from this record.</typeparam>
 public abstract record StateLogic<TState> : StateBase
-  where TState : StateLogic<TState> {
+  where TState : StateLogic<TState>
+{
   /// <summary>
   /// Logic block state. Inherit from this class to create a base state for a
   /// logic block.
@@ -100,10 +101,14 @@ public abstract record StateLogic<TState> : StateBase
   /// <param name="e">Exception to add.</param>
   protected void AddError(Exception e) => Context.AddError(e);
 
-  private void CallOnEnterCallbacks(object? previous, TState? next) {
-    if (next is StateLogic<TState> nextLogic) {
-      foreach (var onEnter in nextLogic.InternalState.EnterCallbacks) {
-        if (onEnter.IsType(previous)) {
+  private void CallOnEnterCallbacks(object? previous, TState? next)
+  {
+    if (next is StateLogic<TState> nextLogic)
+    {
+      foreach (var onEnter in nextLogic.InternalState.EnterCallbacks)
+      {
+        if (onEnter.IsType(previous))
+        {
           // Already entered this state type.
           continue;
         }
@@ -112,10 +117,14 @@ public abstract record StateLogic<TState> : StateBase
     }
   }
 
-  private void CallOnExitCallbacks(TState? previous, object? next) {
-    if (previous is StateLogic<TState> previousLogic) {
-      foreach (var onExit in previousLogic.InternalState.ExitCallbacks) {
-        if (onExit.IsType(next)) {
+  private void CallOnExitCallbacks(TState? previous, object? next)
+  {
+    if (previous is StateLogic<TState> previousLogic)
+    {
+      foreach (var onExit in previousLogic.InternalState.ExitCallbacks)
+      {
+        if (onExit.IsType(next))
+        {
           // Not actually leaving this state type.
           continue;
         }
@@ -126,10 +135,14 @@ public abstract record StateLogic<TState> : StateBase
 
   private void RunSafe(
     Action<object?> callback, object? stateArg
-  ) {
-    try { callback(stateArg); }
-    catch (Exception e) {
-      if (InternalState.ContextAdapter.OnError is { } onError) {
+  )
+  {
+    try
+    { callback(stateArg); }
+    catch (Exception e)
+    {
+      if (InternalState.ContextAdapter.OnError is { } onError)
+      {
         onError(e);
         return;
       }

@@ -2,8 +2,10 @@ namespace Chickensoft.LogicBlocks.Tests.Examples;
 
 using System;
 
-public class LightSwitchBindingExample {
-  public void BindingExample() {
+public class LightSwitchBindingExample
+{
+  public static void BindingExample()
+  {
     var logic = new LightSwitch();
 
     // Start the logic block to force the initial state to be active.

@@ -14,7 +14,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 [Generator]
-public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
+public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator
+{
   public static Log Log { get; } = new Log();
   public ICodeService CodeService { get; } = new CodeService();
 
@@ -22,7 +23,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
   // private static bool _logsFlushed;
   // #pragma warning restore
 
-  public void Initialize(IncrementalGeneratorInitializationContext context) {
+  public void Initialize(IncrementalGeneratorInitializationContext context)
+  {
     // We don't output any static sources. If we did, this is how we'd do it.
     // // Add post initialization sources
     // // (source code that is always generated regardless)
@@ -62,7 +64,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
     // --------------------------------------------------------------------- //
 
     var options = context.AnalyzerConfigOptionsProvider
-      .Select((options, _) => {
+      .Select((options, _) =>
+      {
         var disabled = options.GlobalOptions.TryGetValue(
           $"build_property.{Constants.DISABLE_CSPROJ_PROP}", out var value
         ) && value.ToLower() is "true";
@@ -96,13 +99,16 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
       action: (
         context,
         data
-      ) => {
+      ) =>
+      {
         var disabled = data.Options.LogicBlocksDiagramGeneratorDisabled;
-        if (disabled) { return; }
+        if (disabled)
+        { return; }
 
         var possibleResult = data.Result;
 
-        if (possibleResult is not LogicBlockOutputResult result) { return; }
+        if (possibleResult is not LogicBlockOutputResult result)
+        { return; }
 
         // Since we need to output non-C# files, we have to write files to
         // the disk ourselves. This also allows us to output files that are
@@ -111,10 +117,12 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
         var destFile = result.FilePath;
         var content = result.Content;
 
-        try {
+        try
+        {
           File.WriteAllText(destFile, content);
         }
-        catch (Exception) {
+        catch (Exception)
+        {
           // If we can't write a file next to the source file, create a
           // commented out C# file with the UML content in it.
           //
@@ -170,11 +178,14 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
     ClassDeclarationSyntax logicBlockClassDecl,
     SemanticModel model,
     CancellationToken token
-  ) {
-    try {
+  )
+  {
+    try
+    {
       return DiscoverStateGraph(logicBlockClassDecl, model, token);
     }
-    catch (Exception e) {
+    catch (Exception e)
+    {
       Log.Print($"Exception occurred: {e}");
       return null;
     }
@@ -193,7 +204,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
     ClassDeclarationSyntax logicBlockClassDecl,
     SemanticModel model,
     CancellationToken token
-  ) {
+  )
+  {
     var filePath = logicBlockClassDecl.SyntaxTree.FilePath;
     var destFile = Path.ChangeExtension(filePath, ".g.puml");
 
@@ -202,7 +214,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
 
     var semanticSymbol = model.GetDeclaredSymbol(logicBlockClassDecl, token);
 
-    if (semanticSymbol is not INamedTypeSymbol symbol) {
+    if (semanticSymbol is not INamedTypeSymbol symbol)
+    {
       return null;
     }
 
@@ -241,25 +254,30 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
       )
     );
 
-    var stateTypesById = new Dictionary<string, INamedTypeSymbol> {
+    var stateTypesById = new Dictionary<string, INamedTypeSymbol>
+    {
       [root.Id] = concreteState
     };
 
-    var stateGraphsById = new Dictionary<string, LogicBlockGraph> {
+    var stateGraphsById = new Dictionary<string, LogicBlockGraph>
+    {
       [root.Id] = root
     };
 
     var subtypesByBaseType =
       new Dictionary<string, IList<INamedTypeSymbol>>();
 
-    foreach (var subtype in stateSubtypes) {
-      if (token.IsCancellationRequested) {
+    foreach (var subtype in stateSubtypes)
+    {
+      if (token.IsCancellationRequested)
+      {
         return null;
       }
 
       var baseType = subtype.BaseType;
 
-      if (baseType is not INamedTypeSymbol namedBaseType) {
+      if (baseType is not INamedTypeSymbol namedBaseType)
+      {
         continue;
       }
 
@@ -267,7 +285,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
         namedBaseType, namedBaseType.Name
       );
 
-      if (!subtypesByBaseType.ContainsKey(baseTypeId)) {
+      if (!subtypesByBaseType.ContainsKey(baseTypeId))
+      {
         subtypesByBaseType[baseTypeId] = [];
       }
 
@@ -289,8 +308,10 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
         (syntaxRef) => syntaxRef.GetSyntax(token)
       ).OfType<MethodDeclarationSyntax>() is
         IEnumerable<MethodDeclarationSyntax> initialStateMethodSyntaxes
-    ) {
-      foreach (var initialStateMethodSyntax in initialStateMethodSyntaxes) {
+    )
+    {
+      foreach (var initialStateMethodSyntax in initialStateMethodSyntaxes)
+      {
         var initialStateVisitor = new ReturnTypeVisitor(
           model, token, CodeService, concreteState, symbol
         );
@@ -303,7 +324,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
     // from the base state.
     LogicBlockGraph buildGraph(
       INamedTypeSymbol type, INamedTypeSymbol baseType
-    ) {
+    )
+    {
       var typeId = CodeService.GetNameFullyQualifiedWithoutGenerics(
         type, type.Name
       );
@@ -323,21 +345,24 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
         ? subtypesByBaseType[typeId]
         : [];
 
-      foreach (var subtype in subtypes) {
+      foreach (var subtype in subtypes)
+      {
         graph.Children.Add(buildGraph(subtype, type));
       }
 
       return graph;
     }
 
-    if (subtypesByBaseType.ContainsKey(root.BaseId)) {
+    if (subtypesByBaseType.ContainsKey(root.BaseId))
+    {
       // Only try to build graph of subtypes if there are any.
       root.Children.AddRange(subtypesByBaseType[root.BaseId]
         .Select((stateType) => buildGraph(stateType, concreteState))
       );
     }
 
-    foreach (var state in stateGraphsById.Values) {
+    foreach (var state in stateGraphsById.Values)
+    {
       state.Data = GetStateGraphData(
         stateTypesById[state.Id], model, token, concreteState
       );
@@ -361,7 +386,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
     GenerationOptions options,
     LogicBlockImplementation implementation,
     CancellationToken token
-  ) {
+  )
+  {
     var sb = new StringBuilder();
 
     // need to build up the uml string describing the state graph
@@ -370,13 +396,16 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
     var transitions = new List<string>();
     foreach (
       var stateId in implementation.StatesById.OrderBy(id => id.Key)
-    ) {
+    )
+    {
       var state = stateId.Value;
       foreach (
         var inputToStates in state.Data.InputToStates.OrderBy(id => id.Key)
-      ) {
+      )
+      {
         var inputId = inputToStates.Key;
-        foreach (var destStateId in inputToStates.Value.OrderBy(id => id)) {
+        foreach (var destStateId in inputToStates.Value.OrderBy(id => id))
+        {
           var dest = implementation.StatesById[destStateId];
           transitions.Add(
             $"{state.UmlId} --> " +
@@ -399,7 +428,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
 
     foreach (
       var initialStateId in implementation.InitialStateIds.OrderBy(id => id)
-    ) {
+    )
+    {
       initialStates.Add(
         "[*] --> " + implementation.StatesById[initialStateId].UmlId
       );
@@ -434,31 +464,38 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
     LogicBlockImplementation impl,
     List<string> stateDescriptions,
     int t
-  ) {
+  )
+  {
     var lines = new List<string>();
 
     var isMultilineState = graph.Children.Count > 0;
 
     var isRoot = graph == impl.Graph;
 
-    if (isMultilineState) {
-      if (isRoot) {
+    if (isMultilineState)
+    {
+      if (isRoot)
+      {
         lines.Add(
           $"{Tab(t)}state \"{impl.Name} State\" as {graph.UmlId} {{"
         );
       }
-      else {
+      else
+      {
         lines.Add($"{Tab(t)}state \"{graph.Name}\" as {graph.UmlId} {{");
       }
     }
-    else if (isRoot) {
+    else if (isRoot)
+    {
       lines.Add($"{Tab(t)}state \"{impl.Name} State\" as {graph.UmlId}");
     }
-    else {
+    else
+    {
       lines.Add($"{Tab(t)}state \"{graph.Name}\" as {graph.UmlId}");
     }
 
-    foreach (var child in graph.Children.OrderBy(child => child.Name)) {
+    foreach (var child in graph.Children.OrderBy(child => child.Name))
+    {
       lines.AddRange(
         WriteGraph(child, impl, stateDescriptions, t + 1)
       );
@@ -467,7 +504,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
     foreach (
       var outputContext in
         graph.Data.Outputs.Keys.OrderBy(key => key.DisplayName)
-    ) {
+    )
+    {
       var outputs = graph.Data.Outputs[outputContext]
         .Select(output => output.Name)
         .OrderBy(output => output);
@@ -477,7 +515,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
       );
     }
 
-    if (isMultilineState) { lines.Add($"{Tab(t)}}}"); }
+    if (isMultilineState)
+    { lines.Add($"{Tab(t)}}}"); }
     return lines;
   }
 
@@ -486,7 +525,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
       SemanticModel model,
       CancellationToken token,
       INamedTypeSymbol stateBaseType
-    ) {
+    )
+  {
     // type is the state type
 
     var inputsBuilder = ImmutableDictionary
@@ -526,29 +566,35 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
     var outputVisitor = new OutputVisitor(
       model, token, CodeService, OutputContexts.None
     );
-    foreach (var constructor in constructorNodes) {
+    foreach (var constructor in constructorNodes)
+    {
       // Collect outputs from every syntax node comprising the state type.
       outputVisitor.Visit(constructor);
     }
     outputsBuilder.AddRange(outputVisitor.OutputTypes);
 
-    foreach (var handledInputInterface in handledInputInterfaces) {
+    foreach (var handledInputInterface in handledInputInterfaces)
+    {
       var interfaceMembers = handledInputInterface.GetMembers();
       var inputTypeSymbol = handledInputInterface.TypeArguments[0];
-      if (inputTypeSymbol is not INamedTypeSymbol inputType) {
+      if (inputTypeSymbol is not INamedTypeSymbol inputType)
+      {
         continue;
       }
-      if (interfaceMembers.Length == 0) { continue; }
+      if (interfaceMembers.Length == 0)
+      { continue; }
       var implementation = type.FindImplementationForInterfaceMember(
         interfaceMembers[0]
       );
-      if (implementation is not IMethodSymbol methodSymbol) {
+      if (implementation is not IMethodSymbol methodSymbol)
+      {
         continue;
       }
 
       var onTypeItself = interfaces.Contains(handledInputInterface);
 
-      if (!onTypeItself) {
+      if (!onTypeItself)
+      {
         // method is not on the current type (so it must be implemented on a
         // base type).
         //
@@ -566,7 +612,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
             )
           );
 
-        if (methodSymbol is null) {
+        if (methodSymbol is null)
+        {
           continue;
         }
       }
@@ -577,7 +624,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
         .OfType<MethodDeclarationSyntax>()
         .ToImmutableArray();
 
-      foreach (var methodSyntax in handlerMethodSyntaxes) {
+      foreach (var methodSyntax in handlerMethodSyntaxes)
+      {
         inputHandlerMethods.Add(methodSyntax);
         var inputId = CodeService.GetNameFullyQualifiedWithoutGenerics(
           inputType, inputType.Name
@@ -595,7 +643,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
         returnTypeVisitor.Visit(methodSyntax);
         outputVisitor.Visit(methodSyntax);
 
-        if (outputVisitor.OutputTypes.ContainsKey(outputContext)) {
+        if (outputVisitor.OutputTypes.ContainsKey(outputContext))
+        {
           outputsBuilder.Add(
             outputContext, outputVisitor.OutputTypes[outputContext]
           );
@@ -621,7 +670,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
         methodSyntax => !inputHandlerMethods.Contains(methodSyntax)
       );
 
-    foreach (var otherMethod in allOtherMethods) {
+    foreach (var otherMethod in allOtherMethods)
+    {
       Log.Print("Examining method: " + otherMethod.Identifier.Text);
       var outputContext = OutputContexts.Method(otherMethod.Identifier.Text);
 
@@ -634,7 +684,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
       );
       outputVisitor.Visit(otherMethod);
 
-      if (outputVisitor.OutputTypes.ContainsKey(outputContext)) {
+      if (outputVisitor.OutputTypes.ContainsKey(outputContext))
+      {
         outputsBuilder.Add(
           outputContext, outputVisitor.OutputTypes[outputContext]
         );
@@ -645,7 +696,8 @@ public class Diagrammer : ChickensoftGenerator, IIncrementalGenerator {
 
     var inputToStates = inputToStatesBuilder.ToImmutable();
 
-    foreach (var input in inputToStates.Keys) {
+    foreach (var input in inputToStates.Keys)
+    {
       Log.Print(
         $"{type.Name} + {input.Split('.').Last()} -> " +
         $"{string.Join(", ", inputToStates[input].Select(

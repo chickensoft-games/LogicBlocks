@@ -2,9 +2,11 @@ namespace Chickensoft.LogicBlocks;
 
 using System;
 
-public abstract partial class LogicBlock<TState> {
+public abstract partial class LogicBlock<TState>
+{
   /// <summary>Logic block context provided to each logic block state.</summary>
-  internal readonly struct DefaultContext : IContext {
+  internal readonly struct DefaultContext : IContext
+  {
     public LogicBlock<TState> Logic { get; }
 
     /// <summary>
@@ -13,7 +15,8 @@ public abstract partial class LogicBlock<TState> {
     /// <param name="logic">Logic block.</param>
     public DefaultContext(
       LogicBlock<TState> logic
-    ) {
+    )
+    {
       Logic = logic;
     }
 
@@ -39,7 +42,8 @@ public abstract partial class LogicBlock<TState> {
     public override int GetHashCode() => HashCode.Combine(Logic);
   }
 
-  internal class ContextAdapter : IContext, IContextAdapter {
+  internal class ContextAdapter : IContext, IContextAdapter
+  {
     public IContext? Context { get; private set; }
 
     public void Adapt(IContext context) => Context = context;
@@ -50,8 +54,10 @@ public abstract partial class LogicBlock<TState> {
 
     /// <inheritdoc />
     public void Input<TInputType>(in TInputType input)
-      where TInputType : struct {
-      if (Context is not IContext context) {
+      where TInputType : struct
+    {
+      if (Context is not IContext context)
+      {
         throw new InvalidOperationException(
           "Cannot add input to a logic block with an uninitialized context."
         );
@@ -62,8 +68,10 @@ public abstract partial class LogicBlock<TState> {
 
     /// <inheritdoc />
     public void Output<TOutputType>(in TOutputType output)
-    where TOutputType : struct {
-      if (Context is not { } context) {
+    where TOutputType : struct
+    {
+      if (Context is not { } context)
+      {
         throw new InvalidOperationException(
           "Cannot add output to a logic block with an uninitialized context."
         );
@@ -81,8 +89,10 @@ public abstract partial class LogicBlock<TState> {
         : context.Get<TDataType>();
 
     /// <inheritdoc />
-    public void AddError(Exception e) {
-      if (Context is not IContext context) {
+    public void AddError(Exception e)
+    {
+      if (Context is not IContext context)
+      {
         throw new InvalidOperationException(
           "Cannot add error to a logic block with an uninitialized context."
         );

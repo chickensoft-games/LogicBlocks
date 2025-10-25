@@ -23,7 +23,8 @@ using Chickensoft.Serialization;
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
 public interface ILogicBlock<TState> :
-ILogicBlockBase, ISerializableBlackboard where TState : StateLogic<TState> {
+ILogicBlockBase, ISerializableBlackboard where TState : StateLogic<TState>
+{
   /// <summary>
   /// Logic block execution context.
   /// </summary>
@@ -140,13 +141,14 @@ ILogicBlockBase, ISerializableBlackboard where TState : StateLogic<TState> {
 /// </summary>
 /// <typeparam name="TState">State type.</typeparam>
 public abstract partial class LogicBlock<TState> : LogicBlockBase,
-ILogicBlock<TState> where TState : StateLogic<TState> {
-  private readonly struct InputPassthrough : IBoxlessValueHandler {
+ILogicBlock<TState> where TState : StateLogic<TState>
+{
+  private readonly struct InputPassthrough : IBoxlessValueHandler
+  {
     public required LogicBlock<TState> LogicBlock { get; init; }
 
-    void IBoxlessValueHandler<ValueType>.HandleValue<TValue>(in TValue value) {
-      LogicBlock.HandleInput(in value);
-    }
+    void IBoxlessValueHandler<ValueType>.HandleValue<TValue>(in TValue value)
+      => LogicBlock.HandleInput(in value);
   }
 
 
@@ -176,8 +178,10 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
   public override object? ValueAsObject => _value;
 
   /// <inheritdoc />
-  public override void RestoreState(object state) {
-    if (_value is not null) {
+  public override void RestoreState(object state)
+  {
+    if (_value is not null)
+    {
       throw new LogicBlockException(
         "Cannot restore state once a state has been initialized."
       );
@@ -195,10 +199,12 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
   private bool IsInvokingBindings => _bindingsInvocationCount > 0;
   private readonly HashSet<ILogicBlockBinding<TState>> _bindingsToRemove = [];
   private void StartBindingInvocation() => _bindingsInvocationCount++;
-  private void EndBindingInvocation() {
+  private void EndBindingInvocation()
+  {
     _bindingsInvocationCount--;
 
-    if (_bindingsInvocationCount == 0) {
+    if (_bindingsInvocationCount == 0)
+    {
       _bindings = [.. _bindings.Where(
         binding => !_bindingsToRemove.Contains(binding)
       )];
@@ -220,7 +226,8 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
   /// machine.
   /// </para>
   /// </summary>
-  protected LogicBlock() {
+  protected LogicBlock()
+  {
     _inputs = new();
     Context = new DefaultContext(this);
     PreallocateStates(this);
@@ -235,8 +242,10 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
   /// <inheritdoc />
   public virtual TState Input<TInputType>(
     in TInputType input
-  ) where TInputType : struct {
-    if (IsProcessing) {
+  ) where TInputType : struct
+  {
+    if (IsProcessing)
+    {
       _inputs.Enqueue(input);
       return Value;
     }
@@ -244,8 +253,10 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
   }
 
   /// <inheritdoc />
-  public void Start() {
-    if (IsProcessing || _value is not null) { return; }
+  public void Start()
+  {
+    if (IsProcessing || _value is not null)
+    { return; }
 
     Flush();
   }
@@ -257,8 +268,10 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
   public virtual void OnStart() { }
 
   /// <inheritdoc />
-  public void Stop() {
-    if (IsProcessing || _value is null) { return; }
+  public void Stop()
+  {
+    if (IsProcessing || _value is null)
+    { return; }
 
     OnStop();
 
@@ -278,8 +291,10 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
   public virtual void OnStop() { }
 
   /// <inheritdoc />
-  public TState ForceReset(TState state) {
-    if (IsProcessing) {
+  public TState ForceReset(TState state)
+  {
+    if (IsProcessing)
+    {
       throw new LogicBlockException(
         "Cannot force reset a logic block while it is processing inputs. " +
         "Do not call ForceReset() from inside a logic block's own state."
@@ -293,8 +308,10 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
 
   /// <inheritdoc />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public void AddBinding(ILogicBlockBinding<TState> binding) {
-    if (_bindings.Contains(binding)) {
+  public void AddBinding(ILogicBlockBinding<TState> binding)
+  {
+    if (_bindings.Contains(binding))
+    {
       return;
     }
 
@@ -303,8 +320,10 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
 
   /// <inheritdoc />
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public bool RemoveBinding(ILogicBlockBinding<TState> binding) {
-    if (IsInvokingBindings) {
+  public bool RemoveBinding(ILogicBlockBinding<TState> binding)
+  {
+    if (IsInvokingBindings)
+    {
 
     }
 
@@ -336,7 +355,8 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
   /// preferred in most cases.
   /// </summary>
   /// <param name="e">Exception to add.</param>
-  internal virtual void AddError(Exception e) {
+  internal virtual void AddError(Exception e)
+  {
     AnnounceException(e);
     HandleError(e);
   }
@@ -364,11 +384,14 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
   /// </summary>
   /// <typeparam name="TStateType">Type of state to transition to.</typeparam>
   protected Transition To<TStateType>()
-      where TStateType : TState {
-    try {
+      where TStateType : TState
+  {
+    try
+    {
       return new(Context.Get<TStateType>());
     }
-    catch (Exception e) {
+    catch (Exception e)
+    {
       throw new InvalidOperationException(
         $"Could not retrieve state {typeof(TStateType)}. You may need to add the Meta attribute to your LogicBlock, or add the states to the blackboard manually.",
         e
@@ -440,10 +463,12 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
 
   internal TState ProcessInputs<TInputType>(
     TInputType? input = null
-  ) where TInputType : struct {
+  ) where TInputType : struct
+  {
     _isProcessing++;
 
-    if (_value is null) {
+    if (_value is null)
+    {
       // No state yet. Let's get the first state going!
       Blackboard.InstantiateAnyMissingSavedData();
       ChangeState(RestoredState as TState ?? GetInitialState().State);
@@ -453,13 +478,15 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
 
     // We can always process the first input directly.
     // This keeps single inputs off the heap.
-    if (input.HasValue) {
+    if (input.HasValue)
+    {
       HandleInput(input.Value);
     }
 
     var passthrough = new InputPassthrough() { LogicBlock = this };
 
-    while (_inputs.HasValues) {
+    while (_inputs.HasValues)
+    {
       _inputs.Dequeue(passthrough);
     }
 
@@ -470,8 +497,10 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
     return _value!;
   }
 
-  private void HandleInput<TInput>(in TInput input) where TInput : struct {
-    if (_value is not IGet<TInput> stateWithInputHandler) {
+  private void HandleInput<TInput>(in TInput input) where TInput : struct
+  {
+    if (_value is not IGet<TInput> stateWithInputHandler)
+    {
       return;
     }
 
@@ -480,7 +509,8 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
 
     AnnounceInput(in input);
 
-    if (!CanChangeState(state)) {
+    if (!CanChangeState(state))
+    {
       // The only time we can't change states is if the new state is
       // equivalent to the old state (determined by the default equality
       // comparer)
@@ -491,7 +521,8 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
   }
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private void ChangeState(TState? state) {
+  private void ChangeState(TState? state)
+  {
     _isProcessing++;
     var previous = _value;
 
@@ -502,24 +533,29 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
 
     var stateIsDifferent = CanChangeState(previous);
 
-    if (state is not null) {
+    if (state is not null)
+    {
       state.Attach(Context);
 
-      if (_shouldCallOnEnter) {
+      if (_shouldCallOnEnter)
+      {
         state.Enter(previous);
       }
 
-      if (stateIsDifferent) {
+      if (stateIsDifferent)
+      {
         AnnounceState(state);
       }
     }
     _isProcessing--;
   }
 
-  internal void InvokeBindings(Action<ILogicBlockBinding<TState>> callback) {
+  internal void InvokeBindings(Action<ILogicBlockBinding<TState>> callback)
+  {
     StartBindingInvocation();
     var i = 0;
-    while (i < _bindings.Count) {
+    while (i < _bindings.Count)
+    {
       var binding = _bindings[i];
       callback(binding);
       i++;
@@ -529,10 +565,12 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   private void AnnounceInput<TInputType>(in TInputType input)
-  where TInputType : struct {
+  where TInputType : struct
+  {
     StartBindingInvocation();
     var i = 0;
-    while (i < _bindings.Count) {
+    while (i < _bindings.Count)
+    {
       var binding = _bindings[i];
       binding.MonitorInput(in input);
       i++;
@@ -547,10 +585,12 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
 
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   private void AnnounceOutput<TOutputType>(TOutputType output)
-  where TOutputType : struct {
+  where TOutputType : struct
+  {
     StartBindingInvocation();
     var i = 0;
-    while (i < _bindings.Count) {
+    while (i < _bindings.Count)
+    {
       var binding = _bindings[i];
       binding.MonitorOutput(in output);
       i++;
@@ -568,8 +608,10 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
     IGet<TInputType> inputHandler,
     in TInputType input,
     TState fallback
-  ) where TInputType : struct {
-    try { return inputHandler.On(in input).State; }
+  ) where TInputType : struct
+  {
+    try
+    { return inputHandler.On(in input).State; }
     catch (Exception e) { AddError(e); }
     return fallback;
   }
@@ -588,12 +630,16 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
   /// </summary>
   /// <param name="obj">Other logic block.</param>
   /// <returns>True if</returns>
-  public override bool Equals(object? obj) {
-    if (ReferenceEquals(this, obj)) { return true; }
+  public override bool Equals(object? obj)
+  {
+    if (ReferenceEquals(this, obj))
+    { return true; }
 
-    if (obj is not LogicBlockBase logic) { return false; }
+    if (obj is not LogicBlockBase logic)
+    { return false; }
 
-    if (GetType() != logic.GetType()) {
+    if (GetType() != logic.GetType())
+    {
       // Two different types of logic blocks are never equal.
       return false;
     }
@@ -601,7 +647,8 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
     // Ensure current states are equal.
     if (
       !SerializationUtilities.IsEquivalent(ValueAsObject, logic.ValueAsObject)
-    ) {
+    )
+    {
       return false;
     }
 
@@ -609,15 +656,19 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
     var types = Blackboard.Types;
     var otherTypes = logic.Blackboard.Types;
 
-    if (types.Count != otherTypes.Count) { return false; }
+    if (types.Count != otherTypes.Count)
+    { return false; }
 
-    foreach (var type in types) {
-      if (!otherTypes.Contains(type)) { return false; }
+    foreach (var type in types)
+    {
+      if (!otherTypes.Contains(type))
+      { return false; }
 
       var obj1 = Blackboard.GetObject(type);
       var obj2 = logic.Blackboard.GetObject(type);
 
-      if (SerializationUtilities.IsEquivalent(obj1, obj2)) {
+      if (SerializationUtilities.IsEquivalent(obj1, obj2))
+      {
         continue;
       }
 
@@ -635,10 +686,12 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
   /// <inheritdoc />
   public void RestoreFrom(
     ILogicBlock<TState> logic, bool shouldCallOnEnter = true
-  ) {
+  )
+  {
     _shouldCallOnEnter = shouldCallOnEnter;
 
-    if ((logic.ValueAsObject ?? logic.RestoredState) is not TState state) {
+    if ((logic.ValueAsObject ?? logic.RestoredState) is not TState state)
+    {
       throw new LogicBlockException(
         $"Cannot restore from an uninitialized logic block ({logic}). Please " +
         "make sure you've called Start() on it first."
@@ -647,7 +700,8 @@ ILogicBlock<TState> where TState : StateLogic<TState> {
 
     Stop();
 
-    foreach (var type in logic.Blackboard.Types) {
+    foreach (var type in logic.Blackboard.Types)
+    {
       Blackboard.OverwriteObject(type, logic.Blackboard.GetObject(type));
     }
 

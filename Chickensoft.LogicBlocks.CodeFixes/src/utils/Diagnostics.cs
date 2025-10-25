@@ -2,11 +2,13 @@ namespace Chickensoft.LogicBlocks.CodeFixes.Utils;
 
 using Microsoft.CodeAnalysis;
 
-public static class Diagnostics {
+public static class Diagnostics
+{
   public const string ERR_PREFIX = "LOGIC_BLOCKS";
   public const string ERR_CATEGORY = "Chickensoft.LogicBlocks.CodeFixes";
 
-  public static DiagnosticDescriptor MissingLogicBlockAttributeDescriptor {
+  public static DiagnosticDescriptor MissingLogicBlockAttributeDescriptor
+  {
     get;
   } = new(
     $"{ERR_PREFIX}_001",

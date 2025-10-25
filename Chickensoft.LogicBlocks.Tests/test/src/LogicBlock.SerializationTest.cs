@@ -9,21 +9,25 @@ using Chickensoft.Serialization;
 using Shouldly;
 using Xunit;
 
-public partial class LogicBlockSerializationTest {
+public partial class LogicBlockSerializationTest
+{
   [Meta, Id("a")]
-  public partial record A {
+  public partial record A
+  {
     [Save("a_value")]
     public string AValue { get; set; } = "";
   }
 
   [Meta, Id("b")]
-  public partial record B {
+  public partial record B
+  {
     [Save("b_value")]
     public string BValue { get; set; } = "";
   }
 
   [Fact]
-  public void SerializesLogicBlock() {
+  public void SerializesLogicBlock()
+  {
     var logic = new SerializableLogicBlock();
     logic.Start();
 
@@ -67,7 +71,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void DeserializesLogicBlock() {
+  public void DeserializesLogicBlock()
+  {
     var options = CreateOptions();
 
     var logic =
@@ -112,7 +117,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void SerializesLogicBlockWithNestedLogicBlocks() {
+  public void SerializesLogicBlockWithNestedLogicBlocks()
+  {
     var options = CreateOptions();
 
     var logic = new SerializableParallelLogicBlock();
@@ -159,7 +165,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenCannotGetStateProperty() {
+  public void ThrowsWhenCannotGetStateProperty()
+  {
     var options = CreateOptions();
 
     Should.Throw<JsonException>(
@@ -176,7 +183,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenCannotGetStateTypeDiscriminator() {
+  public void ThrowsWhenCannotGetStateTypeDiscriminator()
+  {
     var options = CreateOptions();
 
     Should.Throw<JsonException>(
@@ -194,7 +202,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenCannotGetBlackboardProperty() {
+  public void ThrowsWhenCannotGetBlackboardProperty()
+  {
     var options = CreateOptions();
 
     Should.Throw<JsonException>(
@@ -212,7 +221,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenLogicBlockHasUnknownIntrospectiveType() {
+  public void ThrowsWhenLogicBlockHasUnknownIntrospectiveType()
+  {
     var options = CreateOptions();
 
     Should.Throw<JsonException>(
@@ -231,7 +241,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenLogicBlockStateHasUnknownIntrospectiveType() {
+  public void ThrowsWhenLogicBlockStateHasUnknownIntrospectiveType()
+  {
     var options = CreateOptions();
 
     Should.Throw<JsonException>(
@@ -250,7 +261,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenLogicBlockHasUnknownIntrospectiveTypeInBlackboard() {
+  public void ThrowsWhenLogicBlockHasUnknownIntrospectiveTypeInBlackboard()
+  {
     var options = CreateOptions();
 
     Should.Throw<JsonException>(
@@ -271,7 +283,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenBlackboardObjIsNull() {
+  public void ThrowsWhenBlackboardObjIsNull()
+  {
     // Blackboards only contain non-null values.
     var options = CreateOptions();
 
@@ -292,7 +305,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenStateIsNull() {
+  public void ThrowsWhenStateIsNull()
+  {
     // States are always non-null.
     var options = CreateOptions();
 
@@ -311,7 +325,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenStateHasUnknownType() {
+  public void ThrowsWhenStateHasUnknownType()
+  {
     var options = CreateOptions();
 
     Should.Throw<JsonException>(
@@ -337,7 +352,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenStateJsonIsNull() {
+  public void ThrowsWhenStateJsonIsNull()
+  {
     var options = CreateOptions();
 
     Should.Throw<JsonException>(
@@ -360,7 +376,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenStateIdIsNull() {
+  public void ThrowsWhenStateIdIsNull()
+  {
     var options = CreateOptions();
 
     Should.Throw<JsonException>(
@@ -386,7 +403,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenStateVersionIsNull() {
+  public void ThrowsWhenStateVersionIsNull()
+  {
     var options = CreateOptions();
 
     Should.Throw<JsonException>(
@@ -411,7 +429,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenBlackboardJsonIsNull() {
+  public void ThrowsWhenBlackboardJsonIsNull()
+  {
     var options = CreateOptions();
 
     Should.Throw<JsonException>(
@@ -433,7 +452,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void ThrowsWhenBlackboardDeserializationFails() {
+  public void ThrowsWhenBlackboardDeserializationFails()
+  {
     var options = CreateOptions();
 
     Should.Throw<JsonException>(
@@ -455,7 +475,8 @@ public partial class LogicBlockSerializationTest {
   }
 
   [Fact]
-  public void UpgradesOutdatedStates() {
+  public void UpgradesOutdatedStates()
+  {
     // Pass it some upgrade dependencies.
     var deps = new Blackboard();
     deps.Set("string value");
@@ -478,9 +499,11 @@ public partial class LogicBlockSerializationTest {
 
   private static JsonSerializerOptions CreateOptions(
     IReadOnlyBlackboard? deps = null
-  ) {
+  )
+  {
     deps ??= new Blackboard();
-    return new JsonSerializerOptions {
+    return new JsonSerializerOptions
+    {
       Converters = {
         new SerializableTypeConverter(deps),
       },

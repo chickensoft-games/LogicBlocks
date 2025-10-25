@@ -5,12 +5,14 @@ using Moq;
 using Shouldly;
 using Xunit;
 
-public class HierarchicalCallbackLogicTest {
+public class HierarchicalCallbackLogicTest
+{
   private static HierarchicalCallbackLogic.Output.Log Log(string message) =>
     new(message);
 
   [Fact]
-  public void StateCallsRelevantEntranceCallbacks() {
+  public void StateCallsRelevantEntranceCallbacks()
+  {
     var state = new HierarchicalCallbackLogic.State.Substate();
     var context = state.CreateFakeContext();
 
@@ -26,7 +28,8 @@ public class HierarchicalCallbackLogicTest {
   }
 
   [Fact]
-  public void StateCallsRelevantExitCallbacks() {
+  public void StateCallsRelevantExitCallbacks()
+  {
     var state = new HierarchicalCallbackLogic.State.Substate();
     var context = state.CreateFakeContext();
 

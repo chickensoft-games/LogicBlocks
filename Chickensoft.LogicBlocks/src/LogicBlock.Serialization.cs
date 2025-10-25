@@ -2,10 +2,11 @@ namespace Chickensoft.LogicBlocks;
 
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Chickensoft.Serialization;
 using Chickensoft.Introspection;
+using Chickensoft.Serialization;
 
-public partial class LogicBlock<TState> : ICustomSerializable {
+public partial class LogicBlock<TState> : ICustomSerializable
+{
   /// <summary>Json property name for the state.</summary>
   public const string STATE_PROPERTY = "state";
   /// <summary>Json property name for the blackboard.</summary>
@@ -16,10 +17,9 @@ public partial class LogicBlock<TState> : ICustomSerializable {
     IdentifiableTypeMetadata metadata,
     JsonObject json,
     JsonSerializerOptions options
-  ) {
+  )
+  {
     var graph = Introspection.Types.Graph;
-
-    var type = GetType();
 
     var stateJson = json[STATE_PROPERTY]?.AsObject() ??
       throw new JsonException(
@@ -33,7 +33,7 @@ public partial class LogicBlock<TState> : ICustomSerializable {
         $"Logic block `{metadata.Id}` is missing the state type."
       );
 
-    var stateVersion =
+    _ =
       stateJson[Serializer.VERSION_PROPERTY]?.GetValue<int>() ??
       throw new JsonException(
         $"Logic block `{metadata.Id}` is missing the state version."
@@ -54,14 +54,16 @@ public partial class LogicBlock<TState> : ICustomSerializable {
     // we found in the deserialized blackboard. Preserving our blackboard
     // enables us to respect new persisted values or non-persisted values that
     // have already been added to the blackboard during construction.
-    foreach (var objType in blackboard.Types) {
+    foreach (var objType in blackboard.Types)
+    {
       Blackboard.OverwriteObject(objType, blackboard.GetObject(objType));
     }
 
     if (
       graph.GetIdentifiableType(stateId) is not { } stateType ||
       graph.GetMetadata(stateType) is not IIdentifiableTypeMetadata
-    ) {
+    )
+    {
       throw new JsonException(
         $"Logic block {metadata.Id} has an unknown identifiable state " +
         $"type id `{stateId}`."
@@ -85,7 +87,8 @@ public partial class LogicBlock<TState> : ICustomSerializable {
     IdentifiableTypeMetadata metadata,
     JsonObject json,
     JsonSerializerOptions options
-  ) {
+  )
+  {
     var graph = Introspection.Types.Graph;
 
     var stateJson = new JsonObject();

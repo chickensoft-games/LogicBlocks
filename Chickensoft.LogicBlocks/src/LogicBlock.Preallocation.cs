@@ -6,7 +6,8 @@ using Chickensoft.Introspection;
 
 using static Introspection.Types;
 
-public abstract partial class LogicBlock<TState> {
+public abstract partial class LogicBlock<TState>
+{
   /// <summary>
   /// Adds an instance of every concrete state type in the state hierarchy to
   /// the blackboard. For this to work, the logic block and its states must be
@@ -16,18 +17,21 @@ public abstract partial class LogicBlock<TState> {
   /// <param name="logic">Logic block whose states should be preallocated.
   /// </param>
   /// <exception cref="LogicBlockException" />
-  internal static void PreallocateStates(ILogicBlock<TState> logic) {
+  internal static void PreallocateStates(ILogicBlock<TState> logic)
+  {
     var type = logic.GetType();
     var metadata = Graph.GetMetadata(type);
 
-    if (metadata is not IIntrospectiveTypeMetadata introspectiveMetadata) {
+    if (metadata is not IIntrospectiveTypeMetadata introspectiveMetadata)
+    {
       // No preallocation for non-introspective types.
       return;
     }
 
     if (
       Graph.GetAttribute<LogicBlockAttribute>(type) is not { } logicAttribute
-    ) {
+    )
+    {
       // We're missing the logic block attribute. Introspective types must
       // have the [LogicBlock] attribute.
       throw new LogicBlockException(
@@ -51,30 +55,37 @@ public abstract partial class LogicBlock<TState> {
       new HashSet<Type>(descendantStateTypes.Count + 1)
       : null;
 
-    void cacheStateIfNeeded(Type type, IConcreteTypeMetadata metadata) {
+    void cacheStateIfNeeded(Type type, IConcreteTypeMetadata metadata)
+    {
       // Cache a pristine version of the state. Only done once per logic block
       // type (not instance). Used by the serialization system to determine
       // if it really needs to save a state.
-      if (!ReferenceStates.ContainsKey(type)) {
+      if (!ReferenceStates.ContainsKey(type))
+      {
         ReferenceStates.TryAdd(type, metadata.Factory());
       }
     }
 
-    void discoverState(Type type) {
-      if (isIdentifiable) {
+    void discoverState(Type type)
+    {
+      if (isIdentifiable)
+      {
         // Serializable logic block.
         var stateMetadata = Graph.GetMetadata(type);
 
         if (
           stateMetadata is IIntrospectiveTypeMetadata iMetadata &&
           iMetadata.Metatype.Attributes.ContainsKey(typeof(TestStateAttribute))
-        ) {
+        )
+        {
           // Skip test states.
           return;
         }
 
-        if (stateMetadata is IIdentifiableTypeMetadata idMetadata) {
-          if (idMetadata is IConcreteTypeMetadata concreteMetadata) {
+        if (stateMetadata is IIdentifiableTypeMetadata idMetadata)
+        {
+          if (idMetadata is IConcreteTypeMetadata concreteMetadata)
+          {
             cacheStateIfNeeded(type, concreteMetadata);
 
             // We're a serializable logic block. States should only be saved if
@@ -91,13 +102,15 @@ public abstract partial class LogicBlock<TState> {
             logic.OverwriteObject(type, concreteMetadata.Factory());
           }
         }
-        else if (stateMetadata is not IIntrospectiveTypeMetadata) {
+        else if (stateMetadata is not IIntrospectiveTypeMetadata)
+        {
           // Logic block is serializable, but the state is not even an
           // introspective type. Add state to the list of states to mention
           // when we throw an error later.
           stateTypesNeedingAttention!.Add(type);
         }
-        else if (stateMetadata is IConcreteTypeMetadata) {
+        else if (stateMetadata is IConcreteTypeMetadata)
+        {
           // Concrete introspective types on serializable logic blocks MUST
           // be identifiable types.
           stateTypesNeedingAttention!.Add(type);
@@ -108,7 +121,8 @@ public abstract partial class LogicBlock<TState> {
 
       // Non-serializable logic block.
 
-      if (Graph.GetMetadata(type) is IConcreteTypeMetadata metadata) {
+      if (Graph.GetMetadata(type) is IConcreteTypeMetadata metadata)
+      {
         cacheStateIfNeeded(type, metadata);
         // We're not a serializable logic block. Just add the state to the
         // blackboard the normal way.
@@ -118,13 +132,16 @@ public abstract partial class LogicBlock<TState> {
 
     discoverState(baseStateType);
 
-    foreach (var stateType in descendantStateTypes) {
+    foreach (var stateType in descendantStateTypes)
+    {
       discoverState(stateType);
     }
 
-    if (!isIdentifiable) { return; }
+    if (!isIdentifiable)
+    { return; }
 
-    if (stateTypesNeedingAttention!.Count == 0) { return; }
+    if (stateTypesNeedingAttention!.Count == 0)
+    { return; }
 
     var statesNeedingAttention = string.Join(", ", stateTypesNeedingAttention);
 

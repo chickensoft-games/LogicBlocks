@@ -3,31 +3,38 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 using System;
 using Chickensoft.Introspection;
 
-public enum SecondaryState {
+public enum SecondaryState
+{
   Blooped,
   Bopped
 }
 
 [Meta, Id("test_machine")]
 [LogicBlock(typeof(State), Diagram = true)]
-public partial class TestMachine : LogicBlock<TestMachine.State> {
-  public static class Input {
+public partial class TestMachine : LogicBlock<TestMachine.State>
+{
+  public static class Input
+  {
     public readonly record struct Activate(SecondaryState Secondary);
     public readonly record struct Deactivate();
   }
 
   [Meta]
-  public abstract partial record State : StateLogic<State>, IGet<Input.Activate> {
+  public abstract partial record State : StateLogic<State>, IGet<Input.Activate>
+  {
     public Transition On(in Input.Activate input) =>
-      input.Secondary switch {
+      input.Secondary switch
+      {
         SecondaryState.Blooped => To<Activated.Blooped>(),
         SecondaryState.Bopped => To<Activated.Bopped>(),
         _ => throw new ArgumentException("Unrecognized secondary state.")
       };
 
     [Meta]
-    public abstract partial record Activated : State, IGet<Input.Deactivate> {
-      public Activated() {
+    public abstract partial record Activated : State, IGet<Input.Deactivate>
+    {
+      public Activated()
+      {
         this.OnEnter(() => Output(new Output.Activated()));
         this.OnExit(() => Output(new Output.ActivatedCleanUp()));
       }
@@ -35,16 +42,20 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
       public Transition On(in Input.Deactivate input) => To<Deactivated>();
 
       [Meta, Id("test_machine_state_activated_blooped")]
-      public partial record Blooped : Activated {
-        public Blooped() {
+      public partial record Blooped : Activated
+      {
+        public Blooped()
+        {
           this.OnEnter(() => Output(new Output.Blooped()));
           this.OnExit(() => Output(new Output.BloopedCleanUp()));
         }
       }
 
       [Meta, Id("test_machine_state_activated_bopped")]
-      public partial record Bopped : Activated {
-        public Bopped() {
+      public partial record Bopped : Activated
+      {
+        public Bopped()
+        {
           this.OnEnter(() => Output(new Output.Bopped()));
           this.OnExit(() => Output(new Output.BoppedCleanUp()));
         }
@@ -52,15 +63,18 @@ public partial class TestMachine : LogicBlock<TestMachine.State> {
     }
 
     [Meta, Id("test_machine_state_deactivated")]
-    public partial record Deactivated : State {
-      public Deactivated() {
+    public partial record Deactivated : State
+    {
+      public Deactivated()
+      {
         this.OnEnter(() => Output(new Output.Deactivated()));
         this.OnExit(() => Output(new Output.DeactivatedCleanUp()));
       }
     }
   }
 
-  public static class Output {
+  public static class Output
+  {
     public readonly record struct Activated;
     public readonly record struct ActivatedCleanUp;
     public readonly record struct Deactivated;

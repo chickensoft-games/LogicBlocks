@@ -12,8 +12,10 @@ using System.Text;
 /// subsequent lines to match the indent where the first line occurs.
 /// </summary>
 [InterpolatedStringHandler]
-public readonly ref struct IndentationAwareInterpolationHandler {
-  private class State {
+public readonly ref struct IndentationAwareInterpolationHandler
+{
+  private class State
+  {
     public bool EndedOnWhitespace { get; set; }
     public int Indent { get; set; }
     public string Prefix => new(' ', Indent * Constants.SPACES_PER_INDENT);
@@ -24,21 +26,26 @@ public readonly ref struct IndentationAwareInterpolationHandler {
 
   public IndentationAwareInterpolationHandler(
     int literalLength, int formattedCount
-  ) {
+  )
+  {
     _sb = new StringBuilder(literalLength);
   }
 
   public void AppendLiteral(string s) => AddString(s);
 
-  public void AppendFormatted<T>(T? t) {
-    if (t is not T item) {
+  public void AppendFormatted<T>(T? t)
+  {
+    if (t is not T item)
+    {
       return;
     }
-    else if (item is IEnumerable<string> lines) {
+    else if (item is IEnumerable<string> lines)
+    {
       AddLines(lines);
       return;
     }
-    else if (item is string str) {
+    else if (item is string str)
+    {
       AddString(str);
       return;
     }
@@ -46,7 +53,8 @@ public readonly ref struct IndentationAwareInterpolationHandler {
     _sb.Append(item.ToString());
   }
 
-  private void AddString(string s) {
+  private void AddString(string s)
+  {
     var value = s.NormalizeLineEndings();
     var lastNewLineIndex = value.LastIndexOf('\n');
     var remainingString = value.Substring(lastNewLineIndex + 1);
@@ -58,7 +66,8 @@ public readonly ref struct IndentationAwareInterpolationHandler {
     _sb.Append(value);
   }
 
-  private void AddLines(IEnumerable<string> lines) {
+  private void AddLines(IEnumerable<string> lines)
+  {
     // Makes subsequent lines after the first share the same initial
     // indentation amount as where the first line occurs, plus any additional
     // indent added by the line.
@@ -67,7 +76,8 @@ public readonly ref struct IndentationAwareInterpolationHandler {
       Environment.NewLine,
       lines.Take(1).Concat(lines.Skip(1).Select((line) => prefix + line))
     );
-    if (string.IsNullOrEmpty(value)) {
+    if (string.IsNullOrEmpty(value))
+    {
       return;
     }
     _sb.Append(value);

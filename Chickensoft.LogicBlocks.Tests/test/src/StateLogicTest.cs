@@ -4,16 +4,19 @@ using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Shouldly;
 using Xunit;
 
-public partial class LogicStateLogicTest {
+public partial class LogicStateLogicTest
+{
   [Fact]
-  public void Initializes() {
-    var logic = new TestMachine();
+  public void Initializes()
+  {
+    _ = new TestMachine();
     var stateLogic = new TestMachine.State.Deactivated();
     stateLogic.GetHashCode().ShouldBeOfType<int>();
   }
 
   [Fact]
-  public void EnterWithTypeRespectsType() {
+  public void EnterWithTypeRespectsType()
+  {
     var state = new TestMachine.State.Activated.Blooped();
     var context = state.CreateFakeContext();
 
@@ -27,7 +30,8 @@ public partial class LogicStateLogicTest {
   }
 
   [Fact]
-  public void ExitWithTypeRespectsType() {
+  public void ExitWithTypeRespectsType()
+  {
     var state = new TestMachine.State.Activated.Blooped();
     var context = state.CreateFakeContext();
 

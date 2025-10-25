@@ -3,7 +3,8 @@ namespace Chickensoft.LogicBlocks;
 using System;
 using System.Collections.Generic;
 
-public abstract partial class LogicBlock<TState> {
+public abstract partial class LogicBlock<TState>
+{
   /// <summary>
   /// Action that responds to a particular type of input.
   /// </summary>
@@ -29,7 +30,8 @@ public abstract partial class LogicBlock<TState> {
   /// updates when a state has changed but the relevant data within it has not.
   /// </para>
   /// </summary>
-  public interface IBinding : IDisposable {
+  public interface IBinding : IDisposable
+  {
     /// <summary>
     /// Register a callback to be invoked whenever an input type of
     /// <typeparamref name="TInputType" /> is encountered.
@@ -89,7 +91,8 @@ public abstract partial class LogicBlock<TState> {
   /// </para>
   /// </summary>
   internal abstract class BindingBase :
-  LogicBlockListenerBase<TState>, IBinding {
+  LogicBlockListenerBase<TState>, IBinding
+  {
     // Map of an input type to a list of functions that receive that input.
     // We store the functions as "object" and cast to the specific function
     // type later when we have a generic argument to avoid boxing inputs.
@@ -110,7 +113,8 @@ public abstract partial class LogicBlock<TState> {
     // binding when a particular type of error is encountered.
     internal readonly List<Action<Exception>> _exceptionRunners;
 
-    internal BindingBase() {
+    internal BindingBase()
+    {
       _inputRunners = [];
       _outputRunners = [];
       _stateCheckers = [];
@@ -121,11 +125,14 @@ public abstract partial class LogicBlock<TState> {
 
     /// <inheritdoc />
     public IBinding Watch<TInputType>(InputAction<TInputType> handler)
-    where TInputType : struct {
-      if (_inputRunners.TryGetValue(typeof(TInputType), out var runners)) {
+    where TInputType : struct
+    {
+      if (_inputRunners.TryGetValue(typeof(TInputType), out var runners))
+      {
         runners.Add(handler);
       }
-      else {
+      else
+      {
         _inputRunners[typeof(TInputType)] = [handler];
       }
 
@@ -134,7 +141,8 @@ public abstract partial class LogicBlock<TState> {
 
     /// <inheritdoc />
     public IBinding When<TStateType>(Action<TStateType> handler)
-      where TStateType : TState {
+      where TStateType : TState
+    {
       // Only run the callback if the incoming state is the expected type of
       // state. All incoming states are guaranteed to be non-equivalent to the
       // previous state.
@@ -146,11 +154,14 @@ public abstract partial class LogicBlock<TState> {
 
     /// <inheritdoc />
     public IBinding Handle<TOutputType>(OutputAction<TOutputType> handler)
-    where TOutputType : struct {
-      if (_outputRunners.TryGetValue(typeof(TOutputType), out var runners)) {
+    where TOutputType : struct
+    {
+      if (_outputRunners.TryGetValue(typeof(TOutputType), out var runners))
+      {
         runners.Add(handler);
       }
-      else {
+      else
+      {
         _outputRunners[typeof(TOutputType)] = [handler];
       }
 
@@ -160,7 +171,8 @@ public abstract partial class LogicBlock<TState> {
     /// <inheritdoc />
     public IBinding Catch<TException>(
       Action<TException> handler
-    ) where TException : Exception {
+    ) where TException : Exception
+    {
       _exceptionCheckers.Add((error) => error is TException);
       _exceptionRunners.Add((error) => handler((TException)error));
 
@@ -168,24 +180,30 @@ public abstract partial class LogicBlock<TState> {
     }
 
     protected override void ReceiveInput<TInputType>(in TInputType input)
-    where TInputType : struct {
-      if (!_inputRunners.TryGetValue(typeof(TInputType), out var runners)) {
+    where TInputType : struct
+    {
+      if (!_inputRunners.TryGetValue(typeof(TInputType), out var runners))
+      {
         return;
       }
 
       // Run each input binding that should be run.
-      foreach (var runner in runners) {
+      foreach (var runner in runners)
+      {
         // If the binding handles this type of input, run it!
         (runner as InputAction<TInputType>)!(in input);
       }
     }
 
-    protected override void ReceiveState(TState state) {
+    protected override void ReceiveState(TState state)
+    {
       // Run each when binding that should be run.
-      for (var i = 0; i < _stateCheckers.Count; i++) {
+      for (var i = 0; i < _stateCheckers.Count; i++)
+      {
         var checker = _stateCheckers[i];
         var runner = _stateRunners[i];
-        if (checker(state)) {
+        if (checker(state))
+        {
           // If the binding handles this type of state, run it!
           runner(state);
         }
@@ -193,31 +211,38 @@ public abstract partial class LogicBlock<TState> {
     }
 
     protected override void ReceiveOutput<TOutputType>(in TOutputType output)
-    where TOutputType : struct {
-      if (!_outputRunners.TryGetValue(typeof(TOutputType), out var runners)) {
+    where TOutputType : struct
+    {
+      if (!_outputRunners.TryGetValue(typeof(TOutputType), out var runners))
+      {
         return;
       }
 
       // Run each output binding that should be run.
-      foreach (var runner in runners) {
+      foreach (var runner in runners)
+      {
         // If the binding handles this type of output, run it!
         (runner as OutputAction<TOutputType>)!(in output);
       }
     }
 
-    protected override void ReceiveException(Exception e) {
+    protected override void ReceiveException(Exception e)
+    {
       // Run each error binding that should be run.
-      for (var i = 0; i < _exceptionCheckers.Count; i++) {
+      for (var i = 0; i < _exceptionCheckers.Count; i++)
+      {
         var checker = _exceptionCheckers[i];
         var runner = _exceptionRunners[i];
-        if (checker(e)) {
+        if (checker(e))
+        {
           // If the binding handles this type of error, run it!
           runner(e);
         }
       }
     }
 
-    protected override void Cleanup() {
+    protected override void Cleanup()
+    {
       _inputRunners.Clear();
       _outputRunners.Clear();
       _stateCheckers.Clear();
@@ -227,16 +252,19 @@ public abstract partial class LogicBlock<TState> {
     }
   }
 
-  internal class Binding : BindingBase {
+  internal class Binding : BindingBase
+  {
     /// <summary>Logic block being listened to.</summary>
     public LogicBlock<TState> LogicBlock { get; }
 
-    internal Binding(LogicBlock<TState> logicBlock) {
+    internal Binding(LogicBlock<TState> logicBlock)
+    {
       LogicBlock = logicBlock;
       logicBlock.AddBinding(this);
     }
 
-    protected override void Cleanup() {
+    protected override void Cleanup()
+    {
       LogicBlock.RemoveBinding(this);
       base.Cleanup();
     }
