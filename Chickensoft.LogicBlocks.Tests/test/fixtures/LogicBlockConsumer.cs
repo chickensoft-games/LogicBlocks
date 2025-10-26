@@ -2,7 +2,8 @@ namespace Chickensoft.LogicBlocks.Tests.Fixtures;
 
 using System;
 
-public class LogicBlockConsumer {
+public class LogicBlockConsumer
+{
   public bool SawOutput { get; private set; }
   public bool SawInput { get; private set; }
   public bool SawState { get; private set; }
@@ -11,7 +12,8 @@ public class LogicBlockConsumer {
   public IMyLogicBlock Logic { get; }
   public MyLogicBlock.IBinding Binding { get; }
 
-  public LogicBlockConsumer(IMyLogicBlock logic) {
+  public LogicBlockConsumer(IMyLogicBlock logic)
+  {
     Logic = logic;
     Binding = logic.Bind();
 

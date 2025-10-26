@@ -4,15 +4,19 @@ using System;
 using Chickensoft.Introspection;
 
 [Meta, LogicBlock(typeof(State))]
-public partial class AbstractTransitionBlock : LogicBlock<AbstractTransitionBlock.State> {
+public partial class AbstractTransitionBlock : LogicBlock<AbstractTransitionBlock.State>
+{
   public override Transition GetInitialState() => To<State.A>();
 
-  public static class Input {
+  public static class Input
+  {
     public readonly record struct Signal;
   }
 
-  public abstract record State : StateLogic<State> {
-    public record A : State, IGet<Input.Signal> {
+  public abstract record State : StateLogic<State>
+  {
+    public record A : State, IGet<Input.Signal>
+    {
       // throws at runtime since you can't transition to an abstract state
       public Transition On(in Input.Signal input) => To<State>();
     }

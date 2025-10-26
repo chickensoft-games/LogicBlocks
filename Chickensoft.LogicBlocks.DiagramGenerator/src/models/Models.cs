@@ -18,7 +18,8 @@ public sealed record LogicBlockGraph(
   string Name,
   string BaseId,
   List<LogicBlockGraph> Children
-) {
+)
+{
   /// <summary>
   /// Logic block graph data (inputs, input to state mappings, and outputs).
   /// </summary>
@@ -43,7 +44,8 @@ public sealed record LogicBlockGraph(
 
   public override string ToString() => Describe(0);
 
-  public string Describe(int level) {
+  public string Describe(int level)
+  {
     var indent = ChickensoftGenerator.Tab(level);
 
     return ($"{indent}LogicBlockGraph {{\n" +
@@ -77,7 +79,8 @@ public sealed record LogicBlockImplementation(
   ImmutableHashSet<string> InitialStateIds,
   LogicBlockGraph Graph,
   ImmutableDictionary<string, LogicBlockGraph> StatesById
-) {
+)
+{
   public bool Equals(LogicBlockImplementation? other) =>
     other is not null &&
     Id == other.Id &&
@@ -109,29 +112,36 @@ public record LogicBlockGraphData(
     Outputs
 );
 
-public interface IOutputContext {
+public interface IOutputContext
+{
   /// <summary>
   /// Display name of the context in which the output is being produced. This
   /// is usually OnEnter, OnExit, or an input handler name.
   /// </summary>
   string DisplayName { get; }
 }
-public static class OutputContexts {
-  private record OutputOnEnterContext : IOutputContext {
+public static class OutputContexts
+{
+  private record OutputOnEnterContext : IOutputContext
+  {
     public string DisplayName => "OnEnter";
   }
-  private record OutputOnExitContext : IOutputContext {
+  private record OutputOnExitContext : IOutputContext
+  {
     public string DisplayName => "OnExit";
   }
-  private record OutputOnHandlerContext(string InputName) : IOutputContext {
+  private record OutputOnHandlerContext(string InputName) : IOutputContext
+  {
     public string DisplayName => $"On{InputName}";
   }
 
-  private record NoOutputContext : IOutputContext {
+  private record NoOutputContext : IOutputContext
+  {
     public string DisplayName => "None";
   }
 
-  private record OutputMethodContext(string MethodName) : IOutputContext {
+  private record OutputMethodContext(string MethodName) : IOutputContext
+  {
     public string DisplayName => $"{MethodName}()";
   }
 

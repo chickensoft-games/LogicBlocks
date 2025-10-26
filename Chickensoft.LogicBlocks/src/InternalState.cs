@@ -7,7 +7,8 @@ using System.Collections.Generic;
 /// Internal state stored in each logic block state. This is used to store
 /// entrance and exit callbacks without tripping up equality checking.
 /// </summary>
-internal class InternalState {
+internal class InternalState
+{
   /// <summary>
   /// Callbacks to be invoked when the state is entered.
   /// </summary>
@@ -43,7 +44,8 @@ internal class InternalState {
 
   /// <summary>Creates a new state logic internal state.</summary>
   /// <param name="contextAdapter">LogicBlock context adapter.</param>
-  public InternalState(IContextAdapter contextAdapter) {
+  public InternalState(IContextAdapter contextAdapter)
+  {
     EnterCallbacks = new();
     ExitCallbacks = new();
     ContextAdapter = contextAdapter;

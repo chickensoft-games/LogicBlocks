@@ -5,17 +5,22 @@ using Shouldly;
 using Xunit;
 using static Chickensoft.LogicBlocks.Tutorial.Timer;
 
-public class TimerTest {
-  private sealed record MyComponent(ITimer Timer) {
-    public void DoSomething() {
-      if (Timer.Value is State.PoweredOff) {
+public class TimerTest
+{
+  private sealed record MyComponent(ITimer Timer)
+  {
+    public void DoSomething()
+    {
+      if (Timer.Value is State.PoweredOff)
+      {
         // Do something when the timer is off.
       }
     }
   }
 
   [Fact]
-  public void Mocks() {
+  public void Mocks()
+  {
     var timer = new Mock<ITimer>();
 
     // Make the mock logic block be in a specific state.
@@ -26,19 +31,23 @@ public class TimerTest {
   }
 
   [Fact]
-  public void Binds() {
+  public void Binds()
+  {
     var timer = new Timer();
     using var binding = timer.Bind();
 
-    binding.Watch((in Input.ChangeDuration input) => {
+    binding.Watch((in Input.ChangeDuration input) =>
+    {
       // Watch for duration change inputs.
     });
 
-    binding.Handle((in Output.PlayBeepingSound output) => {
+    binding.Handle((in Output.PlayBeepingSound output) =>
+    {
       // Play a beeping sound.
     });
 
-    binding.When<State.PoweredOn.Idle>(state => {
+    binding.When<State.PoweredOn.Idle>(state =>
+    {
       // Do something when the timer becomes idle.
     });
 
@@ -46,7 +55,8 @@ public class TimerTest {
   }
 
   [Fact]
-  public void Initializes() {
+  public void Initializes()
+  {
     // Mock dependencies that the logic block needs.
     var clock = new Mock<IClock>();
 
@@ -56,7 +66,7 @@ public class TimerTest {
     timer.Set(clock.Object);
 
     // Check that the initial state is the one we expect.
-    var state = timer.GetInitialState()
+    timer.GetInitialState()
       .State
       .ShouldBeOfType<State.PoweredOff>();
 
@@ -66,12 +76,14 @@ public class TimerTest {
   }
 }
 
-public class PoweredOnStateTest() {
+public class PoweredOnStateTest()
+{
   // We can't create abstract classes directly for testing, so we extend it.
   public record TestPoweredOnState : State.PoweredOn { }
 
   [Fact]
-  public void TurnsOff() {
+  public void TurnsOff()
+  {
     var state = new TestPoweredOnState();
 
     state.CreateFakeContext();
@@ -81,9 +93,11 @@ public class PoweredOnStateTest() {
   }
 }
 
-public class IdleStateTest() {
+public class IdleStateTest()
+{
   [Fact]
-  public void ChangesDuration() {
+  public void ChangesDuration()
+  {
     var state = new State.PoweredOn.Idle();
     var context = state.CreateFakeContext();
 
@@ -99,9 +113,10 @@ public class IdleStateTest() {
   }
 
   [Fact]
-  public void Starts() {
+  public void Starts()
+  {
     var state = new State.PoweredOn.Idle();
-    var context = state.CreateFakeContext();
+    _ = state.CreateFakeContext();
 
     state.On(new Input.StartStopButtonPressed())
       .State
@@ -109,9 +124,11 @@ public class IdleStateTest() {
   }
 }
 
-public class CountdownStateTest {
+public class CountdownStateTest
+{
   [Fact]
-  public void AddsTimeElapsedInputWhenClockFires() {
+  public void AddsTimeElapsedInputWhenClockFires()
+  {
     var state = new State.PoweredOn.Countdown();
     var context = state.CreateFakeContext();
 
@@ -131,7 +148,8 @@ public class CountdownStateTest {
   }
 
   [Fact]
-  public void OnTimeElapsedStartsBeeping() {
+  public void OnTimeElapsedStartsBeeping()
+  {
     var state = new State.PoweredOn.Countdown();
     var context = state.CreateFakeContext();
 
@@ -143,7 +161,8 @@ public class CountdownStateTest {
   }
 
   [Fact]
-  public void OnTimeElapsedKeepsCountingDown() {
+  public void OnTimeElapsedKeepsCountingDown()
+  {
     var state = new State.PoweredOn.Countdown();
     var context = state.CreateFakeContext();
 
@@ -157,9 +176,10 @@ public class CountdownStateTest {
   }
 
   [Fact]
-  public void OnStartStopButtonPressedIdles() {
+  public void OnStartStopButtonPressedIdles()
+  {
     var state = new State.PoweredOn.Countdown();
-    var context = state.CreateFakeContext();
+    _ = state.CreateFakeContext();
 
     state.On(new Input.StartStopButtonPressed())
       .State
@@ -167,9 +187,11 @@ public class CountdownStateTest {
   }
 }
 
-public class BeepingStateTest {
+public class BeepingStateTest
+{
   [Fact]
-  public void PlaysBeepingSoundOnEnter() {
+  public void PlaysBeepingSoundOnEnter()
+  {
     var state = new State.PoweredOn.Beeping();
     var context = state.CreateFakeContext();
 
@@ -179,7 +201,8 @@ public class BeepingStateTest {
   }
 
   [Fact]
-  public void StopsBeepingSoundOnExit() {
+  public void StopsBeepingSoundOnExit()
+  {
     var state = new State.PoweredOn.Beeping();
     var context = state.CreateFakeContext();
 
@@ -189,9 +212,10 @@ public class BeepingStateTest {
   }
 
   [Fact]
-  public void OnStartStopButtonPressedIdles() {
+  public void OnStartStopButtonPressedIdles()
+  {
     var state = new State.PoweredOn.Beeping();
-    var context = state.CreateFakeContext();
+    _ = state.CreateFakeContext();
 
     state.On(new Input.StartStopButtonPressed())
       .State
@@ -199,11 +223,13 @@ public class BeepingStateTest {
   }
 }
 
-public class PoweredOffStateTest() {
+public class PoweredOffStateTest()
+{
   [Fact]
-  public void TurnsOn() {
+  public void TurnsOn()
+  {
     var state = new State.PoweredOff();
-    var context = state.CreateFakeContext();
+    _ = state.CreateFakeContext();
 
     state.On(new Input.PowerButtonPressed())
       .State

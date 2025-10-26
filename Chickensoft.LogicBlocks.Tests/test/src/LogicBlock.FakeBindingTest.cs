@@ -6,9 +6,11 @@ using Moq;
 using Shouldly;
 using Xunit;
 
-public class FakeBindingTest {
+public class FakeBindingTest
+{
   [Fact]
-  public void SimulatesAnInput() {
+  public void SimulatesAnInput()
+  {
     var logic = new Mock<IMyLogicBlock>();
     var binding = MyLogicBlock.CreateFakeBinding();
     logic.Setup(logic => logic.Bind()).Returns(binding);
@@ -21,7 +23,8 @@ public class FakeBindingTest {
   }
 
   [Fact]
-  public void SimulatesAnOutput() {
+  public void SimulatesAnOutput()
+  {
     var logic = new Mock<IMyLogicBlock>();
     var binding = MyLogicBlock.CreateFakeBinding();
     logic.Setup(logic => logic.Bind()).Returns(binding);
@@ -34,7 +37,8 @@ public class FakeBindingTest {
   }
 
   [Fact]
-  public void SimulatesAnError() {
+  public void SimulatesAnError()
+  {
     var logic = new Mock<IMyLogicBlock>();
     var binding = MyLogicBlock.CreateFakeBinding();
     logic.Setup(logic => logic.Bind()).Returns(binding);
@@ -47,7 +51,8 @@ public class FakeBindingTest {
   }
 
   [Fact]
-  public void SimulatesAState() {
+  public void SimulatesAState()
+  {
     var logic = new Mock<IMyLogicBlock>();
     var binding = MyLogicBlock.CreateFakeBinding();
     logic.Setup(logic => logic.Bind()).Returns(binding);

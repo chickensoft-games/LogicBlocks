@@ -8,10 +8,12 @@ using System.Linq;
 /// Simple, but effective.
 /// Inspired by https://dev.to/panoukos41/debugging-c-source-generators-1flm.
 /// </summary>
-public class Log {
+public class Log
+{
   protected List<string> Logs { get; } = [];
 
-  public void Print(string msg) {
+  public void Print(string msg)
+  {
 #if DEBUG
     var lines = msg.Split('\n').Select(line => "//\t" + line);
     Logs.AddRange(lines);

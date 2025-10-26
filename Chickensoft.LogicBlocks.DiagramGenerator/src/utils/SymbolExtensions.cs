@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 
-public static class SymbolExtensions {
+public static class SymbolExtensions
+{
   public static bool InheritsFromOrEquals(
       this ITypeSymbol type, INamedTypeSymbol baseType) =>
         type
@@ -22,9 +23,11 @@ public static class SymbolExtensions {
 
   private static IEnumerable<ITypeSymbol> GetBaseTypesAndThis(
     this ITypeSymbol? type
-  ) {
+  )
+  {
     var current = type;
-    while (current != null) {
+    while (current != null)
+    {
       yield return current;
       current = current.BaseType;
     }

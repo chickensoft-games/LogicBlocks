@@ -7,12 +7,15 @@ using Chickensoft.Serialization;
 using Shouldly;
 using Xunit;
 
-public class SerializationTest {
+public class SerializationTest
+{
   [Fact]
-  public void SerializesAndDeserializes() {
+  public void SerializesAndDeserializes()
+  {
     var logic = new SerializableLogicBlock();
 
-    var options = new JsonSerializerOptions() {
+    var options = new JsonSerializerOptions()
+    {
       WriteIndented = true,
       TypeInfoResolver = new SerializableTypeResolver(),
       Converters = { new SerializableTypeConverter(new Blackboard()) }

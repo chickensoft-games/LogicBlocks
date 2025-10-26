@@ -7,11 +7,13 @@ using Moq;
 using Shouldly;
 using Xunit;
 
-public class BindingTest {
+public class BindingTest
+{
   public static bool WasFinalized { get; set; }
 
   [Fact]
-  public void MatchingStateRunsAgainIfNonEquivalent() {
+  public void MatchingStateRunsAgainIfNonEquivalent()
+  {
     var block = new FakeLogicBlock();
     using var binding = block.Bind();
 
@@ -24,7 +26,8 @@ public class BindingTest {
   }
 
   [Fact]
-  public void MatchingStateDoesNotRunAgainIfEquivalent() {
+  public void MatchingStateDoesNotRunAgainIfEquivalent()
+  {
     var block = new FakeLogicBlock();
     using var binding = block.Bind();
 
@@ -39,7 +42,8 @@ public class BindingTest {
   }
 
   [Fact]
-  public void HandlesOutputs() {
+  public void HandlesOutputs()
+  {
     var block = new FakeLogicBlock();
     using var binding = block.Bind();
 
@@ -47,17 +51,20 @@ public class BindingTest {
     var output2 = 0;
 
     binding.Handle(
-      (in FakeLogicBlock.Output.OutputOne effect) => {
+      (in FakeLogicBlock.Output.OutputOne effect) =>
+      {
         output1++;
         effect.Value.ShouldBe(1);
       }
     ).Handle(
-      (in FakeLogicBlock.Output.OutputOne effect) => {
+      (in FakeLogicBlock.Output.OutputOne effect) =>
+      {
         output1++;
         effect.Value.ShouldBe(1);
       }
     ).Handle(
-      (in FakeLogicBlock.Output.OutputTwo effect) => {
+      (in FakeLogicBlock.Output.OutputTwo effect) =>
+      {
         output2++;
         effect.Value.ShouldBe("2");
       }
@@ -77,7 +84,8 @@ public class BindingTest {
   }
 
   [Fact]
-  public void CallsSubstateTransitionsOnlyOnce() {
+  public void CallsSubstateTransitionsOnlyOnce()
+  {
     var block = new FakeLogicBlock();
 
     using var binding = block.Bind();
@@ -126,7 +134,8 @@ public class BindingTest {
   }
 
   [Fact]
-  public void CleansUpSubscriptions() {
+  public void CleansUpSubscriptions()
+  {
     var callStateUpdate = 0;
     var callSideEffectHandler = 0;
 
@@ -152,7 +161,8 @@ public class BindingTest {
   }
 
   [Fact]
-  public void WatchesInputs() {
+  public void WatchesInputs()
+  {
     var block = new FakeLogicBlock();
     var binding = block.Bind();
 
@@ -173,13 +183,15 @@ public class BindingTest {
   }
 
   [Fact]
-  public void CatchesExceptions() {
+  public void CatchesExceptions()
+  {
     var block = new FakeLogicBlock();
     var binding = block.Bind();
 
     var called = false;
 
-    binding.Catch<InvalidOperationException>((e) => {
+    binding.Catch<InvalidOperationException>((e) =>
+    {
       called = true;
       e.ShouldBeOfType<InvalidOperationException>();
     });
@@ -190,7 +202,8 @@ public class BindingTest {
   }
 
   [Fact]
-  public void CanBeMocked() {
+  public void CanBeMocked()
+  {
     var logic = new Mock<FakeLogicBlock>((Exception e) => { });
 
     var binding = new Mock<FakeLogicBlock.IBinding>();
@@ -206,7 +219,8 @@ public class BindingTest {
   }
 
   [Fact]
-  public void Finalizes() {
+  public void Finalizes()
+  {
     // Weak reference has to be created and cleared from a static function
     // or else the GC won't ever collect it :P
     var weakRef = CreateWeakFakeLogicBlockBindingReference();
@@ -214,7 +228,8 @@ public class BindingTest {
   }
 
   [Fact]
-  public void CanAddAndRemoveBindingsFromInputHandler() {
+  public void CanAddAndRemoveBindingsFromInputHandler()
+  {
     var block = new FakeLogicBlock();
     var binding = block.Bind();
 
@@ -227,31 +242,36 @@ public class BindingTest {
 
     binding
       .Watch(
-        (in FakeLogicBlock.Input.InputOne _) => {
+        (in FakeLogicBlock.Input.InputOne _) =>
+        {
           block.AddBinding(listener2);
           block.RemoveBinding(listener1);
           called++;
         }
       )
       .Handle(
-        (in FakeLogicBlock.Output.OutputOne _) => {
+        (in FakeLogicBlock.Output.OutputOne _) =>
+        {
           block.AddBinding(listener1);
           block.RemoveBinding(listener2);
           called++;
         }
       )
-      .When<FakeLogicBlock.State>((state) => {
+      .When<FakeLogicBlock.State>((state) =>
+      {
         block.AddBinding(listener3);
         block.RemoveBinding(listener4);
         called++;
       })
-      .Catch<Exception>((e) => {
+      .Catch<Exception>((e) =>
+      {
         block.AddBinding(listener4);
         block.RemoveBinding(listener3);
         called++;
       });
 
-    Should.NotThrow(() => {
+    Should.NotThrow(() =>
+    {
       block.Input(new FakeLogicBlock.Input.InputOne(1, 2));
       block.Input(new FakeLogicBlock.Input.InputTwo("a", "b"));
       block.Input(new FakeLogicBlock.Input.InputError());

@@ -9,7 +9,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-public class ReturnTypeVisitor : CSharpSyntaxWalker {
+public class ReturnTypeVisitor : CSharpSyntaxWalker
+{
   public SemanticModel Model { get; }
   public CancellationToken Token { get; }
   public ICodeService CodeService { get; }
@@ -26,7 +27,8 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
     ICodeService codeService,
     INamedTypeSymbol stateBaseType,
     INamedTypeSymbol stateType
-  ) {
+  )
+  {
     Model = model;
     Token = token;
     CodeService = codeService;
@@ -41,33 +43,40 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
     ArrowExpressionClauseSyntax node
   ) => AddExpressionToReturnTypes(node.Expression);
 
-  private void AddExpressionToReturnTypes(ExpressionSyntax? expression) {
+  private void AddExpressionToReturnTypes(ExpressionSyntax? expression)
+  {
     // Recurse into other expressions, looking for return types.
-    if (expression is not ExpressionSyntax expressionSyntax) {
+    if (expression is null)
+    {
       return;
     }
 
-    if (expression is ConditionalExpressionSyntax conditional) {
+    if (expression is ConditionalExpressionSyntax conditional)
+    {
       AddExpressionToReturnTypes(conditional.WhenTrue);
       AddExpressionToReturnTypes(conditional.WhenFalse);
       return;
     }
 
-    if (expression is SwitchExpressionSyntax @switch) {
-      foreach (var arm in @switch.Arms) {
+    if (expression is SwitchExpressionSyntax @switch)
+    {
+      foreach (var arm in @switch.Arms)
+      {
         AddExpressionToReturnTypes(arm.Expression);
       }
 
       return;
     }
 
-    if (expression is BinaryExpressionSyntax binary) {
+    if (expression is BinaryExpressionSyntax binary)
+    {
       AddExpressionToReturnTypes(binary.Left);
       AddExpressionToReturnTypes(binary.Right);
       return;
     }
 
-    if (expression is MemberAccessExpressionSyntax memberAccess) {
+    if (expression is MemberAccessExpressionSyntax memberAccess)
+    {
       AddExpressionToReturnTypes(memberAccess.Expression);
       return;
     }
@@ -80,34 +89,40 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker {
 
     if (
       expression is InvocationExpressionSyntax invocation
-    ) {
+    )
+    {
       if (
         invocation.Expression is GenericNameSyntax generic &&
         generic.Identifier.Text == "To" &&
         generic.TypeArgumentList.Arguments.Count == 1
-      ) {
+      )
+      {
         var genericType = generic.TypeArgumentList.Arguments[0];
         type = GetModel(genericType).GetTypeInfo(genericType, Token).Type;
       }
       else if (
         invocation.Expression is IdentifierNameSyntax id &&
         id.Identifier.Text == "ToSelf"
-      ) {
+      )
+      {
         type = StateType;
       }
-      else {
+      else
+      {
         AddExpressionToReturnTypes(invocation.Expression);
         return;
       }
     }
 
     // Make sure type is provided.
-    if (type is not ITypeSymbol typeSymbol) {
+    if (type is not ITypeSymbol typeSymbol)
+    {
       return;
     }
 
     // Make sure type is a subtype of the state.
-    if (!type.InheritsFromOrEquals(StateBaseType)) {
+    if (!type.InheritsFromOrEquals(StateBaseType))
+    {
       return;
     }
 

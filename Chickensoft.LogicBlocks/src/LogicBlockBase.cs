@@ -7,7 +7,8 @@ using Chickensoft.Serialization;
 /// <summary>
 /// <inheritdoc cref="LogicBlockBase" path="/summary" />
 /// </summary>
-public interface ILogicBlockBase {
+public interface ILogicBlockBase
+{
   /// <summary>
   /// Current state of the logic block, if any. Reading this will not start
   /// the logic block and can return null.
@@ -35,7 +36,8 @@ public interface ILogicBlockBase {
 /// types computed from the generated type registry that the logic blocks
 /// generator produces.
 /// </summary>
-public abstract class LogicBlockBase : ILogicBlockBase {
+public abstract class LogicBlockBase : ILogicBlockBase
+{
   /// <inheritdoc />
   public abstract object? ValueAsObject { get; }
 

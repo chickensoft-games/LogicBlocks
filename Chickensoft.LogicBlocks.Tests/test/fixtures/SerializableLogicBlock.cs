@@ -5,10 +5,12 @@ using Chickensoft.Introspection;
 [Meta, Id("serializable_logic_block")]
 [LogicBlock(typeof(State), Diagram = false)]
 public partial class SerializableLogicBlock :
-LogicBlock<SerializableLogicBlock.State> {
+LogicBlock<SerializableLogicBlock.State>
+{
   public override Transition GetInitialState() => To<State>();
 
   [Meta, Id("serializable_logic_block_state")]
-  public partial record State : StateLogic<State> {
+  public partial record State : StateLogic<State>
+  {
   }
 }

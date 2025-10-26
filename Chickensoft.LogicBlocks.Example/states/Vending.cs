@@ -1,8 +1,11 @@
 namespace Chickensoft.LogicBlocks.Example;
 
-public partial class VendingMachine {
-  public partial record Vending : State, IGet<Input.VendingCompleted> {
-    public Vending() {
+public partial class VendingMachine
+{
+  public partial record Vending : State, IGet<Input.VendingCompleted>
+  {
+    public Vending()
+    {
       this.OnEnter(() => Output(new Output.BeginVending()));
     }
 

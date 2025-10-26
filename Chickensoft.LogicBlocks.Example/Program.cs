@@ -5,7 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-public static class Program {
+public static class Program
+{
   public const string IMAGE = """
  :::::::::::::::::::::::::::::
  :::::::::::::::::::::::::::::
@@ -25,7 +26,8 @@ public static class Program {
  :::::::::::::::::::::::::::::
 """;
 
-  public static readonly Dictionary<ItemType, int> Totals = new() {
+  public static readonly Dictionary<ItemType, int> Totals = new()
+  {
     [ItemType.Juice] = 6,
     [ItemType.Water] = 6,
     [ItemType.Candy] = 6
@@ -33,7 +35,8 @@ public static class Program {
 
   public const char EMPTY = '_';
 
-  public static readonly Dictionary<ItemType, char> Chars = new() {
+  public static readonly Dictionary<ItemType, char> Chars = new()
+  {
     [ItemType.Juice] = 'J',
     [ItemType.Water] = 'W',
     [ItemType.Candy] = 'C'
@@ -58,16 +61,19 @@ public static class Program {
   private static readonly Queue<object> _outputs = new();
 
   public class VendingMachineListener :
-  LogicBlockListener<VendingMachine.State> {
+  LogicBlockListener<VendingMachine.State>
+  {
     public VendingMachineListener(VendingMachine machine) : base(machine) { }
 
-    protected override void ReceiveOutput<TOutputType>(in TOutputType output) {
+    protected override void ReceiveOutput<TOutputType>(in TOutputType output)
+    {
       AddOutputToBuffer(output);
       _outputs.Enqueue(output);
     }
   }
 
-  public static int Main(string[] args) {
+  public static int Main(string[] args)
+  {
     var machine = new VendingMachine();
     machine.Set(Stock);
     var listener = new VendingMachineListener(machine);
@@ -76,8 +82,10 @@ public static class Program {
 
     Console.CancelKeyPress += (_, _) => shouldContinue = false;
 
-    void update() {
-      while (_outputs.Count > 0) {
+    void update()
+    {
+      while (_outputs.Count > 0)
+      {
         var output = _outputs.Dequeue();
         ProcessOutput(output);
       }
@@ -91,42 +99,52 @@ public static class Program {
 
     update();
 
-    while (shouldContinue) {
-      if (machine.Value != lastState || _outputs.Count > 0) {
+    while (shouldContinue)
+    {
+      if (machine.Value != lastState || _outputs.Count > 0)
+      {
         update();
         lastState = machine.Value;
       }
 
       // Update timers
-      if (_isVending) {
+      if (_isVending)
+      {
         var time = GetMs() - _vendingStartedTime;
-        if (time > VENDING_TIME) {
+        if (time > VENDING_TIME)
+        {
           _isVending = false;
           machine.Input(new VendingMachine.Input.VendingCompleted());
         }
-        else {
+        else
+        {
           PrintCountdown(time, VENDING_TIME);
         }
       }
 
-      if (_isTransactionUnderway) {
+      if (_isTransactionUnderway)
+      {
         var time = GetMs() - _transactionStartedTime;
-        if (time > TRANSACTION_TIMEOUT) {
+        if (time > TRANSACTION_TIMEOUT)
+        {
           _isTransactionUnderway = false;
           machine.Input(new VendingMachine.Input.TransactionTimedOut());
         }
-        else {
+        else
+        {
           PrintCountdown(time, TRANSACTION_TIMEOUT);
         }
       }
 
       // Don't do anything else if there's nothing to do or we're vending.
-      while (_isVending && Console.KeyAvailable) {
+      while (_isVending && Console.KeyAvailable)
+      {
         // Flush keys
         Console.ReadKey(false);
       }
 
-      if (_isVending || !Console.KeyAvailable) {
+      if (_isVending || !Console.KeyAvailable)
+      {
         continue;
       }
 
@@ -137,7 +155,8 @@ public static class Program {
 
       int? digit = null;
 
-      switch (key.Key) {
+      switch (key.Key)
+      {
         case ConsoleKey.Escape:
           Console.Write("q "); // Fixes formatting.
           goto case ConsoleKey.Q;
@@ -204,7 +223,8 @@ public static class Program {
           break;
       }
 
-      if (digit is int cash) {
+      if (digit is int cash)
+      {
         machine.Input(new VendingMachine.Input.PaymentReceived(cash));
       }
     }
@@ -212,7 +232,8 @@ public static class Program {
     return 0;
   }
 
-  private static void ShowState(VendingMachine machine) {
+  private static void ShowState(VendingMachine machine)
+  {
     Console.WriteLine("");
     Console.WriteLine(" -- Vending Machine State --");
     Console.WriteLine($"   :: {machine.Value.GetType().Name}");
@@ -221,7 +242,8 @@ public static class Program {
     Console.WriteLine($"   :: {machine.Get<VendingMachine.Data>()}");
   }
 
-  private static void ShowOverview() {
+  private static void ShowOverview()
+  {
     Console.Clear();
 
     Console.Write(
@@ -253,17 +275,22 @@ public static class Program {
     Console.WriteLine("Press `q` or `escape` to quit.");
   }
 
-  private static void ShowOutputs(Queue<object> outputs) {
-    if (outputs.Count == 0) { return; }
+  private static void ShowOutputs(Queue<object> outputs)
+  {
+    if (outputs.Count == 0)
+    { return; }
     Console.WriteLine(" -- Last 3 Outputs (Most Recent -> Oldest) --");
     var i = 1;
-    foreach (var output in outputs.Reverse()) {
+    foreach (var output in outputs.Reverse())
+    {
       Console.WriteLine($"   {i++} :: {output}");
     }
   }
 
-  private static void ProcessOutput(object output) {
-    if (output is VendingMachine.Output.BeginVending) {
+  private static void ProcessOutput(object output)
+  {
+    if (output is VendingMachine.Output.BeginVending)
+    {
       _vendingStartedTime = GetMs();
       _isTransactionUnderway = false;
       _isVending = true;
@@ -272,11 +299,13 @@ public static class Program {
       output is
       VendingMachine.Output.TransactionStarted or
       VendingMachine.Output.RestartTransactionTimeOutTimer
-    ) {
+    )
+    {
       _transactionStartedTime = GetMs();
       _isTransactionUnderway = true;
     }
-    else if (output is VendingMachine.Output.ClearTransactionTimeOutTimer) {
+    else if (output is VendingMachine.Output.ClearTransactionTimeOutTimer)
+    {
       _isTransactionUnderway = false;
     }
   }
@@ -289,7 +318,8 @@ public static class Program {
       $"\r{(durationMs - timeMs) / 1000d:00}s".ToCharArray(), 0, 3
     );
 
-  private static string PlaceBesideImage(string image, params string[] text) {
+  private static string PlaceBesideImage(string image, params string[] text)
+  {
     var imageLines = image.Split("\n").Select(line => line.Trim()).ToArray();
     var imageWidth = imageLines.Max(line => line.Length);
     var lines = new List<string>();
@@ -298,21 +328,27 @@ public static class Program {
     var showText = true;
     var showImage = true;
 
-    while (index < iterations) {
-      if (index >= imageLines.Length) {
+    while (index < iterations)
+    {
+      if (index >= imageLines.Length)
+      {
         showImage = false;
       }
-      if (index >= text.Length) {
+      if (index >= text.Length)
+      {
         showText = false;
       }
 
-      if (showImage && showText) {
+      if (showImage && showText)
+      {
         lines.Add($"{imageLines[index]} {text[index]}");
       }
-      else if (showImage) {
+      else if (showImage)
+      {
         lines.Add(imageLines[index]);
       }
-      else if (showText) {
+      else if (showText)
+      {
         lines.Add($"{new string(' ', imageWidth)} {text[index]}");
       }
 
@@ -324,9 +360,11 @@ public static class Program {
 
   private static string ReplaceToReflectQuantities(
     string image, Dictionary<ItemType, int> quantities
-  ) {
+  )
+  {
     var result = image;
-    foreach ((var type, var qty) in quantities) {
+    foreach ((var type, var qty) in quantities)
+    {
       result = ReplaceNTimes(
         result, Chars[type], EMPTY, Totals[type] - qty
       );
@@ -334,19 +372,24 @@ public static class Program {
     return result;
   }
 
-  private static string ReplaceNTimes(string text, char a, char b, int n) {
-    if (n == 0) { return text; }
+  private static string ReplaceNTimes(string text, char a, char b, int n)
+  {
+    if (n == 0)
+    { return text; }
     var result = text;
     var regex = new Regex(Regex.Escape(a.ToString()));
-    for (var i = 0; i < n; i++) {
+    for (var i = 0; i < n; i++)
+    {
       result = regex.Replace(result, b.ToString(), 1);
     }
     return result;
   }
 
-  private static void AddOutputToBuffer(object output) {
+  private static void AddOutputToBuffer(object output)
+  {
     _lastFewOutputs.Enqueue(output);
-    if (_lastFewOutputs.Count > MAX_OUTPUTS) {
+    if (_lastFewOutputs.Count > MAX_OUTPUTS)
+    {
       _lastFewOutputs.Dequeue();
     }
   }

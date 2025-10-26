@@ -4,11 +4,13 @@ using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Shouldly;
 using Xunit;
 
-public class AttachTests {
+public class AttachTests
+{
   [Fact]
-  public void MultipleInputsOnAttachAreQueued() {
+  public void MultipleInputsOnAttachAreQueued()
+  {
     var logic = new GreedyLogic();
 
-    Should.NotThrow(() => logic.Start());
+    Should.NotThrow(logic.Start);
   }
 }

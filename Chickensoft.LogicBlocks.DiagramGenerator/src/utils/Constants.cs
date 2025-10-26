@@ -3,7 +3,8 @@ namespace Chickensoft.SourceGeneratorUtils;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-public class Constants {
+public class Constants
+{
   /// <summary>Spaces per tab. Adjust to your generator's liking.</summary>
   public static int SPACES_PER_INDENT = 2;
 

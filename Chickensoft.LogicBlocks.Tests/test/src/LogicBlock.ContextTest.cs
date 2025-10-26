@@ -5,9 +5,11 @@ using Chickensoft.LogicBlocks.Tests.Fixtures;
 using Shouldly;
 using Xunit;
 
-public class DefaultContextTest {
+public class DefaultContextTest
+{
   [Fact]
-  public void OverridesEqualityToAlwaysBeEqual() {
+  public void OverridesEqualityToAlwaysBeEqual()
+  {
     var context1 = new FakeLogicBlock.DefaultContext();
     var context2 = new FakeLogicBlock.DefaultContext();
 
@@ -16,9 +18,11 @@ public class DefaultContextTest {
   }
 }
 
-public class ContextAdapterTest {
+public class ContextAdapterTest
+{
   [Fact]
-  public void OverridesEqualityToAlwaysBeEqual() {
+  public void OverridesEqualityToAlwaysBeEqual()
+  {
     var context1 = new FakeLogicBlock.ContextAdapter();
     var context2 = new FakeLogicBlock.ContextAdapter();
 
@@ -27,28 +31,32 @@ public class ContextAdapterTest {
   }
 
   [Fact]
-  public void InputThrowsWhenNoContextIsSet() {
+  public void InputThrowsWhenNoContextIsSet()
+  {
     var context = new FakeLogicBlock.ContextAdapter();
 
     Should.Throw<InvalidOperationException>(() => context.Input(1));
   }
 
   [Fact]
-  public void OutputThrowsWhenNoContextIsSet() {
+  public void OutputThrowsWhenNoContextIsSet()
+  {
     var context = new FakeLogicBlock.ContextAdapter();
 
     Should.Throw<InvalidOperationException>(() => context.Output(1));
   }
 
   [Fact]
-  public void GetThrowsWhenNoContextIsSet() {
+  public void GetThrowsWhenNoContextIsSet()
+  {
     var context = new FakeLogicBlock.ContextAdapter();
 
-    Should.Throw<InvalidOperationException>(() => context.Get<string>());
+    Should.Throw<InvalidOperationException>(context.Get<string>);
   }
 
   [Fact]
-  public void AddErrorThrowsWhenNoContextIsSet() {
+  public void AddErrorThrowsWhenNoContextIsSet()
+  {
     var context = new FakeLogicBlock.ContextAdapter();
 
     Should.Throw<InvalidOperationException>(
