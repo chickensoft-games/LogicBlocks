@@ -21,7 +21,7 @@ jobs:
       DOTNET_NOLOGO: true
     steps:
       - name: 🧾 Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           lfs: true
           submodules: "recursive"
