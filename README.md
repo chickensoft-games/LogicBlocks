@@ -46,30 +46,27 @@ _A logic block is a class that **receives inputs**, **maintains a single state i
 
 _Logic blocks enable you to efficiently model complex behaviors_[^1].
 
+In v6, the logic block has **no generic type parameter**, states live **outside** the logic block class, and input handlers **return `Type`** instead of a `Transition` struct.
+
 ```csharp
-using Chickensoft.Introspection;
-
-[Meta, LogicBlock(typeof(State), Diagram = true)]
-public class LightSwitch : LogicBlock<LightSwitch.State>
+// LightSwitchLogic.cs
+public partial class LightSwitchLogic : LogicBlock
 {
-  public override Transition GetInitialState() => To<State.PoweredOff>();
+  public LightSwitchLogic()
+  {
+    // Preallocate states
+    Set(new LightSwitchState.PoweredOn());
+    Set(new LightSwitchState.PoweredOff());
+  }
+}
+```
 
+```csharp
+public abstract partial record LightSwitchState : LogicBlockState
+{
   public static class Input
   {
     public readonly record struct Toggle;
-  }
-
-  public abstract record State : StateLogic<State>
-  {
-    public record PoweredOn : State, IGet<Input.Toggle>
-    {
-      public Transition On(in Input.Toggle input) => To<PoweredOff>();
-    }
-
-    public record PoweredOff : State, IGet<Input.Toggle>
-    {
-      public Transition On(in Input.Toggle input) => To<PoweredOn>();
-    }
   }
 
   public static class Output
@@ -77,6 +74,58 @@ public class LightSwitch : LogicBlock<LightSwitch.State>
     public readonly record struct StatusChanged(bool IsOn);
   }
 }
+```
+
+```csharp
+// LightSwitchStates.cs
+public partial record LightSwitchState
+{
+  public record PoweredOn : LightSwitchState, IGet<Input.Toggle>
+  {
+    public PoweredOn()
+    {
+      this.OnEnter(() => Output(new Output.StatusChanged(IsOn: true)));
+    }
+
+    public Type On(in Input.Toggle input) => To<PoweredOff>();
+  }
+
+  public record PoweredOff : LightSwitchState, IGet<Input.Toggle>
+  {
+    public PoweredOff()
+    {
+      this.OnEnter(() => Output(new Output.StatusChanged(IsOn: false)));
+    }
+
+    public Type On(in Input.Toggle input) => To<PoweredOn>();
+  }
+}
+```
+
+```csharp
+// Usage
+using var logic = new LightSwitchLogic();
+logic.Start<LightSwitchState.PoweredOff>();
+
+logic.Input(new LightSwitchState.Input.Toggle());
+// logic.State is now LightSwitchState.PoweredOn
+```
+
+## 🔗 Bindings
+
+Observe a logic block by creating a binding. Bindings are `IDisposable` — dispose them when done.
+
+```csharp
+using var binding = logic.Bind();
+
+binding
+  .OnState<LightSwitchState.PoweredOn>(_ => Console.WriteLine("Light is on"))
+  .OnState<LightSwitchState.PoweredOff>(_ => Console.WriteLine("Light is off"))
+  .OnOutput<LightSwitchState.Output.StatusChanged>(
+    output => Console.WriteLine($"Status changed: {output.IsOn}")
+  )
+  .OnStart(() => Console.WriteLine("Started"))
+  .OnStop(() => Console.WriteLine("Stopped"));
 ```
 
 ## 🖼️ Visualizing Logic Blocks
@@ -100,10 +149,105 @@ Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_LightSwitch_State_Power
 [*] --> Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_LightSwitch_State_PoweredOff
 ```
 
-Generated UML diagrams are placed alongside the code for your logic block with the `*.g.puml` extension. You can use [PlantUML] (and/or the [PlantUML VSCode Extension]) to visualize the generated diagram code.
+Add `[StateDiagram]` to your base state class to enable diagram generation. Generated `*.g.puml` files are placed alongside your code. You can use [PlantUML] (and/or the [PlantUML VSCode Extension]) to visualize them.
+
+```csharp
+[StateDiagram]
+public abstract partial record LightSwitchState : LogicBlockState { ... }
+```
 
 > [!TIP]
-> A diagram explains all of the high level behavior of a state machine in a single picture. Without a diagram, you would have to read and scroll through all the relevant code files to understand the machine (especially if you weren't the author, or forgot how it worked since you had written it).
+> A diagram explains all of the high-level behavior of a state machine in a single picture. Without a diagram, you would have to read through every relevant code file to understand the machine.
+
+## 📜 History (Pushdown Automaton)
+
+Logic blocks support a state history stack, enabling pushdown automaton behavior — push the current state type and pop it later to return to a previous state.
+
+```csharp
+public Type On(in Input.Pause input)
+{
+  Push();               // save current state type on the history stack
+  return To<Paused>();
+}
+
+public Type On(in Input.Resume input)
+{
+  return Pop() ?? To<Playing>();  // restore previous state, or fall back
+}
+```
+
+The history stack has a configurable maximum capacity (default: 8).
+
+## ⚡ Async Inputs
+
+Bridge async tasks safely back into the synchronous input pipeline using `Async()`:
+
+```csharp
+public Type On(in Input.Load input)
+{
+  Async(FetchDataAsync())
+    .Input(data => new Input.Loaded(data))
+    .ErrorInput(ex => new Input.LoadFailed(ex.Message))
+    .CanceledInput(() => new Input.LoadCanceled());
+
+  return ToSelf();
+}
+```
+
+## 💾 Serialization (AutoBlock)
+
+For logic blocks that need serialization, extend `AutoBlock` instead of `LogicBlock`. `AutoBlock` integrates with [Chickensoft.Introspection] and [Chickensoft.Serialization] to automatically discover and preallocate all concrete states, and to save/load state.
+
+```csharp
+[Meta, Id("my_logic")]
+public partial class MyLogic : AutoBlock
+{
+  public MyLogic()
+  {
+    Preallocate<MyState>(); // discover and preallocate all concrete states
+  }
+
+  public override ILogicBlockSaveData GetSaveData(LogicBlockData data) =>
+    new MySaveData { Data = data };
+}
+```
+
+```csharp
+// Save
+var saveData = myLogic.Save();
+
+// Load (resume from saved state)
+myLogic.Start(saveData.Data);
+```
+
+## 🧪 Testing
+
+### Testing States
+
+Test individual states in isolation using `state.Test()`:
+
+```csharp
+var state = new LightSwitchState.PoweredOff();
+var tester = state.Test();
+
+tester.Set(new SomeDependency());
+state.Enter();
+
+tester.Outputs.ShouldContain(new LightSwitchState.Output.StatusChanged(IsOn: false));
+```
+
+### Testing Bindings
+
+Use `LogicBlock.CreateFakeBinding()` to test binding callbacks without a real logic block:
+
+```csharp
+using var binding = LogicBlock.CreateFakeBinding();
+
+binding.OnState<LightSwitchState.PoweredOn>(_ => ranCallback = true);
+
+binding.SetState(new LightSwitchState.PoweredOn());
+ranCallback.ShouldBeTrue();
+```
 
 ## 🤫 Differences from Statecharts
 

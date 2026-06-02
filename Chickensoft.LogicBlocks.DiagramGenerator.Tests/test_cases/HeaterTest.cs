@@ -13,27 +13,28 @@ public class HeaterTest
     var heater = new Heater();
     heater.Set<ITemperatureSensor>(tempSensor);
 
-    heater.Value.ShouldBeOfType<Heater.State.Off>();
-
     var finishedHeating = false;
     using var binding = heater.Bind();
 
-    binding.Handle((in Heater.Output.FinishedHeating output) =>
+    binding.OnOutput((in Heater.Output.FinishedHeating _) =>
       finishedHeating = true
     );
 
+    heater.Start<Heater.HeaterState.Off>();
+    heater.State.ShouldBeOfType<Heater.HeaterState.Off>();
+
     heater.Input(new Heater.Input.TargetTempChanged(73.0d));
-    heater.Value.ShouldBeOfType<Heater.State.Off>();
-    heater.Value.TargetTemp.ShouldBe(73.0d);
+    var state = heater.State.ShouldBeOfType<Heater.HeaterState.Off>();
+    state.Get<Heater.Data>().TargetTemp.ShouldBe(73.0d);
 
     heater.Input(new Heater.Input.TurnOn());
     // Turning it on will go straight to heating since the air temp (72) is
     // below the target temp (73)
-    heater.Value.ShouldBeOfType<Heater.State.Heating>();
+    heater.State.ShouldBeOfType<Heater.HeaterState.Heating>();
 
     // Updating air temp to above target temp should move it to idle
     tempSensor.UpdateReading(74.0d);
-    heater.Value.ShouldBeOfType<Heater.State.Idle>();
+    heater.State.ShouldBeOfType<Heater.HeaterState.Idle>();
 
     finishedHeating.ShouldBeTrue();
   }
@@ -50,18 +51,20 @@ public class HeaterTest
     var messages = new List<string>();
 
     // Handle an output produced by the heater.
-    binding.Handle(
-      (in Heater.Output.FinishedHeating output) =>
+    binding.OnOutput(
+      (in Heater.Output.FinishedHeating _) =>
         messages.Add("Finished heating :)")
-    ).When<Heater.State.Off>(
-      (state) => messages.Add("Heater turned off")
-    ).When<Heater.State.Powered>(
-      (state) => messages.Add("Heater is powered")
-    ).When<Heater.State.Idle>(
-      (state) => messages.Add("Heater is idling")
-    ).When<Heater.State.Heating>(
-      (state) => messages.Add("Heater is heating")
+    ).OnState<Heater.HeaterState.Off>(
+      _ => messages.Add("Heater turned off")
+    ).OnState<Heater.HeaterState.Powered>(
+      _ => messages.Add("Heater is powered")
+    ).OnState<Heater.HeaterState.Idle>(
+      _ => messages.Add("Heater is idling")
+    ).OnState<Heater.HeaterState.Heating>(
+      _ => messages.Add("Heater is heating")
     );
+
+    heater.Start<Heater.HeaterState.Off>();
 
     // Listen to all states that inherit from Heater.State.Powered.
 
@@ -69,10 +72,10 @@ public class HeaterTest
 
     // Dropping the temp below target should move it from idle to heating
     tempSensor.UpdateReading(66.0);
-    heater.Value.ShouldBeOfType<Heater.State.Heating>();
+    heater.State.ShouldBeOfType<Heater.HeaterState.Heating>();
     // Raising the temp above target should move it from heating back to idle
     tempSensor.UpdateReading(74);
-    heater.Value.ShouldBeOfType<Heater.State.Idle>();
+    heater.State.ShouldBeOfType<Heater.HeaterState.Idle>();
 
     messages.ShouldBe([
       "Heater turned off",

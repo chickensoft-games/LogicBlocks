@@ -1,31 +1,46 @@
 namespace Chickensoft.LogicBlocks.Tutorial;
 
+using Auto;
 using Chickensoft.Introspection;
+using Serialization;
 
-public interface ISerializableLogicBlock : ILogicBlock<SerializableLogicBlock.State>;
+public interface ISerializableLogicBlock : IAutoLogicBlock;
 
-[Meta, LogicBlock(typeof(State), Diagram = true), Id("serializable_logic")]
+[Meta, Id("serializable_logic")]
 public partial class SerializableLogicBlock :
-LogicBlock<SerializableLogicBlock.State>, ISerializableLogicBlock
+AutoBlock, ISerializableLogicBlock
 {
-  public override Transition GetInitialState() => To<State.PoweredOff>();
-
-  [Meta]
-  public abstract partial record State : StateLogic<State>
+  public SerializableLogicBlock()
   {
-    [Meta, Id("serializable_logic_state_off")]
-    public partial record PoweredOff : State;
-
-    [Meta, Id("serializable_logic_state_on")]
-    public partial record PoweredOn : State;
-
-    [Meta, Id("serializable_logic_versioned_state")]
-    public abstract partial record VersionedState : State;
-
-    [Meta, Version(1)]
-    public partial record Version1 : VersionedState;
-
-    [Meta, Version(2)]
-    public partial record Version2 : VersionedState;
+    Preallocate<TimerState>();
   }
+
+  public override ILogicBlockSaveData GetSaveData(LogicBlockData data) =>
+    new SerializableLogicBlockSaveData { Data = data };
+}
+
+[Meta, Id("serializable_logic_block_save_data")]
+public partial class SerializableLogicBlockSaveData : ILogicBlockSaveData
+{
+  [Save("data")]
+  public required LogicBlockData Data { get; init; }
+}
+
+[Meta]
+public abstract partial record TimerState : LogicBlockState
+{
+  [Meta, Id("serializable_logic_state_off")]
+  public partial record PoweredOff : TimerState;
+
+  [Meta, Id("serializable_logic_state_on")]
+  public partial record PoweredOn : TimerState;
+
+  [Meta, Id("serializable_logic_versioned_state")]
+  public abstract partial record VersionedState : TimerState;
+
+  [Meta, Version(1)]
+  public partial record Version1 : VersionedState;
+
+  [Meta, Version(2)]
+  public partial record Version2 : VersionedState;
 }

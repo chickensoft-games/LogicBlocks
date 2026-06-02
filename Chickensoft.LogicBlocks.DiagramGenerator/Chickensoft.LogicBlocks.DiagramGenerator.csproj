@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- Source generators must target netstandard 2.0 -->
+    <!-- Source generators must target netstandard 2.0 to avoid weird IDE issues -->
     <TargetFramework>netstandard2.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -16,10 +16,10 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <DebugType>portable</DebugType>
 
-    <Title>LogicBlocks Generator</Title>
+    <Title>LogicBlocks Diagram Generator</Title>
     <Version>0.0.0-devbuild</Version>
     <Description>See what your hierarchical state machine code looks like as a diagram!</Description>
-    <Copyright>© 2024 Chickensoft Games</Copyright>
+    <Copyright>© 2026 Chickensoft Games</Copyright>
     <Authors>Chickensoft</Authors>
     <Company>Chickensoft</Company>
 
@@ -38,15 +38,15 @@
 
   <ItemGroup>
     <!-- Has to be in its own item group -->
-    <None Include="../README.md" Pack="true" PackagePath="\" />
-    <None Include="../LICENSE" Pack="true" PackagePath="\" />
-    <None Include="../Chickensoft.LogicBlocks/icon.png" Pack="true" PackagePath="" />
+    <None Include="../README.md" Pack="true" PackagePath="\"/>
+    <None Include="../LICENSE" Pack="true" PackagePath="\"/>
+    <None Include="../Chickensoft.LogicBlocks/icon.png" Pack="true" PackagePath=""/>
   </ItemGroup>
 
   <!-- The following libraries include the source generator interfaces and types we need -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.3.0" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" PrivateAssets="all"/>
     <PackageReference Include="IsExternalInit" Version="1.0.3" PrivateAssets="all">
     </PackageReference>
   </ItemGroup>
@@ -54,6 +54,6 @@
   <!-- This ensures the library will be packaged as a source generator when we use `dotnet pack` -->
   <ItemGroup>
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true"
-      PackagePath="analyzers/dotnet/cs" Visible="false" />
+          PackagePath="analyzers/dotnet/cs" Visible="false"/>
   </ItemGroup>
 </Project>

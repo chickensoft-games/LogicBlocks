@@ -1,0 +1,7 @@
+﻿@startuml ToasterOven
+state ToasterOven {
+  state Toasting
+}
+
+[*] --> Toasting
+@enduml

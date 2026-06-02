@@ -2,7 +2,7 @@ namespace Chickensoft.LogicBlocks.DiagramGenerator.Tests.Models;
 
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using Chickensoft.LogicBlocks.DiagramGenerator.Models;
+using LogicBlocks.DiagramGenerator.Models;
 using Shouldly;
 using Xunit;
 
@@ -25,60 +25,55 @@ public class ModelsTest
     }
   }
 
-  public class LogicBlockImplementationTest
+  public class StateDiagramImplementationTest
   {
     [Fact]
     public void Equality()
     {
-      var impl = new LogicBlockImplementation(
+      var impl = new StateDiagramImplementation(
         "file",
         "id",
         "name",
-        [],
         new LogicBlockGraph(
           "id", "name", "baseId", []
         ),
         new Dictionary<string, LogicBlockGraph>().ToImmutableDictionary()
       );
 
-      var identical = new LogicBlockImplementation(
+      var identical = new StateDiagramImplementation(
         "file",
         "id",
         "name",
-        [],
         new LogicBlockGraph(
           "id", "name", "baseId", []
         ),
         new Dictionary<string, LogicBlockGraph>().ToImmutableDictionary()
       );
 
-      var differentId = new LogicBlockImplementation(
+      var differentId = new StateDiagramImplementation(
         "file",
         "id_other",
         "name",
-        [],
         new LogicBlockGraph(
           "id", "name", "baseId", []
         ),
         new Dictionary<string, LogicBlockGraph>().ToImmutableDictionary()
       );
 
-      var differentName = new LogicBlockImplementation(
+      var differentName = new StateDiagramImplementation(
         "file",
         "id",
         "name_other",
-        [],
         new LogicBlockGraph(
           "id", "name", "baseId", []
         ),
         new Dictionary<string, LogicBlockGraph>().ToImmutableDictionary()
       );
 
-      var differentGraph = new LogicBlockImplementation(
+      var differentGraph = new StateDiagramImplementation(
         "file",
         "id",
         "name_other",
-        [],
         new LogicBlockGraph(
           "id", "name", "baseId", [
             new("id", "name", "baseId", [])

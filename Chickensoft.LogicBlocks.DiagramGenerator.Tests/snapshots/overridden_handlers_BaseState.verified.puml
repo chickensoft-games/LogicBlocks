@@ -1,0 +1,13 @@
+﻿@startuml BaseState
+state "BaseState" as Chickensoft_LogicBlocks_ScratchPad_OverriddenHandlers_BaseState {
+  state "Idle" as Chickensoft_LogicBlocks_ScratchPad_OverriddenHandlers_BaseState_Idle
+}
+
+Chickensoft_LogicBlocks_ScratchPad_OverriddenHandlers_BaseState --> Chickensoft_LogicBlocks_ScratchPad_OverriddenHandlers_BaseState : SomeInput
+Chickensoft_LogicBlocks_ScratchPad_OverriddenHandlers_BaseState --> Chickensoft_LogicBlocks_ScratchPad_OverriddenHandlers_BaseState : SomeOtherInput
+Chickensoft_LogicBlocks_ScratchPad_OverriddenHandlers_BaseState_Idle --> Chickensoft_LogicBlocks_ScratchPad_OverriddenHandlers_BaseState_Idle : SomeInput
+
+Chickensoft_LogicBlocks_ScratchPad_OverriddenHandlers_BaseState : OnSomeInput → SomeOutput
+Chickensoft_LogicBlocks_ScratchPad_OverriddenHandlers_BaseState : OnSomeOtherInput → SomeOtherOutput
+Chickensoft_LogicBlocks_ScratchPad_OverriddenHandlers_BaseState_Idle : OnSomeInput → SomeOtherOutput
+@enduml

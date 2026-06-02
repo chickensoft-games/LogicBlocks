@@ -1,712 +1,514 @@
-namespace Chickensoft.LogicBlocks;
+﻿namespace Chickensoft.LogicBlocks;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using Chickensoft.Collections;
-using Chickensoft.Introspection;
-using Chickensoft.Serialization;
+using Collections;
+using Sync;
+using Sync.Primitives;
 
 /// <summary>
 /// <para>
-/// A logic block. Logic blocks are machines that receive input, maintain a
-/// single state, and produce outputs. They can be used as simple
-/// input-to-state reducers, or built upon to create hierarchical state
-/// machines.
+/// A logic block is a hierarchical state machine that can process inputs,
+/// produce outputs, handle errors, and maintain a history of states (like a
+/// pushdown automaton).
 /// </para>
 /// <para>
-/// Logic blocks are similar to statecharts, and enable the state pattern to
-/// be easily leveraged using traditional object oriented programming built
-/// into C#. Each state is a self-contained record.
+/// Logic blocks can be started, stopped, saved, loaded, and easily observed
+/// using bindings. Logic blocks are decoupled from their dependencies and
+/// optimized to prevent memory allocations during input handler execution in
+/// the vast majority of scenarios.
 /// </para>
 /// </summary>
-/// <typeparam name="TState">State type.</typeparam>
-public interface ILogicBlock<TState> :
-ILogicBlockBase, ISerializableBlackboard where TState : StateLogic<TState>
+public interface ILogicBlock :
+  IDisposable, IBlackboard, IAutoObject<LogicBlock.Binding>
 {
   /// <summary>
-  /// Logic block execution context.
+  /// Blackboard containing dependencies needed by the states in the state
+  /// machine.
   /// </summary>
-  IContext Context { get; }
-
-  /// <summary>Current state of the logic block.</summary>
-  TState Value { get; }
+  Blackboard Blackboard { get; }
 
   /// <summary>
-  /// Whether or not the logic block is currently processing inputs.
+  /// Logic block state type history stack. States can push and pop state types from
+  /// this stack to return to previous states as desired. Logic block history can be
+  /// configured with a maximum size to prevent unbound memory growth. See
+  /// <see cref="LogicBlock(Type?, Blackboard?, int?)"/> for more details.
   /// </summary>
-  bool IsProcessing { get; }
+  History History { get; }
 
   /// <summary>
-  /// Whether or not the logic block has been started. A logic block is started
-  /// if its underlying state has been initialized.
+  /// Provide an input to the current state. If the current state handles the
+  /// input, it will return the next state. If the state machine is already
+  /// executing an input handler, this will queue the input to be processed.
   /// </summary>
-  bool IsStarted { get; }
+  /// <typeparam name="TInput">Input value type.</typeparam>
+  /// <param name="input">Input value.</param>
+  /// <returns>The resulting state. If the state machine is already executing
+  /// an input handler, the input will be queued and the current state will be
+  /// returned.</returns>
+  LogicBlockState Input<TInput>(in TInput input) where TInput : struct;
 
   /// <summary>
-  /// Returns the initial state of the logic block. Implementations must
-  /// override this to provide a valid initial state.
+  /// Current state of the logic block, or null if the logic block has not been
+  /// started or has been stopped.
   /// </summary>
-  /// <returns>Initial logic block state.</returns>
-  LogicBlock<TState>.Transition GetInitialState();
+  LogicBlockState? State { get; }
 
   /// <summary>
-  /// Adds an input value to the logic block's internal input queue.
+  /// Starts the logic block by entering the specified state. If the logic block
+  /// is already started, nothing happens.
   /// </summary>
-  /// <param name="input">Input to process.</param>
-  /// <typeparam name="TInputType">Type of the input.</typeparam>
-  /// <returns>Logic block input return value.</returns>
-  TState Input<TInputType>(in TInputType input) where TInputType : struct;
+  /// <param name="initialStateType">Initial state to enter.</param>
+  /// <param name="shouldCallOnEnter">Whether or not to call the OnEnter
+  /// callback for the initial state. Default is true.</param>
+  /// <returns>The current state of the logic block after starting (after any
+  /// added inputs settle).</returns>
+  LogicBlockState Start(Type initialStateType, bool shouldCallOnEnter = true);
 
   /// <summary>
-  /// Creates a binding to a logic block.
+  /// Starts the logic block by entering the specified state. If the logic block
+  /// is already started, nothing happens.
   /// </summary>
-  /// <returns>Logic block binding.</returns>
-  LogicBlock<TState>.IBinding Bind();
+  /// <param name="shouldCallOnEnter">Whether or not to call the OnEnter
+  /// callback for the initial state. Default is true.</param>
+  /// <typeparam name="TState">Type of the initial state to enter.</typeparam>
+  /// <returns>The current state of the logic block after starting (after any
+  /// added inputs settle).</returns>
+  LogicBlockState Start<TState>(bool shouldCallOnEnter = true)
+    where TState : LogicBlockState;
 
   /// <summary>
-  /// Starts the logic block by entering the current state. If the logic block
-  /// is already started, nothing happens. If the logic block
-  /// has not initialized its underlying state, it will initialize it by calling
-  /// <see cref="GetInitialState" /> and attaching it to the logic block first.
+  /// Loads and starts the logic block, resuming execution immediately. A logic block
+  /// will attempt to restore any missing blackboard data objects, states, and history
+  /// from the data provided in <see cref="LogicBlockData"/>.
   /// </summary>
-  void Start();
+  /// <param name="data">Data to load.</param>
+  /// <param name="shouldCallOnEnter">Whether or not to call the state entrance
+  /// callbacks for the loaded state. Default is true.</param>
+  /// <returns>The current state of the logic block after loading (after any
+  /// added inputs settle).</returns>
+  LogicBlockState Start(
+    LogicBlockData data, bool shouldCallOnEnter = true
+  );
 
   /// <summary>
-  /// Stops the logic block. This calls any OnExit callbacks the current state
-  /// registered before detaching it. If any inputs are created while the
+  /// Stops the logic block. This calls any exit callbacks for the current state
+  /// before detaching it. If any inputs are created while the
   /// state is exiting and detaching, they are cleared instead of being
   /// processed.
   /// </summary>
   void Stop();
 
   /// <summary>
-  /// <para>
-  /// Forcibly resets the logic block to the specified state, even if the
-  /// LogicBlock is on another state that would never transition to the
-  /// given state. This can be leveraged by systems outside the logic block's
-  /// own states to force the logic block to a specific state, such as when
-  /// deserializing a logic block state.
-  /// </para>
-  /// <para>
-  /// If the logic block has no underlying state (because it hasn't been started
-  /// or was stopped), this will make the specified state the initial state.
-  /// </para>
-  /// <para>
-  /// When resetting, the logic block will exit and detach any current state,
-  /// if it has one, before attaching and entering the given state.
-  /// </para>
+  /// Callback invoked when the logic block is started. This is a great place to
+  /// setup listeners for any reactive dependencies provided on the blackboard.
   /// </summary>
-  /// <param name="state">State to forcibly reset to.</param>
-  TState ForceReset(TState state);
+  void OnStart();
+
+  IEnumerable<IDisposable> OnStartSubscriptions();
+  void OnStopSubscriptions();
 
   /// <summary>
-  /// Restores the logic block from a deserialized logic block.
+  /// Callback invoked when the logic block is stopped. This is a great place to
+  /// clean up listeners.
   /// </summary>
-  /// <param name="logic">Other logic block.</param>
-  /// <param name="shouldCallOnEnter">Whether or not to call OnEnter callbacks
-  /// when entering the restored state.</param>
-  void RestoreFrom(ILogicBlock<TState> logic, bool shouldCallOnEnter = true);
+  void OnStop();
 
   /// <summary>
-  /// Adds a binding to the logic block. This is used internally by the standard
-  /// bindings implementation. Prefer using <see cref="Bind" /> to create an
-  /// instance of the standard bindings which allow you to easily observe a
-  /// logic block's inputs, states, outputs, and exceptions.
+  /// A task that completes when all in-flight async operations tracked by this
+  /// logic block have completed. If no async operations are in progress, this
+  /// returns a completed task.
   /// </summary>
-  /// <param name="binding">Logic block binding.</param>
-  void AddBinding(ILogicBlockBinding<TState> binding);
+  Task Task { get; }
 
-  /// <summary>
-  /// Removes a binding from the logic block. This is used internally by the
-  /// standard bindings implementation. Prefer using <see cref="Bind" /> to
-  /// create an instance of the standard bindings which allow you to easily
-  /// observe a logic block's inputs, states, outputs, and exceptions.
-  /// </summary>
-  /// <param name="binding">Logic block binding.</param>
-  /// <returns>True if the binding was removed, false otherwise.</returns>
-  bool RemoveBinding(ILogicBlockBinding<TState> binding);
+  LogicBlockData GetData();
 }
 
-/// <summary>
-/// <para>
-/// A synchronous logic block. Logic blocks are machines that process inputs
-/// one-at-a-time, maintain a current state graph, and produce outputs.
-/// </para>
-/// <para>
-/// Logic blocks are essentially statecharts that are created using the state
-/// pattern. Each state is a self-contained record.
-/// </para>
-/// </summary>
-/// <typeparam name="TState">State type.</typeparam>
-public abstract partial class LogicBlock<TState> : LogicBlockBase,
-ILogicBlock<TState> where TState : StateLogic<TState>
+/// <inheritdoc cref="ILogicBlock" path="/summary" />
+public abstract partial class LogicBlock : ILogicBlock,
+  IPerformAnyOperation,
+  IPerform<LogicBlock.StartOp>,
+  IPerform<LogicBlock.StartFromDataOp>,
+  IPerform<LogicBlock.StopOp>,
+  IPerform<LogicBlock.DisposeOp>
 {
-  private readonly struct InputPassthrough : IBoxlessValueHandler
-  {
-    public required LogicBlock<TState> LogicBlock { get; init; }
+  // Atomic operations
+  private readonly record struct StartOp(bool IsLoading = false);
 
-    void IBoxlessValueHandler<ValueType>.HandleValue<TValue>(in TValue value)
-      => LogicBlock.HandleInput(in value);
+  private readonly record struct StartFromDataOp(
+    LogicBlockData Data,
+    bool ShouldCallOnEnter = true
+  );
+
+  private readonly record struct StopOp();
+
+  private readonly record struct DisposeOp();
+
+  private readonly TaskTracker _taskTracker = new();
+
+  internal Blackboard? _blackboard;
+  internal LogicBlockState? _state;
+  internal History? _history;
+  private List<IDisposable>? _disposables = [];
+
+  public History History => _history ??=
+    new History(maxCapacity: _maxHistoryCapacity);
+
+  private readonly int? _maxHistoryCapacity;
+  private readonly SyncSubject _subject;
+
+  public Blackboard Blackboard => _blackboard ?? throw Disposed;
+
+  public LogicBlockState? State => _state;
+
+  public Task Task => _taskTracker.Task;
+  internal void TrackTask(Task task) => _taskTracker.TrackTask(task);
+
+  public bool IsBusy => _subject.IsBusy;
+  public LogicBlockStatus Status { get; internal set; } = LogicBlockStatus.Stopped;
+  public bool IsStarted => Status == LogicBlockStatus.Started;
+  public bool IsStopped => Status == LogicBlockStatus.Stopped;
+  public bool IsDisposed => Status == LogicBlockStatus.Disposed;
+
+  internal static LogicBlockException NotStarted =>
+    new(
+      "Logic block has not been started. Call Start() first."
+    );
+
+  internal static LogicBlockException AlreadyStarted =>
+    new("Logic block is already started.");
+
+  internal static LogicBlockException Disposed =>
+    new("Logic block has been disposed.");
+
+
+  public const int MAX_HISTORY_DEFAULT = 8;
+
+  protected LogicBlock() : this(null, MAX_HISTORY_DEFAULT) { }
+
+  protected LogicBlock(
+    Blackboard? blackboard = null,
+    int? maxHistory = MAX_HISTORY_DEFAULT
+  )
+  {
+    _blackboard = blackboard ?? new Blackboard();
+    _maxHistoryCapacity = maxHistory;
+    _subject = new SyncSubject(this);
   }
 
+  #region StartAndStop
 
-  // We do want static members on generic types here since it makes for a
-  // really ergonomic API.
-  /// <summary>
-  /// Creates a fake logic binding that can be used to more easily test objects
-  /// that bind to logic blocks.
-  /// </summary>
-  /// <returns>Fake binding.</returns>
-  public static IFakeBinding CreateFakeBinding() => new FakeBinding();
-
-  /// <inheritdoc />
-  public IContext Context { get; }
-
-  /// <inheritdoc />
-  public bool IsProcessing => _isProcessing > 0;
-
-  /// <inheritdoc />
-  public bool IsStarted => _value is not null;
-
-  /// <inheritdoc />
-  public TState Value => _value ?? Flush();
-
-  #region LogicBlockBase
-  /// <inheritdoc />
-  public override object? ValueAsObject => _value;
-
-  /// <inheritdoc />
-  public override void RestoreState(object state)
+  public LogicBlockState Start(
+    Type initialStateType, bool shouldCallOnEnter = true
+  )
   {
-    if (_value is not null)
-    {
-      throw new LogicBlockException(
-        "Cannot restore state once a state has been initialized."
-      );
-    }
+    // start must be called before other operations
 
-    RestoredState = (TState)state;
-  }
-  #endregion LogicBlockBase
+    if (IsStarted)
+    { throw AlreadyStarted; }
 
-  private TState? _value;
-  private int _isProcessing;
-  private readonly BoxlessQueue _inputs;
-  private List<ILogicBlockBinding<TState>> _bindings = [];
-  private int _bindingsInvocationCount;
-  private bool IsInvokingBindings => _bindingsInvocationCount > 0;
-  private readonly HashSet<ILogicBlockBinding<TState>> _bindingsToRemove = [];
-  private void StartBindingInvocation() => _bindingsInvocationCount++;
-  private void EndBindingInvocation()
-  {
-    _bindingsInvocationCount--;
+    if (IsDisposed)
+    { throw Disposed; }
 
-    if (_bindingsInvocationCount == 0)
-    {
-      _bindings = [.. _bindings.Where(
-        binding => !_bindingsToRemove.Contains(binding)
-      )];
-      _bindingsToRemove.Clear();
-    }
+    Status = LogicBlockStatus.Started;
+
+    _state = LookupInitialState(initialStateType);
+
+    _subject.Perform(new StartOp());
+
+    // state may have changed after broadcasting *if* the initial state sequence
+    // resulted in inputs that were handled synchronously and resulted in state
+    // change(s)
+    return _state;
   }
 
-  // Sometimes, it is preferable not to call OnEnter callbacks when starting
-  // a logic block, such as when restoring from a saved / serialized logic
-  // block.
-  private bool _shouldCallOnEnter = true;
+  public LogicBlockState Start<TState>(bool shouldCallOnEnter = true)
+    where TState : LogicBlockState =>
+    Start(typeof(TState), shouldCallOnEnter);
 
-  /// <summary>
-  /// <para>Creates a new LogicBlock.</para>
-  /// <para>
-  /// A logic block is a machine that receives input, maintains a
-  /// single state, and produces outputs. It can be used as a simple
-  /// input-to-state reducer, or built upon to create a hierarchical state
-  /// machine.
-  /// </para>
-  /// </summary>
-  protected LogicBlock()
-  {
-    _inputs = new();
-    Context = new DefaultContext(this);
-    PreallocateStates(this);
-  }
+  // defer stop until after current operations, otherwise stop right away
+  public void Stop() => _subject.Perform(new StopOp());
 
-  /// <inheritdoc />
-  public abstract Transition GetInitialState();
-
-  /// <inheritdoc />
-  public virtual IBinding Bind() => new Binding(this);
-
-  /// <inheritdoc />
-  public virtual TState Input<TInputType>(
-    in TInputType input
-  ) where TInputType : struct
-  {
-    if (IsProcessing)
-    {
-      _inputs.Enqueue(input);
-      return Value;
-    }
-    return ProcessInputs<TInputType>(input);
-  }
-
-  /// <inheritdoc />
-  public void Start()
-  {
-    if (IsProcessing || _value is not null)
-    { return; }
-
-    Flush();
-  }
-
-  /// <summary>
-  /// Called when the logic block is started. Override this method to
-  /// perform any initialization logic.
-  /// </summary>
   public virtual void OnStart() { }
 
-  /// <inheritdoc />
-  public void Stop()
+  public virtual IEnumerable<IDisposable> OnStartSubscriptions()
   {
-    if (IsProcessing || _value is null)
-    { return; }
-
-    OnStop();
-
-    // Repeatedly exit and detach the current state until there is none.
-    ChangeState(null);
-
-    _inputs.Clear();
-
-    // A state finally exited and detached without queuing additional inputs.
-    _value = null;
+    yield break;
   }
 
-  /// <summary>
-  /// Called when the logic block is stopped. Override this method to
-  /// perform any cleanup logic.
-  /// </summary>
   public virtual void OnStop() { }
 
-  /// <inheritdoc />
-  public TState ForceReset(TState state)
+  public virtual void OnStopSubscriptions() { }
+
+  #endregion StartAndStop
+
+  #region Persistence
+
+  public LogicBlockState Start(
+    LogicBlockData data, bool shouldCallOnEnter = true
+  )
   {
-    if (IsProcessing)
-    {
-      throw new LogicBlockException(
-        "Cannot force reset a logic block while it is processing inputs. " +
-        "Do not call ForceReset() from inside a logic block's own state."
-      );
-    }
+    // can only be called when the logic block is stopped and not disposed
+    ValidateNotStartedAndNotDisposed();
 
-    ChangeState(state);
+    _subject.Perform(new StartFromDataOp(data, shouldCallOnEnter));
 
-    return Flush();
+    return _state!;
   }
 
-  /// <inheritdoc />
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public void AddBinding(ILogicBlockBinding<TState> binding)
+  public LogicBlockData GetData()
   {
-    if (_bindings.Contains(binding))
-    {
-      return;
-    }
+    ValidateStartedAndNotDisposed();
 
-    _bindings.Add(binding);
+    return new LogicBlockData(State!.GetType(), Blackboard, History);
   }
 
-  /// <inheritdoc />
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public bool RemoveBinding(ILogicBlockBinding<TState> binding)
+  // Called immediately after a logic block has loaded from LogicBlockData
+  internal virtual void Loaded() { }
+
+  #endregion Persistence
+
+  public LogicBlockState Input<TInput>(in TInput input) where TInput : struct
   {
-    if (IsInvokingBindings)
-    {
+    ValidateStartedAndNotDisposed();
 
-    }
+    _subject.Perform(input);
 
-    return _bindings.Remove(binding);
+    return _state!;
   }
 
-  /// <summary>
-  /// <para>
-  /// Determines if the logic block can transition to the next state.
-  /// </para>
-  /// <para>
-  /// A logic block can only transition to a state if the state is not
-  /// equivalent to the current state. That is, the state must not be the same
-  /// reference and must not be equal to the current state (as determined by
-  /// the default equality comparer).
-  /// </para>
-  /// </summary>
-  /// <param name="state">Next potential state.</param>
-  /// <returns>True if the logic block can change to the given state, false
-  /// otherwise.</returns>
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  protected virtual bool CanChangeState(TState? state) =>
-    !SerializationUtilities.IsEquivalent(state, _value);
-
-  /// <summary>
-  /// Adds an error to the logic block. Call this from your states to
-  /// register errors that occur. Logic blocks are designed to be resilient
-  /// to errors, so registering errors instead of stopping execution is
-  /// preferred in most cases.
-  /// </summary>
-  /// <param name="e">Exception to add.</param>
-  internal virtual void AddError(Exception e)
+  internal void Output<TOutput>(in TOutput output)
+    where TOutput : struct
   {
-    AnnounceException(e);
-    HandleError(e);
+    ValidateStartedAndNotDisposed();
+
+
+    // immediately invokes output bindings when called, rather than scheduling them.
+    // this technically allows re-entry on output bindings...but because this method
+    // can only be called from a state, developers are more or less prevented
+    // from accidentally re-entering via outputs (you'd have to write some awful code
+    // to get around that).
+    _subject.Broadcast(new OutputBroadcast<TOutput>(output)); // runs user code
   }
 
-  /// <summary>
-  /// Produces an output. Outputs are one-shot side effects that allow you
-  /// to communicate with the world outside the logic block. Outputs are
-  /// equivalent to the idea of actions in statecharts.
-  /// </summary>
-  /// <typeparam name="TOutput">Output type.</typeparam>
-  /// <param name="output">Output value.</param>
-  internal virtual void OutputValue<TOutput>(in TOutput output)
-    where TOutput : struct => AnnounceOutput(output);
+  #region AtomicOperations
 
-  /// <summary>
-  /// Called when the logic block encounters an error. Overriding this method
-  /// allows you to customize how errors are handled. If you throw the error
-  /// again from this method, you can make errors stop execution.
-  /// </summary>
-  /// <param name="e">Exception that occurred.</param>
-  protected virtual void HandleError(Exception e) { }
-
-  /// <summary>
-  /// Defines a transition to a state stored on the logic block's blackboard.
-  /// </summary>
-  /// <typeparam name="TStateType">Type of state to transition to.</typeparam>
-  protected Transition To<TStateType>()
-      where TStateType : TState
+  void IPerformAnyOperation.Perform<TOp>(in TOp op) where TOp : struct
   {
-    try
+    if (op is not StartOp and not StartFromDataOp and not StopOp
+        and not DisposeOp)
     {
-      return new(Context.Get<TStateType>());
-    }
-    catch (Exception e)
-    {
-      throw new InvalidOperationException(
-        $"Could not retrieve state {typeof(TStateType)}. You may need to add the Meta attribute to your LogicBlock, or add the states to the blackboard manually.",
-        e
-      );
+      HandleInput(op);
     }
   }
 
-
-  #region IReadOnlyBlackboard
-  /// <inheritdoc />
-  public IReadOnlySet<Type> Types => Blackboard.Types;
-
-  /// <inheritdoc />
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public TData Get<TData>() where TData : class => Blackboard.Get<TData>();
-
-  /// <inheritdoc />
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public object GetObject(Type type) => Blackboard.GetObject(type);
-
-  /// <inheritdoc />
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public bool Has<TData>() where TData : class => Blackboard.Has<TData>();
-
-  /// <inheritdoc />
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public bool HasObject(Type type) => Blackboard.HasObject(type);
-  #endregion IReadOnlyBlackboard
-
-  #region IBlackboard
-  /// <inheritdoc cref="IBlackboard.Set{TData}(TData)" />
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public void Set<TData>(TData data) where TData : class =>
-    Blackboard.Set(data);
-
-  /// <inheritdoc cref="IBlackboard.SetObject(Type, object)" />
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public void SetObject(Type type, object data) =>
-    Blackboard.SetObject(type, data);
-
-  /// <inheritdoc cref="IBlackboard.Overwrite{TData}(TData)" />
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public void Overwrite<TData>(TData data) where TData : class =>
-    Blackboard.Overwrite(data);
-
-  /// <inheritdoc cref="IBlackboard.OverwriteObject(Type, object)" />
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public void OverwriteObject(Type type, object data) =>
-    Blackboard.OverwriteObject(type, data);
-  #endregion IBlackboard
-
-  #region ISerializableBlackboard
-  /// <inheritdoc cref="ISerializableBlackboard.SavedTypes" />
-  public IEnumerable<Type> SavedTypes => Blackboard.SavedTypes;
-
-  /// <inheritdoc cref="ISerializableBlackboard.TypesToSave" />
-  public IEnumerable<Type> TypesToSave => Blackboard.TypesToSave;
-
-  /// <inheritdoc cref="ISerializableBlackboard.Save{TData}(Func{TData})" />
-  public void Save<TData>(Func<TData> factory)
-    where TData : class, IIdentifiable => Blackboard.Save(factory);
-
-  /// <inheritdoc
-  /// cref="ISerializableBlackboard.SaveObject(Type, Func{object}, object?)" />
-  public void SaveObject(
-    Type type, Func<object> factory, object? referenceValue
-  ) => Blackboard.SaveObject(type, factory, referenceValue);
-  #endregion ISerializableBlackboard
-
-  internal TState ProcessInputs<TInputType>(
-    TInputType? input = null
-  ) where TInputType : struct
+  void IPerform<StartOp>.Perform(in StartOp op)
   {
-    _isProcessing++;
+    // run the second half of a state change sequence since there's no state to exit
+    var state = _state!;
 
-    if (_value is null)
+    state.Attach(this);
+    state.Enter(null); // runs user code
+
+    OnStart(); // runs user code
+
+    var disposables = OnStartSubscriptions(); // runs user code
+
+    foreach (var disposable in disposables)
     {
-      // No state yet. Let's get the first state going!
-      Blackboard.InstantiateAnyMissingSavedData();
-      ChangeState(RestoredState as TState ?? GetInitialState().State);
-      RestoredState = null;
-      OnStart();
+      _disposables!.Add(disposable);
     }
 
-    // We can always process the first input directly.
-    // This keeps single inputs off the heap.
-    if (input.HasValue)
+    // announce that we've started
+    _subject.Broadcast(new StartedBroadcast()); // runs user code
+
+    // also announce the state itself for any bindings that may be listening
+    _subject.Broadcast(new StateBroadcast(state)); // runs user code
+
+    if (op.IsLoading)
     {
-      HandleInput(input.Value);
+      Loaded(); // AutoBlock extends this to run user code, OnLoad()
+
+      _subject.Broadcast(new LoadedBroadcast()); // runs user code
+    }
+  }
+
+  void IPerform<StopOp>.Perform(in StopOp op)
+  {
+    if (!IsStarted)
+    { return; }
+
+    _state!.Exit(null); // runs user code
+    _state.Detach();
+
+    _state = null;
+
+    OnStop();
+    OnStopSubscriptions();
+
+    foreach (var disposable in _disposables!)
+    {
+      disposable.Dispose();
     }
 
-    var passthrough = new InputPassthrough() { LogicBlock = this };
+    _disposables.Clear();
 
-    while (_inputs.HasValues)
+    _subject.Broadcast(new StoppedBroadcast());
+
+    // history might be null since we create it lazily (most logic blocks don't
+    // make use of it)
+    _history?.Clear();
+    _history = null;
+
+    // any pending operations previously scheduled are cleared
+    // (no restart from reentry allowed)
+    _subject.Clear();
+
+    Status = LogicBlockStatus.Stopped;
+  }
+
+  void IPerform<StartFromDataOp>.Perform(in StartFromDataOp op)
+  {
+    var data = op.Data;
+    var blackboard = data.Blackboard;
+
+    foreach (var type in blackboard.Types)
     {
-      _inputs.Dequeue(passthrough);
+      // deserialized objects take precedence
+      Blackboard.OverwriteObject(type, blackboard.GetObject(type));
     }
 
-    _isProcessing--;
+    // Restore history from saved data
+    foreach (var type in data.History)
+    {
+      History.Push(type);
+    }
 
-    _shouldCallOnEnter = true;
+    Status = LogicBlockStatus.Started;
 
-    return _value!;
+    _state = LookupInitialState(data.StateType);
+
+    (this as IPerform<StartOp>).Perform(new StartOp(true));
+  }
+
+  void IPerform<DisposeOp>.Perform(in DisposeOp op)
+  {
+    _blackboard = null;
+    _state = null;
+    _history = null;
+    _disposables = null;
+
+    Status = LogicBlockStatus.Disposed;
+
+    _subject.ClearBindings();
   }
 
   private void HandleInput<TInput>(in TInput input) where TInput : struct
   {
-    if (_value is not IGet<TInput> stateWithInputHandler)
+    var state = _state;
+    if (_state is IGetEveryInput handlerForEverything)
+    {
+      var stateType = handlerForEverything.On(in input);
+      state = (LogicBlockState)GetObject(stateType);
+    }
+    // only check for specific handler if the state doesn't have an any-input handler
+    else if (_state is IGet<TInput> handler)
+    {
+      var stateType = handler.On(in input);
+      state = (LogicBlockState)GetObject(stateType);
+    }
+
+    _subject.Broadcast(new InputBroadcast<TInput>(input));
+
+    if (IsEquivalent(state, _state))
     {
       return;
     }
 
-    // Run the input handler on the state to get the next state.
-    var state = RunInputHandler(stateWithInputHandler, in input, _value);
-
-    AnnounceInput(in input);
-
-    if (!CanChangeState(state))
-    {
-      // The only time we can't change states is if the new state is
-      // equivalent to the old state (determined by the default equality
-      // comparer)
-      return;
-    }
-
-    ChangeState(state);
-  }
-
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private void ChangeState(TState? state)
-  {
-    _isProcessing++;
-    var previous = _value;
-
-    previous?.Exit(state);
-    previous?.Detach();
-
-    _value = state;
-
-    var stateIsDifferent = CanChangeState(previous);
+    var previous = _state;
+    previous!.Exit(state); // runs user code
+    previous.Detach();
+    _state = state;
+    state?.Attach(this);
+    state?.Enter(previous); // runs user code
 
     if (state is not null)
     {
-      state.Attach(Context);
-
-      if (_shouldCallOnEnter)
-      {
-        state.Enter(previous);
-      }
-
-      if (stateIsDifferent)
-      {
-        AnnounceState(state);
-      }
+      _subject.Broadcast(new StateBroadcast(state)); // runs user code
     }
-    _isProcessing--;
   }
 
-  internal void InvokeBindings(Action<ILogicBlockBinding<TState>> callback)
-  {
-    StartBindingInvocation();
-    var i = 0;
-    while (i < _bindings.Count)
-    {
-      var binding = _bindings[i];
-      callback(binding);
-      i++;
-    }
-    EndBindingInvocation();
-  }
+  #endregion AtomicOperations
 
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private void AnnounceInput<TInputType>(in TInputType input)
-  where TInputType : struct
-  {
-    StartBindingInvocation();
-    var i = 0;
-    while (i < _bindings.Count)
-    {
-      var binding = _bindings[i];
-      binding.MonitorInput(in input);
-      i++;
-    }
-    EndBindingInvocation();
-  }
-
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private void AnnounceState(TState state) => InvokeBindings(
-    binding => binding.MonitorState(state)
-  );
-
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private void AnnounceOutput<TOutputType>(TOutputType output)
-  where TOutputType : struct
-  {
-    StartBindingInvocation();
-    var i = 0;
-    while (i < _bindings.Count)
-    {
-      var binding = _bindings[i];
-      binding.MonitorOutput(in output);
-      i++;
-    }
-    EndBindingInvocation();
-  }
-
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private void AnnounceException(Exception exception) => InvokeBindings(
-    binding => binding.MonitorException(exception)
-  );
-
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private TState RunInputHandler<TInputType>(
-    IGet<TInputType> inputHandler,
-    in TInputType input,
-    TState fallback
-  ) where TInputType : struct
-  {
-    try
-    { return inputHandler.On(in input).State; }
-    catch (Exception e) { AddError(e); }
-    return fallback;
-  }
+  #region Utilities
 
   /// <summary>
-  /// Processes inputs and changes state until there are no more inputs.
+  /// Determines if two logic block states are equivalent. Logic block states
+  /// are equivalent if they are the same reference or are equal according to
+  /// the default equality comparer.
   /// </summary>
-  /// <returns>The resting state.</returns>
+  /// <param name="a">First state.</param>
+  /// <param name="b">Second state.</param>
+  /// <returns>True if the states are equivalent.</returns>
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  private TState Flush() => ProcessInputs<int>();
+  public static bool IsEquivalent(object? a, object? b) =>
+    ReferenceEquals(a, b) || (
+      a is null &&
+      b is null
+    ) || (
+      a is not null &&
+      b is not null &&
+      EqualityComparer<object>.Default.Equals(a, b)
+    );
 
-  /// <summary>
-  /// Determines if two logic blocks are equivalent. Logic blocks are equivalent
-  /// if they are the same reference, or if each of their states and blackboards
-  /// are equivalent.
-  /// </summary>
-  /// <param name="obj">Other logic block.</param>
-  /// <returns>True if</returns>
-  public override bool Equals(object? obj)
+  public Binding Bind() => new(_subject);
+
+  public void ClearBindings() => _subject.ClearBindings();
+
+  public void Dispose()
   {
-    if (ReferenceEquals(this, obj))
-    { return true; }
+    // stops the logic block if needed
+    _subject.Perform(new StopOp());
+    // a logic block can't be restarted after being disposed
+    _subject.Perform(new DisposeOp());
+    _subject.Dispose();
+  }
 
-    if (obj is not LogicBlockBase logic)
-    { return false; }
-
-    if (GetType() != logic.GetType())
-    {
-      // Two different types of logic blocks are never equal.
-      return false;
-    }
-
-    // Ensure current states are equal.
+  private LogicBlockState LookupInitialState(Type initialStateType)
+  {
     if (
-      !SerializationUtilities.IsEquivalent(ValueAsObject, logic.ValueAsObject)
+      !_blackboard!.HasObject(initialStateType) ||
+      _blackboard.GetObject(initialStateType) is not LogicBlockState state
     )
     {
-      return false;
-    }
-
-    // Ensure blackboard entries are equal.
-    var types = Blackboard.Types;
-    var otherTypes = logic.Blackboard.Types;
-
-    if (types.Count != otherTypes.Count)
-    { return false; }
-
-    foreach (var type in types)
-    {
-      if (!otherTypes.Contains(type))
-      { return false; }
-
-      var obj1 = Blackboard.GetObject(type);
-      var obj2 = logic.Blackboard.GetObject(type);
-
-      if (SerializationUtilities.IsEquivalent(obj1, obj2))
-      {
-        continue;
-      }
-
-      return false;
-    }
-
-    return true;
-  }
-
-  // Equivalent logic blocks have different hash codes because they are
-  // different instances.
-  /// <inheritdoc />
-  public override int GetHashCode() => base.GetHashCode();
-
-  /// <inheritdoc />
-  public void RestoreFrom(
-    ILogicBlock<TState> logic, bool shouldCallOnEnter = true
-  )
-  {
-    _shouldCallOnEnter = shouldCallOnEnter;
-
-    if ((logic.ValueAsObject ?? logic.RestoredState) is not TState state)
-    {
+      // courtesy error — if you haven't set the initial state, you likely haven't
+      // set any of them yet
       throw new LogicBlockException(
-        $"Cannot restore from an uninitialized logic block ({logic}). Please " +
-        "make sure you've called Start() on it first."
+        $"Initial state of type {initialStateType} has not been set on the " +
+        "logic block. Please set an instance of each state type used on the " +
+        "logic block."
       );
     }
 
-    Stop();
-
-    foreach (var type in logic.Blackboard.Types)
-    {
-      Blackboard.OverwriteObject(type, logic.Blackboard.GetObject(type));
-    }
-
-    var stateType = state.GetType();
-    OverwriteObject(stateType, state);
-    RestoreState(state);
+    return state;
   }
+
+  private void ValidateNotStartedAndNotDisposed()
+  {
+    if (IsDisposed)
+    { throw Disposed; }
+
+    if (IsStarted)
+    { throw AlreadyStarted; }
+  }
+
+  private void ValidateStartedAndNotDisposed()
+  {
+    if (IsDisposed)
+    { throw Disposed; }
+
+    if (!IsStarted)
+    { throw NotStarted; }
+  }
+
+  #endregion Utilities
 }

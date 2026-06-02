@@ -1,0 +1,9 @@
+﻿@startuml BaseState
+state "BaseState" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SingleState_BaseState
+
+Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SingleState_BaseState --> Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SingleState_BaseState : MyInput
+
+Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SingleState_BaseState : OnEnter → MyOutput
+Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SingleState_BaseState : OnExit → MyOutput
+Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SingleState_BaseState : OnMyInput → MyOutput
+@enduml

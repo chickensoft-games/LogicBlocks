@@ -1,0 +1,7 @@
+﻿@startuml OverriddenHandlers
+state OverriddenHandlers {
+  state Idle
+}
+
+[*] --> Idle
+@enduml

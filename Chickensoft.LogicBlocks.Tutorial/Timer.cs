@@ -15,13 +15,11 @@ public interface IClock
   event Action<double> TimeElapsed;
 }
 
-public interface ITimer : ILogicBlock<Timer.State>;
+public interface ITimer : ILogicBlock;
 
-[Meta, LogicBlock(typeof(State), Diagram = true)]
-public partial class Timer : LogicBlock<Timer.State>, ITimer
+[Meta]
+public partial class Timer : LogicBlock, ITimer
 {
-  public override Transition GetInitialState() => To<State.PoweredOff>();
-
   /// <summary>Blackboard data for our hierarchical state machine.</summary>
   public sealed record Data
   {
@@ -35,6 +33,9 @@ public partial class Timer : LogicBlock<Timer.State>, ITimer
   {
     // Set shared data for all states in the blackboard.
     Set(new Data() { Duration = 30.0d });
+    Set(new TimerState.PoweredOff());
+    Set(new TimerState.PoweredOn.Idle());
+    Set(new TimerState.PoweredOn.Countdown());
   }
 
   public static class Input
@@ -55,27 +56,27 @@ public partial class Timer : LogicBlock<Timer.State>, ITimer
     public readonly record struct StopBeepingSound;
   }
 
-  public abstract record State : StateLogic<State>
+  public abstract record TimerState : LogicBlockState
   {
-    public record PoweredOff : State, IGet<Input.PowerButtonPressed>
+    public record PoweredOff : TimerState, IGet<Input.PowerButtonPressed>
     {
-      public Transition On(in Input.PowerButtonPressed input) =>
+      public Type On(in Input.PowerButtonPressed input) =>
         To<PoweredOn.Idle>();
     }
 
-    public abstract record PoweredOn : State, IGet<Input.PowerButtonPressed>
+    public abstract record PoweredOn : TimerState, IGet<Input.PowerButtonPressed>
     {
-      public Transition On(in Input.PowerButtonPressed input) => To<PoweredOff>();
+      public Type On(in Input.PowerButtonPressed input) => To<PoweredOff>();
 
       public record Idle : PoweredOn, IGet<Input.StartStopButtonPressed>, IGet<Input.ChangeDuration>
       {
-        public Transition On(in Input.ChangeDuration input)
+        public Type On(in Input.ChangeDuration input)
         {
           Get<Data>().Duration = input.Duration;
           return ToSelf();
         }
 
-        public Transition On(in Input.StartStopButtonPressed input) =>
+        public Type On(in Input.StartStopButtonPressed input) =>
           To<Countdown>();
       }
 
@@ -84,21 +85,21 @@ public partial class Timer : LogicBlock<Timer.State>, ITimer
       {
         public Countdown()
         {
-          OnAttach(() => Get<IClock>().TimeElapsed += OnTimeElapsed);
-          OnDetach(() => Get<IClock>().TimeElapsed -= OnTimeElapsed);
+          this.OnEnter(() => Get<IClock>().TimeElapsed += OnTimeElapsed);
+          this.OnExit(() => Get<IClock>().TimeElapsed -= OnTimeElapsed);
         }
 
         private void OnTimeElapsed(double delta) =>
           Input(new Input.TimeElapsed(delta));
 
-        public Transition On(in Input.TimeElapsed input)
+        public Type On(in Input.TimeElapsed input)
         {
           var data = Get<Data>();
           data.TimeRemaining -= input.Delta;
           return data.TimeRemaining <= 0.0d ? To<Beeping>() : ToSelf();
         }
 
-        public Transition On(in Input.StartStopButtonPressed input) => To<Idle>();
+        public Type On(in Input.StartStopButtonPressed input) => To<Idle>();
       }
 
       public record Beeping : PoweredOn, IGet<Input.StartStopButtonPressed>
@@ -109,7 +110,7 @@ public partial class Timer : LogicBlock<Timer.State>, ITimer
           this.OnExit(() => Output(new Output.StopBeepingSound()));
         }
 
-        public Transition On(in Input.StartStopButtonPressed input) =>
+        public Type On(in Input.StartStopButtonPressed input) =>
           To<Idle>();
       }
     }

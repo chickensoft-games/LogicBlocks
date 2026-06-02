@@ -1,0 +1,10 @@
+﻿@startuml Heater
+state Heater {
+  state Off
+}
+
+[*] --> Off
+
+Heater : Dependencies:
+Heater : - Data
+@enduml

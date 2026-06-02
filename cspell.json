@@ -17,7 +17,6 @@
   ],
   "words": [
     "assemblyfilters",
-    "devbuild",
     "automerge",
     "Boxless",
     "branchcoverage",
@@ -29,6 +28,9 @@
     "classfilters",
     "contentfiles",
     "CYGWIN",
+    "Cyotek",
+    "Deque",
+    "devbuild",
     "endregion",
     "enduml",
     "finalizer",
@@ -48,6 +50,8 @@
     "metatype",
     "Metatypes",
     "methodcoverage",
+    "microtask",
+    "microtasks",
     "missingall",
     "Moq's",
     "msbuild",
@@ -64,7 +68,9 @@
     "pascalcase",
     "picoweb",
     "plantuml",
+    "prealloc",
     "puml",
+    "pushdown",
     "renovatebot",
     "reportgenerator",
     "reporttypes",
@@ -88,6 +94,9 @@
     "typeparamref",
     "ulong",
     "VBCS",
-    "Xunit"
+    "Xunit",
+    "Pumls",
+    "SYSTEMTYPE",
+    "projectdir",
   ]
 }

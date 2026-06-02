@@ -1,12 +1,12 @@
 namespace Chickensoft.LogicBlocks.Generator.Tests;
 
-public partial class PartialLogic : LogicBlock<PartialLogic.State>
+public partial class PartialLogic : LogicBlock
 {
-  public abstract partial record State : StateLogic<State>
+  public abstract partial record BaseState : LogicBlockState
   {
-    public partial record A : State, IGet<Input.One>
+    public partial record A : BaseState, IGet<Input.One>
     {
-      public Transition On(in Input.One input)
+      public Type On(in Input.One input)
       {
         Output(new Output.OutputA());
         return To<B>();

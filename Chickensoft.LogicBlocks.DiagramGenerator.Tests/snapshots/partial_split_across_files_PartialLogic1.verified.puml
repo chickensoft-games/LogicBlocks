@@ -1,0 +1,7 @@
+﻿@startuml PartialLogic
+state PartialLogic {
+  state A
+}
+
+[*] --> A
+@enduml

@@ -35,32 +35,28 @@ public readonly ref struct IndentationAwareInterpolationHandler
 
   public void AppendFormatted<T>(T? t)
   {
-    if (t is not T item)
+    switch (t)
     {
-      return;
+      case IEnumerable<string> lines:
+        AddLines(lines);
+        break;
+      case string str:
+        AddString(str);
+        break;
+      case not null:
+        _sb.Append(t);
+        break;
     }
-    else if (item is IEnumerable<string> lines)
-    {
-      AddLines(lines);
-      return;
-    }
-    else if (item is string str)
-    {
-      AddString(str);
-      return;
-    }
-
-    _sb.Append(item.ToString());
   }
 
   private void AddString(string s)
   {
-    var value = s.NormalizeLineEndings();
-    var lastNewLineIndex = value.LastIndexOf('\n');
-    var remainingString = value.Substring(lastNewLineIndex + 1);
-    var remainingNonWs = remainingString.TrimEnd();
-    _state.EndedOnWhitespace = remainingNonWs.Length == 0;
-    _state.Indent = _state.EndedOnWhitespace
+    var value = s.NormalizeLineEndings(); //Replace CRLF with LF
+    var lastNewLineIndex = value.LastIndexOf('\n'); //Find the last newline character
+    var remainingString = value.Substring(lastNewLineIndex + 1); //Everything after the last newline
+    var remainingNonWs = remainingString.TrimEnd(); //Everything after the last newline, trimmed of whitespace
+    _state.EndedOnWhitespace = remainingNonWs.Length == 0; // true if the last line ended on whitespace
+    _state.Indent = _state.EndedOnWhitespace //If the string ended on whitespace, indent by the number of spaces per indent
       ? remainingString.Length / Constants.SPACES_PER_INDENT
       : 0;
     _sb.Append(value);

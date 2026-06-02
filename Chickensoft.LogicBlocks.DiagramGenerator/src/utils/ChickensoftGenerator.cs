@@ -9,7 +9,7 @@ public abstract class ChickensoftGenerator
   /// Produces whitespace for the required number of tabs.
   /// </summary>
   /// <param name="numTabs">Indentation level.</param>
-  /// <returns><paramref name="numTabs" /> * <see cref="SPACES_PER_TAB"/>
+  /// <returns><paramref name="numTabs" /> * <see cref="Constants.SPACES_PER_INDENT"/>
   /// spaces in a string.</returns>
   public static string Tab(int numTabs)
   => new(' ', numTabs * Constants.SPACES_PER_INDENT);

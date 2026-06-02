@@ -1,5 +1,0 @@
-
-# .NET Style Rules
-[*.{cs,csx,cake,vb,vbx}]
-
-dotnet_diagnostic.IDE0010.severity = none
