@@ -1,0 +1,7 @@
+﻿@startuml Patterns
+state Patterns {
+  state One
+}
+
+[*] --> One
+@enduml

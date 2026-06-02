@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
@@ -16,13 +16,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Chickensoft.Introspection" Version="3.0.2" />
-    <PackageReference Include="Chickensoft.Introspection.Generator" Version="3.0.2" PrivateAssets="all" OutputItemType="analyzer" />
+    <!-- <PackageReference Include="Chickensoft.Introspection" Version="3.0.2" />
+    <PackageReference Include="Chickensoft.Introspection.Generator" Version="3.0.2" PrivateAssets="all" OutputItemType="analyzer" /> -->
 
-    <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
-    <ProjectReference Include="../Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
-    <ProjectReference Include="../Chickensoft.LogicBlocks.CodeFixes/Chickensoft.LogicBlocks.CodeFixes.csproj" PrivateAssets="all" OutputItemType="analyzer" />
-    <ProjectReference Include="../Chickensoft.LogicBlocks.Analyzers/Chickensoft.LogicBlocks.Analyzers.csproj" PrivateAssets="all" OutputItemType="analyzer" />
+    <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj"/>
+    <!-- <ProjectReference Include="../Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj" PrivateAssets="all" OutputItemType="analyzer" /> -->
+    <!-- <ProjectReference Include="../Chickensoft.LogicBlocks.CodeFixes/Chickensoft.LogicBlocks.CodeFixes.csproj" PrivateAssets="all" OutputItemType="analyzer" />
+    <ProjectReference Include="../Chickensoft.LogicBlocks.Analyzers/Chickensoft.LogicBlocks.Analyzers.csproj" PrivateAssets="all" OutputItemType="analyzer" /> -->
   </ItemGroup>
 
 </Project>

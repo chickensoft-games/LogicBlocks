@@ -1,0 +1,7 @@
+﻿@startuml SingleState
+state SingleState {
+  state BaseState
+}
+
+[*] --> BaseState
+@enduml

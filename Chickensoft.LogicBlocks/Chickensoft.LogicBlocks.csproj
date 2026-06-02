@@ -1,6 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <LangVersion>preview</LangVersion>
@@ -22,7 +23,7 @@
     <Title>LogicBlocks</Title>
     <Version>0.0.0-devbuild</Version>
     <Description>Human-friendly, hierarchical state machines for games and apps in C#.</Description>
-    <Copyright>© 2024 Chickensoft</Copyright>
+    <Copyright>© 2026 Chickensoft</Copyright>
     <Authors>Chickensoft</Authors>
     <Company>Chickensoft</Company>
 
@@ -39,12 +40,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../README.md" Pack="true" PackagePath="/" />
-    <None Include="../LICENSE" Pack="true" PackagePath="/" />
-    <None Include="./icon.png" Pack="true" PackagePath="" />
+    <None Include="../README.md" Pack="true" PackagePath="/"/>
+    <None Include="../LICENSE" Pack="true" PackagePath="/"/>
+    <None Include="./icon.png" Pack="true" PackagePath=""/>
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DequeNET" Version="1.0.2"/>
     <PackageReference Include="SauceControl.InheritDoc" Version="2.0.2">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -53,35 +55,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Text.Json" Version="10.0.8" />
-    <PackageReference Include="Chickensoft.Collections" Version="3.1.4" />
-    <PackageReference Include="Chickensoft.Introspection" Version="3.0.2" />
-    <PackageReference Include="Chickensoft.Serialization" Version="3.1.0" />
-  </ItemGroup>
-
-  <!-- Include analyzers as part of logic blocks -->
-  <ItemGroup>
-      <ProjectReference Include="..\Chickensoft.LogicBlocks.Analyzers\Chickensoft.LogicBlocks.Analyzers.csproj" Pack="false">
-          <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-          <OutputItemType>Content</OutputItemType>
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </ProjectReference>
-    <ProjectReference Include="..\Chickensoft.LogicBlocks.CodeFixes\Chickensoft.LogicBlocks.CodeFixes.csproj" Pack="false">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <OutputItemType>Content</OutputItemType>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </ProjectReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="$(OutputPath)/Chickensoft.LogicBlocks.Analyzers.dll" />
-    <None Include="$(OutputPath)/Chickensoft.LogicBlocks.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Remove="$(OutputPath)/Chickensoft.LogicBlocks.CodeFixes.dll" />
-    <None Include="$(OutputPath)/Chickensoft.LogicBlocks.CodeFixes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <PackageReference Include="Chickensoft.Sync" Version="2.2.0"/>
   </ItemGroup>
 
   <!-- Include the stuff inside ./buildTransitive so our props get picked up by consuming packages -->
   <ItemGroup>
-    <None Include="./buildTransitive/**/*" Pack="true" PackagePath="buildTransitive" />
+    <None Include="./buildTransitive/**/*" Pack="true" PackagePath="buildTransitive"/>
   </ItemGroup>
 </Project>

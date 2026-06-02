@@ -1,0 +1,13 @@
+﻿@startuml BaseState
+state "BaseState" as Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_BaseState {
+  state "A" as Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_BaseState_A
+  state "B" as Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_BaseState_B
+}
+
+Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_BaseState_A --> Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_BaseState_B : One
+
+Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_BaseState_A : DoSomething() → OutputSomething
+Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_BaseState_A : OnEnter → OutputEnterA
+Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_BaseState_A : OnExit → OutputExitA
+Chickensoft_LogicBlocks_Generator_Tests_PartialLogic_BaseState_A : OnOne → OutputA
+@enduml

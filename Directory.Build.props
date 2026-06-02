@@ -1,3 +1,6 @@
 <Project>
-  <Sdk Name="ViHo.PackAsAnalyzer" Version="1.0.1" />
+  <Sdk Name="ViHo.PackAsAnalyzer" Version="1.0.1"/>
+  <PropertyGroup>
+    <NuGetAuditMode>direct</NuGetAuditMode>
+  </PropertyGroup>
 </Project>

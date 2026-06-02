@@ -2,6 +2,7 @@ namespace Chickensoft.LogicBlocks.Tutorial.Tests;
 
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Auto;
 using Chickensoft.Serialization;
 using Shouldly;
 using Xunit;
@@ -21,24 +22,30 @@ public class SerializableLogicBlockTest
   [Fact]
   public void Serializes()
   {
-    var logic = new SerializableLogicBlock();
+    LogicBlockSerialization.Setup();
 
-    var jsonText = JsonSerializer.Serialize(logic, _options);
+    var logic = new SerializableLogicBlock();
+    logic.Start<TimerState.PoweredOff>();
+
+    var saveData = logic.Save().ShouldBeOfType<SerializableLogicBlockSaveData>();
+    var jsonText = JsonSerializer.Serialize(saveData, _options);
     var jsonNode = JsonNode.Parse(jsonText);
 
     var jsonExpectedText = /*language=json*/
       """
       {
-        "$type": "serializable_logic",
+        "$type": "serializable_logic_block_save_data",
         "$v": 1,
-        "state": {
-          "$type": "serializable_logic_state_off",
-          "$v": 1
-        },
-        "blackboard": {
-          "$type": "blackboard",
-          "$v": 1,
-          "values": {}
+        "data": {
+          "$v": 6,
+          "$type": "$lb",
+          "state": "serializable_logic_state_off",
+          "blackboard": {
+            "$type": "blackboard",
+            "$v": 1,
+            "values": {}
+          },
+          "history": []
         }
       }
       """;
@@ -73,6 +80,9 @@ public class SerializableLogicBlockTest
     );
 
     logic.ShouldNotBeNull();
-    logic.Value.ShouldBeOfType<SerializableLogicBlock.State.PoweredOff>();
+
+    logic.Start<TimerState.PoweredOff>();
+
+    logic.State.ShouldBeOfType<TimerState.PoweredOff>();
   }
 }

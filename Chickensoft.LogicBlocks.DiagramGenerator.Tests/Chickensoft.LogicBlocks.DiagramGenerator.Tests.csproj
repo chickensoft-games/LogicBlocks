@@ -1,52 +1,42 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>disable</ImplicitUsings>
+    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
     <IsPackable>false</IsPackable>
-    <LangVersion>preview</LangVersion>
-    <DebugType>portable</DebugType>
-
-    <!-- To show generated files -->
-    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <CompilerGeneratedFilesOutputPath>.generated</CompilerGeneratedFilesOutputPath>
-
-    <!-- Tracks generator performance when dotnet build /binaryLogger -->
-    <ReportAnalyzer>true</ReportAnalyzer>
-
-    <!-- This can be used to disable the diagram generator, if desired. -->
-    <!-- <LogicBlocksDiagramGeneratorDisabled>true</LogicBlocksDiagramGeneratorDisabled> -->
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.11.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="xunit" Version="2.9.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.msbuild" Version="10.0.1">
+    <PackageReference Include="Verify.Xunit" Version="30.4.0" />
+    <PackageReference Include="coverlet.msbuild" Version="6.0.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="10.0.1">
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Shouldly" Version="4.3.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.3.0" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" PrivateAssets="all" />
+    <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
+    <ProjectReference Include="../Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj" />
+    <ProjectReference Include="../Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj" />
-    <ProjectReference Include="../Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
-    <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
-    <ProjectReference Include="../Chickensoft.GeneratorTester/Chickensoft.GeneratorTester.csproj" />
-
-    <PackageReference Include="Chickensoft.Introspection.Generator" Version="3.0.2" PrivateAssets="all" OutputItemType="analyzer" />
+    <Using Include="Xunit" />
+    <Using Include="Shouldly" />
   </ItemGroup>
 
 </Project>

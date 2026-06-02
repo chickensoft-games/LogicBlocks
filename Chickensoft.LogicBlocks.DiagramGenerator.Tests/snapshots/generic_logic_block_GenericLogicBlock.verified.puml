@@ -1,0 +1,7 @@
+﻿@startuml GenericLogicBlock
+state GenericLogicBlock {
+  state StateOne
+}
+
+[*] --> StateOne
+@enduml

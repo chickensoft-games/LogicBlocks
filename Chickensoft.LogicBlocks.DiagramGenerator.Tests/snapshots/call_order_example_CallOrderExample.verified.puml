@@ -1,0 +1,7 @@
+﻿@startuml CallOrderExample
+state CallOrderExample {
+  state Standing
+}
+
+[*] --> Standing
+@enduml

@@ -70,12 +70,22 @@ jobs:
           regex: false
           include: Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj
 
+      - name: 📝 Write AutoBlock Version to File
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          find: "0.0.0-devbuild"
+          replace: ${{ steps.next-version.outputs.version }}
+          regex: false
+          include: Chickensoft.LogicBlocks.Auto/Chickensoft.LogicBlocks.Auto.csproj
+
       - name: 📦 Build
         run: |
           dotnet build \
             Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj -c Release
           dotnet build \
             Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj -c Release
+          dotnet build \
+            Chickensoft.LogicBlocks.Auto/Chickensoft.LogicBlocks.Auto.csproj -c Release
 
       - name: 🔎 Get Package Path
         id: package-path
@@ -91,20 +101,31 @@ jobs:
           echo "package=$package" >> "$GITHUB_OUTPUT"
           echo "📦 Found generator package: $package"
 
+      - name: 🔎 Get AutoBlock Package Path
+        id: auto-package-path
+        run: |
+          package=$(find Chickensoft.LogicBlocks.Auto/nupkg -type f -name "*.nupkg")
+          echo "package=$package" >> "$GITHUB_OUTPUT"
+          echo "📦 Found autoblock package: $package"
+
       - name: ✨ Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_BASIC }}
         run: |
           version="${{ steps.next-version.outputs.version }}"
           gh release create --title "v$version" --generate-notes "$version" \
-            "${{ steps.package-path.outputs.package }}" "${{ steps.gen-package-path.outputs.package }}"
+            "${{ steps.package-path.outputs.package }}" \
+            "${{ steps.gen-package-path.outputs.package }}" \
+            "${{ steps.auto-package-path.outputs.package }}"
 
       - name: 🛜 Publish to Nuget
         run: |
           dotnet nuget push "${{ steps.package-path.outputs.package }}" \
             --api-key "${{ secrets.NUGET_API_KEY }}" \
             --source "https://api.nuget.org/v3/index.json" --skip-duplicate
-
-            dotnet nuget push "${{ steps.gen-package-path.outputs.package }}" \
+          dotnet nuget push "${{ steps.gen-package-path.outputs.package }}" \
+            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --source "https://api.nuget.org/v3/index.json" --skip-duplicate
+          dotnet nuget push "${{ steps.auto-package-path.outputs.package }}" \
             --api-key "${{ secrets.NUGET_API_KEY }}" \
             --source "https://api.nuget.org/v3/index.json" --skip-duplicate

@@ -1,0 +1,68 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <LangVersion>preview</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <CopyAllFiles>true</CopyAllFiles>
+    <RootNamespace>Chickensoft.LogicBlocks.Auto</RootNamespace>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <OutputPath>./nupkg</OutputPath>
+    <DebugType>portable</DebugType>
+
+    <!-- Enable AOT warnings when building (used for development) -->
+    <!-- Note that you must change target to net8 to enable this. -->
+    <!-- <PublishAot>true</PublishAot> -->
+
+    <!-- Disables most reflection — helps us simulate AOT constraints. -->
+    <IlcDisableReflection>true</IlcDisableReflection>
+
+    <Title>LogicBlocks AutoBlock</Title>
+    <Version>0.0.0-devbuild</Version>
+    <Description>Automatic serialization and introspection support for LogicBlocks hierarchical state machines.</Description>
+    <Copyright>© 2026 Chickensoft Games</Copyright>
+    <Authors>Chickensoft</Authors>
+    <Company>Chickensoft</Company>
+
+    <PackageId>Chickensoft.LogicBlocks.Auto</PackageId>
+    <PackageReleaseNotes>LogicBlocks AutoBlock release.</PackageReleaseNotes>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>state management;bloc;godot;game;state machine</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/chickensoft-games/LogicBlocks</PackageProjectUrl>
+
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>git@github.com:chickensoft-games/LogicBlocks.git</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="/"/>
+    <None Include="../LICENSE" Pack="true" PackagePath="/"/>
+    <None Include="../Chickensoft.LogicBlocks/icon.png" Pack="true" PackagePath=""/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SauceControl.InheritDoc" Version="2.0.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="IsExternalInit" Version="1.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="System.Text.Json" Version="9.0.7"/>
+    <PackageReference Include="Chickensoft.Introspection" Version="3.0.2"/>
+    <PackageReference Include="Chickensoft.Serialization" Version="3.1.0"/>
+    <PackageReference Include="Cyotek.CircularBuffer" Version="1.2.1"/>
+    <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj"/>
+  </ItemGroup>
+
+  <!-- Include the stuff inside ./buildTransitive so our props get picked up by consuming packages -->
+  <ItemGroup>
+    <None Include="./buildTransitive/**/*" Pack="true" PackagePath="buildTransitive"/>
+  </ItemGroup>
+</Project>

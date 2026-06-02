@@ -3,20 +3,20 @@ namespace Chickensoft.LogicBlocks.DiagramGenerator;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
-using Chickensoft.LogicBlocks.DiagramGenerator.Services;
-using Chickensoft.SourceGeneratorUtils;
+using Services;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SourceGeneratorUtils;
 
 public class ReturnTypeVisitor : CSharpSyntaxWalker
 {
   public SemanticModel Model { get; }
   public CancellationToken Token { get; }
   public ICodeService CodeService { get; }
-  public INamedTypeSymbol StateBaseType { get; }
   /// <summary>Type of the current state.</summary>
   public INamedTypeSymbol StateType { get; }
+  private readonly INamedTypeSymbol? _stateBaseType;
   private readonly HashSet<string> _returnTypes = [];
 
   public ImmutableHashSet<string> ReturnTypes => [.. _returnTypes];
@@ -25,16 +25,22 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker
     SemanticModel model,
     CancellationToken token,
     ICodeService codeService,
-    INamedTypeSymbol stateBaseType,
-    INamedTypeSymbol stateType
+    INamedTypeSymbol stateType,
+    INamedTypeSymbol? stateBaseType = null
   )
   {
     Model = model;
     Token = token;
     CodeService = codeService;
-    StateBaseType = stateBaseType;
     StateType = stateType;
+    _stateBaseType = stateBaseType;
   }
+
+  public override void VisitInvocationExpression(InvocationExpressionSyntax node)
+    => AddExpressionToReturnTypes(node.Expression);
+
+  public override void VisitArgument(ArgumentSyntax node)
+    => AddExpressionToReturnTypes(node.Expression);
 
   public override void VisitReturnStatement(ReturnStatementSyntax node)
     => AddExpressionToReturnTypes(node.Expression);
@@ -81,15 +87,10 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker
       return;
     }
 
-    // Recursive base case.
-    // Look for To<State>() and ToSelf() method calls and glean type information
-    // based on that.
+    ITypeSymbol? typeSymbol = null;
 
-    ITypeSymbol? type = default;
-
-    if (
-      expression is InvocationExpressionSyntax invocation
-    )
+    // Handle To<T>() and ToSelf() transition invocations
+    if (expression is InvocationExpressionSyntax invocation)
     {
       if (
         invocation.Expression is GenericNameSyntax generic &&
@@ -98,14 +99,14 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker
       )
       {
         var genericType = generic.TypeArgumentList.Arguments[0];
-        type = GetModel(genericType).GetTypeInfo(genericType, Token).Type;
+        typeSymbol = GetModel(genericType).GetTypeInfo(genericType, Token).Type;
       }
       else if (
-        invocation.Expression is IdentifierNameSyntax id &&
-        id.Identifier.Text == "ToSelf"
+        invocation.Expression is IdentifierNameSyntax invId &&
+        invId.Identifier.Text == "ToSelf"
       )
       {
-        type = StateType;
+        typeSymbol = StateType;
       }
       else
       {
@@ -114,14 +115,19 @@ public class ReturnTypeVisitor : CSharpSyntaxWalker
       }
     }
 
+    if (expression is TypeOfExpressionSyntax typeOfExpr)
+    {
+      typeSymbol = Model.GetTypeInfo(typeOfExpr.Type).Type;
+    }
+
     // Make sure type is provided.
-    if (type is not ITypeSymbol typeSymbol)
+    if (typeSymbol is null)
     {
       return;
     }
 
-    // Make sure type is a subtype of the state.
-    if (!type.InheritsFromOrEquals(StateBaseType))
+    // Filter by stateBaseType when provided (for state diagram transition detection).
+    if (_stateBaseType is not null && !typeSymbol.InheritsFromOrEquals(_stateBaseType))
     {
       return;
     }

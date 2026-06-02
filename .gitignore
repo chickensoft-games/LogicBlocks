@@ -15,6 +15,7 @@ nupkg/
 .vs/
 .idea/
 .DS_Store
+.*/
 *.DotSettings.user
 *.binlog
 

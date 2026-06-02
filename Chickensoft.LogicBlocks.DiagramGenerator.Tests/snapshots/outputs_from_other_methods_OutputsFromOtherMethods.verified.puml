@@ -1,0 +1,7 @@
+﻿@startuml OutputsFromOtherMethods
+state OutputsFromOtherMethods {
+  state BaseState
+}
+
+[*] --> BaseState
+@enduml

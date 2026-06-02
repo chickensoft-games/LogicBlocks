@@ -123,8 +123,8 @@ dotnet_style_predefined_type_for_member_access = true:warning
 
 # Modifier preferences
 dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
-csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:warning
-visual_basic_preferred_modifier_order = Partial,Default,Private,Protected,Public,Friend,NotOverridable,Overridable,MustOverride,Overloads,Overrides,MustInherit,NotInheritable,Static,Shared,Shadows,ReadOnly,WriteOnly,Dim,Const,WithEvents,Widening,Narrowing,Custom,Async:warning
+csharp_preferred_modifier_order = public, private, protected, internal, static, extern, new, virtual, abstract, sealed, override, readonly, unsafe, volatile, async:warning
+visual_basic_preferred_modifier_order = Partial, Default, Private, Protected, Public, Friend, NotOverridable, Overridable, MustOverride, Overloads, Overrides, MustInherit, NotInheritable, Static, Shared, Shadows, ReadOnly, WriteOnly, Dim, Const, WithEvents, Widening, Narrowing, Custom, Async:warning
 dotnet_style_readonly_field = true:warning
 
 # Parentheses preferences
@@ -154,8 +154,8 @@ dotnet_style_null_propagation = true:warning
 dotnet_style_prefer_is_null_check_over_reference_equality_method = true:warning
 
 # Unused parameters and methods
-dotnet_diagnostic.IDE0060.severity = warn
-dotnet_diagnostic.IDE0051.severity = warn
+dotnet_diagnostic.IDE0060.severity = warning
+dotnet_diagnostic.IDE0051.severity = warning
 
 # File header preferences
 # Keep operators at end of line when wrapping.
@@ -319,7 +319,7 @@ dotnet_naming_rule.non_public_fields_under_camel.symbols = non_public_fields
 dotnet_naming_rule.non_public_fields_under_camel.style = camel_case_underscore_style
 dotnet_naming_symbols.non_public_fields.applicable_kinds = field
 dotnet_naming_symbols.non_public_fields.required_modifiers =
-dotnet_naming_symbols.non_public_fields.applicable_accessibilities = private,private_protected,internal,protected,protected_internal
+dotnet_naming_symbols.non_public_fields.applicable_accessibilities = private, private_protected, internal, protected, protected_internal
 
 # Public fields should be PascalCase
 dotnet_naming_rule.public_fields_pascal.severity = suggestion
@@ -413,3 +413,9 @@ dotnet_diagnostic.IDE0010.severity = none
 dotnet_diagnostic.IDE0062.severity = warning
 # Don't make me use properties if I don't want to.
 dotnet_diagnostic.IDE0032.severity = none
+# Erroneous — can't simplify lambda signatures with parameter modifiers
+dotnet_diagnostic.IDE0350.severity = none
+# Disregard string localization
+dotnet_diagnostic.CA1305.severity = none
+# Don't force expression body methods
+dotnet_diagnostic.IDE0022.severity = none

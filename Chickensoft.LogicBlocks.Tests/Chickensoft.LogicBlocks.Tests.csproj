@@ -1,47 +1,34 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>disable</ImplicitUsings>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
     <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
-    <LangVersion>preview</LangVersion>
-    <DebugType>portable</DebugType>
-
-    <!-- To show generated files -->
-    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <CompilerGeneratedFilesOutputPath>.generated</CompilerGeneratedFilesOutputPath>
-
-    <!-- Tracks generator performance when dotnet build /binaryLogger -->
-    <ReportAnalyzer>true</ReportAnalyzer>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
-    <PackageReference Include="Moq" Version="4.20.72" />
-    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1"/>
+    <PackageReference Include="Moq" Version="4.20.72"/>
+    <PackageReference Include="xunit" Version="2.9.3"/>
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.msbuild" Version="10.0.1">
+    <PackageReference Include="coverlet.msbuild" Version="8.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="10.0.1">
+    <PackageReference Include="coverlet.collector" Version="8.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Shouldly" Version="4.3.0" />
+    <PackageReference Include="Shouldly" Version="4.3.0"/>
+    <ProjectReference Include="..\Chickensoft.LogicBlocks\Chickensoft.LogicBlocks.csproj"/>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Chickensoft.Introspection" Version="3.0.2" />
-    <PackageReference Include="Chickensoft.Introspection.Generator" Version="3.0.2" PrivateAssets="all" OutputItemType="analyzer" />
-
-    <ProjectReference Include="../Chickensoft.LogicBlocks/Chickensoft.LogicBlocks.csproj" />
-    <ProjectReference Include="../Chickensoft.LogicBlocks.DiagramGenerator/Chickensoft.LogicBlocks.DiagramGenerator.csproj" PrivateAssets="all" OutputItemType="analyzer" />
+    <Using Include="Xunit"/>
   </ItemGroup>
+
 </Project>

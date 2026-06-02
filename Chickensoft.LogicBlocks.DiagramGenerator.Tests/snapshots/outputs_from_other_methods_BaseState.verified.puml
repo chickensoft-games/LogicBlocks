@@ -1,0 +1,5 @@
+﻿@startuml BaseState
+state "BaseState" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_OutputsFromOtherMethods_BaseState
+
+Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_OutputsFromOtherMethods_BaseState : Method1() → A
+@enduml
