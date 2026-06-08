@@ -466,6 +466,13 @@ public abstract partial class LogicBlock : ILogicBlock,
 
   public void Dispose()
   {
+    Dispose(true);
+    GC.SuppressFinalize(this);
+  }
+
+  protected virtual void Dispose(bool disposing) {
+    if (IsDisposed || !disposing) { return; }
+
     // stops the logic block if needed
     _subject.Perform(new StopOp());
     // a logic block can't be restarted after being disposed
