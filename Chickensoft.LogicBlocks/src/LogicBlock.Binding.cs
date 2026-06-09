@@ -124,9 +124,9 @@ public partial class LogicBlock
       _fakeSubject.Broadcast(new StateBroadcast(state, previous));
 
     /// <summary>Simulates a state exit.</summary>
-    public void ExitState<TState>(TState state, LogicBlockState? next = null)
+    public void SetExitState<TState>(TState state, LogicBlockState? next = null)
       where TState : LogicBlockState =>
-      _fakeSubject.Broadcast(new StateBroadcast(state, next));
+      _fakeSubject.Broadcast(new ExitStateBroadcast(state, next));
 
     /// <summary>Simulates an output being produced.</summary>
     public void Output<TOutput>(in TOutput output)

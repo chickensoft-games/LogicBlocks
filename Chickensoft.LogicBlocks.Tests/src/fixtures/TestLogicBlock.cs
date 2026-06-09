@@ -43,6 +43,8 @@ public record TestLogicBlockState : LogicBlockState,
     return ToSelf();
   }
 
+  public record SubState : TestLogicBlockState;
+
   public record OutputtingState : TestLogicBlockState,
     IGet<Input.TestInput>
   {

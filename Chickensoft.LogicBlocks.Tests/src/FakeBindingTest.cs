@@ -35,6 +35,20 @@ public class FakeBindingTest
   }
 
   [Fact]
+  public void StateFiresOnExitStateCallback()
+  {
+    using var binding = LogicBlock.CreateFakeBinding();
+    TestLogicBlockState? received = null;
+
+    binding.OnExitState<TestLogicBlockState>(state => received = state);
+
+    var state = new TestLogicBlockState();
+    binding.SetExitState(state);
+
+    received.ShouldBeSameAs(state);
+  }
+
+  [Fact]
   public void StateDoesNotFireForNonMatchingType()
   {
     using var binding = LogicBlock.CreateFakeBinding();
@@ -42,6 +56,42 @@ public class FakeBindingTest
 
     binding.OnState<TestLogicBlockState.OutputtingState>(_ => fired = true);
     binding.SetState(new TestLogicBlockState());
+
+    fired.ShouldBeFalse();
+  }
+
+  [Fact]
+  public void StateExitDoesNotFireForNonMatchingType()
+  {
+    using var binding = LogicBlock.CreateFakeBinding();
+    var fired = false;
+
+    binding.OnExitState<TestLogicBlockState.OutputtingState>(_ => fired = true);
+    binding.SetExitState(new TestLogicBlockState());
+
+    fired.ShouldBeFalse();
+  }
+
+  [Fact]
+  public void StateDoesNotFireForDerivedType()
+  {
+    using var binding = LogicBlock.CreateFakeBinding();
+    var fired = false;
+
+    binding.OnState<TestLogicBlockState>(_ => fired = true);
+    binding.SetState(new TestLogicBlockState.SubState(), new TestLogicBlockState());
+
+    fired.ShouldBeFalse();
+  }
+
+  [Fact]
+  public void StateExitDoesNotFireForDerivedType()
+  {
+    using var binding = LogicBlock.CreateFakeBinding();
+    var fired = false;
+
+    binding.OnExitState<TestLogicBlockState>(_ => fired = true);
+    binding.SetExitState(new TestLogicBlockState(), new TestLogicBlockState.SubState());
 
     fired.ShouldBeFalse();
   }
