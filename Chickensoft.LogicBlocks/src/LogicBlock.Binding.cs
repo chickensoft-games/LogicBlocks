@@ -14,7 +14,9 @@ public partial class LogicBlock
   private readonly record struct
     InputBroadcast<TInput>(in TInput Input) where TInput : struct;
 
-  private readonly record struct StateBroadcast(object State);
+  private readonly record struct StateBroadcast(object State, object? Previous);
+
+  private readonly record struct ExitStateBroadcast(object State, object? Next);
 
   private readonly record struct
     OutputBroadcast<TOutput>(in TOutput Output) where TOutput : struct;
@@ -45,7 +47,20 @@ public partial class LogicBlock
     {
       AddCallback(
         (in StateBroadcast broadcast) => callback((TState)broadcast.State),
-        (in StateBroadcast broadcast) => broadcast.State is TState
+        (in StateBroadcast broadcast) =>
+          broadcast.Previous is not TState && broadcast.State is TState
+      );
+
+      return this;
+    }
+
+    public Binding OnExitState<TState>(Action<TState> callback)
+      where TState : LogicBlockState
+    {
+      AddCallback(
+        (in ExitStateBroadcast broadcast) => callback((TState)broadcast.State),
+        (in ExitStateBroadcast broadcast) =>
+          broadcast.Next is not TState && broadcast.State is TState
       );
 
       return this;
@@ -104,9 +119,14 @@ public partial class LogicBlock
       _fakeSubject.Broadcast(new InputBroadcast<TInput>(input));
 
     /// <summary>Simulates a state change.</summary>
-    public void SetState<TState>(TState state)
+    public void SetState<TState>(TState state, LogicBlockState? previous = null)
       where TState : LogicBlockState =>
-      _fakeSubject.Broadcast(new StateBroadcast(state));
+      _fakeSubject.Broadcast(new StateBroadcast(state, previous));
+
+    /// <summary>Simulates a state exit.</summary>
+    public void ExitState<TState>(TState state, LogicBlockState? next = null)
+      where TState : LogicBlockState =>
+      _fakeSubject.Broadcast(new StateBroadcast(state, next));
 
     /// <summary>Simulates an output being produced.</summary>
     public void Output<TOutput>(in TOutput output)

@@ -322,7 +322,7 @@ public abstract partial class LogicBlock : ILogicBlock,
     _subject.Broadcast(new StartedBroadcast()); // runs user code
 
     // also announce the state itself for any bindings that may be listening
-    _subject.Broadcast(new StateBroadcast(state)); // runs user code
+    _subject.Broadcast(new StateBroadcast(state, null)); // runs user code
 
     if (op.IsLoading)
     {
@@ -339,6 +339,8 @@ public abstract partial class LogicBlock : ILogicBlock,
 
     _state!.Exit(null); // runs user code
     _state.Detach();
+
+    _subject.Perform(new ExitStateBroadcast(_state, null));
 
     _state = null;
 
@@ -433,7 +435,8 @@ public abstract partial class LogicBlock : ILogicBlock,
 
     if (state is not null)
     {
-      _subject.Broadcast(new StateBroadcast(state)); // runs user code
+      _subject.Broadcast(new StateBroadcast(state, previous));
+      _subject.Broadcast(new ExitStateBroadcast(previous, state));
     }
   }
 
