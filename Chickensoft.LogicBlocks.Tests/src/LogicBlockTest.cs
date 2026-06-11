@@ -516,6 +516,20 @@ public sealed class LogicBlockStatusTest
   }
 
   [Fact]
+  public void StatusIsDisposedAfterGarbageCollected()
+  {
+    var weakReference = Utils.MakeWeakRef<LightSwitchLogic>();
+
+    GC.Collect();
+    GC.WaitForPendingFinalizers();
+
+    weakReference.TryGetTarget(out var logic);
+    logic.ShouldNotBeNull();
+
+    logic.Status.ShouldBe(LogicBlockStatus.Disposed);
+  }
+
+  [Fact]
   public void IsStoppedTrueByDefault()
   {
     using var logic = new LightSwitchLogic();

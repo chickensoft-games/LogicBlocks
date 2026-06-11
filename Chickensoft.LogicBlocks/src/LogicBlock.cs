@@ -195,6 +195,11 @@ public abstract partial class LogicBlock : ILogicBlock,
     _subject = new SyncSubject(this);
   }
 
+  ~LogicBlock()
+  {
+    Dispose(false);
+  }
+
   #region StartAndStop
 
   public LogicBlockState Start(
@@ -471,7 +476,7 @@ public abstract partial class LogicBlock : ILogicBlock,
   }
 
   protected virtual void Dispose(bool disposing) {
-    if (IsDisposed || !disposing) { return; }
+    if (IsDisposed) { return; }
 
     // stops the logic block if needed
     _subject.Perform(new StopOp());
