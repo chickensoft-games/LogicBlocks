@@ -327,26 +327,6 @@ public abstract partial class LogicBlock : ILogicBlock,
     }
   }
 
-  private void ChangeState(LogicBlockState? nextState, LogicBlockState? previousState)
-  {
-    if (previousState is not null)
-    {
-      _state!.Exit(nextState); // runs user code
-      _subject.Broadcast(new ExitStateBroadcast(previousState, nextState)); // runs user code
-      _state.Detach();
-    }
-
-    _state = nextState;
-
-    if (nextState is not null)
-    {
-      nextState.Attach(this);
-      nextState.Enter(previousState); // runs user code
-      _subject.Broadcast(new StateBroadcast(nextState)); // runs user code
-      _subject.Broadcast(new EnterStateBroadcast(nextState, previousState)); // runs user code
-    }
-  }
-
   void IPerform<StopOp>.Perform(in StopOp op)
   {
     if (!IsStarted)
@@ -439,6 +419,26 @@ public abstract partial class LogicBlock : ILogicBlock,
 
     var previous = _state;
     ChangeState(state, previous);
+  }
+
+  private void ChangeState(LogicBlockState? nextState, LogicBlockState? previousState)
+  {
+    if (previousState is not null)
+    {
+      _state!.Exit(nextState); // runs user code
+      _subject.Broadcast(new ExitStateBroadcast(previousState, nextState)); // runs user code
+      _state.Detach();
+    }
+
+    _state = nextState;
+
+    if (nextState is not null)
+    {
+      nextState.Attach(this);
+      nextState.Enter(previousState); // runs user code
+      _subject.Broadcast(new StateBroadcast(nextState)); // runs user code
+      _subject.Broadcast(new EnterStateBroadcast(nextState, previousState)); // runs user code
+    }
   }
 
   #endregion AtomicOperations
