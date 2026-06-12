@@ -55,7 +55,7 @@ public class FakeBindingTest
     binding.OnEnter<TestLogicBlockState>(state => received = state);
 
     var state = new TestLogicBlockState();
-    binding.SetEnterState(state);
+    binding.EnterState(state);
 
     received.ShouldBeSameAs(state);
   }
@@ -67,7 +67,7 @@ public class FakeBindingTest
     var fired = false;
 
     binding.OnEnter<TestLogicBlockState.OutputtingState>(_ => fired = true);
-    binding.SetEnterState(new TestLogicBlockState());
+    binding.EnterState(new TestLogicBlockState());
 
     fired.ShouldBeFalse();
   }
@@ -79,7 +79,7 @@ public class FakeBindingTest
     var fired = false;
 
     binding.OnEnter<TestLogicBlockState>(_ => fired = true);
-    binding.SetEnterState(new TestLogicBlockState.SubState(), new TestLogicBlockState());
+    binding.EnterState(new TestLogicBlockState.SubState(), new TestLogicBlockState());
 
     fired.ShouldBeFalse();
   }
@@ -93,7 +93,7 @@ public class FakeBindingTest
     binding.OnExit<TestLogicBlockState>(state => received = state);
 
     var state = new TestLogicBlockState();
-    binding.SetExitState(state);
+    binding.ExitState(state);
 
     received.ShouldBeSameAs(state);
   }
@@ -105,7 +105,7 @@ public class FakeBindingTest
     var fired = false;
 
     binding.OnExit<TestLogicBlockState.OutputtingState>(_ => fired = true);
-    binding.SetExitState(new TestLogicBlockState());
+    binding.ExitState(new TestLogicBlockState());
 
     fired.ShouldBeFalse();
   }
@@ -117,7 +117,7 @@ public class FakeBindingTest
     var fired = false;
 
     binding.OnExit<TestLogicBlockState>(_ => fired = true);
-    binding.SetExitState(new TestLogicBlockState(), new TestLogicBlockState.SubState());
+    binding.ExitState(new TestLogicBlockState(), new TestLogicBlockState.SubState());
 
     fired.ShouldBeFalse();
   }

@@ -137,12 +137,12 @@ public partial class LogicBlock
       _fakeSubject.Broadcast(new StateBroadcast(state));
 
     /// <summary>Simulates a state enter.</summary>
-    public void SetEnterState<TState>(TState state, LogicBlockState? previous = null)
+    public void EnterState<TState>(TState state, LogicBlockState? previous = null)
       where TState : LogicBlockState =>
       _fakeSubject.Broadcast(new EnterStateBroadcast(state, previous));
 
     /// <summary>Simulates a state exit.</summary>
-    public void SetExitState<TState>(TState state, LogicBlockState? next = null)
+    public void ExitState<TState>(TState state, LogicBlockState? next = null)
       where TState : LogicBlockState =>
       _fakeSubject.Broadcast(new ExitStateBroadcast(state, next));
 
