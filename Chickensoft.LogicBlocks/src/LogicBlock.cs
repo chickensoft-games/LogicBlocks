@@ -305,9 +305,7 @@ public abstract partial class LogicBlock : ILogicBlock,
   {
     // run the second half of a state change sequence since there's no state to exit
     var state = _state!;
-
-    state.Attach(this);
-    state.Enter(null); // runs user code
+    ChangeState(state, null);
 
     OnStart(); // runs user code
 
@@ -320,9 +318,6 @@ public abstract partial class LogicBlock : ILogicBlock,
 
     // announce that we've started
     _subject.Broadcast(new StartedBroadcast()); // runs user code
-
-    // also announce the state itself for any bindings that may be listening
-    _subject.Broadcast(new StateBroadcast(state)); // runs user code
 
     if (op.IsLoading)
     {
@@ -337,10 +332,8 @@ public abstract partial class LogicBlock : ILogicBlock,
     if (!IsStarted)
     { return; }
 
-    _state!.Exit(null); // runs user code
-    _state.Detach();
-
-    _state = null;
+    var previous = _state;
+    ChangeState(null, previous);
 
     OnStop();
     OnStopSubscriptions();
@@ -425,15 +418,26 @@ public abstract partial class LogicBlock : ILogicBlock,
     }
 
     var previous = _state;
-    previous!.Exit(state); // runs user code
-    previous.Detach();
-    _state = state;
-    state?.Attach(this);
-    state?.Enter(previous); // runs user code
+    ChangeState(state, previous);
+  }
 
-    if (state is not null)
+  private void ChangeState(LogicBlockState? nextState, LogicBlockState? previousState)
+  {
+    if (previousState is not null)
     {
-      _subject.Broadcast(new StateBroadcast(state)); // runs user code
+      _state!.Exit(nextState); // runs user code
+      _subject.Broadcast(new ExitStateBroadcast(previousState, nextState)); // runs user code
+      _state.Detach();
+    }
+
+    _state = nextState;
+
+    if (nextState is not null)
+    {
+      nextState.Attach(this);
+      nextState.Enter(previousState); // runs user code
+      _subject.Broadcast(new StateBroadcast(nextState)); // runs user code
+      _subject.Broadcast(new EnterStateBroadcast(nextState, previousState)); // runs user code
     }
   }
 

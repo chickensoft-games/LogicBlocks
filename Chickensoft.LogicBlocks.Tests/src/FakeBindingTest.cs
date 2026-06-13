@@ -47,6 +47,82 @@ public class FakeBindingTest
   }
 
   [Fact]
+  public void StateEnterFiresOnStateCallback()
+  {
+    using var binding = LogicBlock.CreateFakeBinding();
+    TestLogicBlockState? received = null;
+
+    binding.OnEnter<TestLogicBlockState>(state => received = state);
+
+    var state = new TestLogicBlockState();
+    binding.EnterState(state);
+
+    received.ShouldBeSameAs(state);
+  }
+
+  [Fact]
+  public void StateEnterDoesNotFireForNonMatchingType()
+  {
+    using var binding = LogicBlock.CreateFakeBinding();
+    var fired = false;
+
+    binding.OnEnter<TestLogicBlockState.OutputtingState>(_ => fired = true);
+    binding.EnterState(new TestLogicBlockState());
+
+    fired.ShouldBeFalse();
+  }
+
+  [Fact]
+  public void StateEnterDoesNotFireForDerivedType()
+  {
+    using var binding = LogicBlock.CreateFakeBinding();
+    var fired = false;
+
+    binding.OnEnter<TestLogicBlockState>(_ => fired = true);
+    binding.EnterState(new TestLogicBlockState.SubState(), new TestLogicBlockState());
+
+    fired.ShouldBeFalse();
+  }
+
+  [Fact]
+  public void StateFiresOnExitStateCallback()
+  {
+    using var binding = LogicBlock.CreateFakeBinding();
+    TestLogicBlockState? received = null;
+
+    binding.OnExit<TestLogicBlockState>(state => received = state);
+
+    var state = new TestLogicBlockState();
+    binding.ExitState(state);
+
+    received.ShouldBeSameAs(state);
+  }
+
+  [Fact]
+  public void StateExitDoesNotFireForNonMatchingType()
+  {
+    using var binding = LogicBlock.CreateFakeBinding();
+    var fired = false;
+
+    binding.OnExit<TestLogicBlockState.OutputtingState>(_ => fired = true);
+    binding.ExitState(new TestLogicBlockState());
+
+    fired.ShouldBeFalse();
+  }
+
+  [Fact]
+  public void StateExitDoesNotFireForDerivedType()
+  {
+    using var binding = LogicBlock.CreateFakeBinding();
+    var fired = false;
+
+    binding.OnExit<TestLogicBlockState>(_ => fired = true);
+    binding.ExitState(new TestLogicBlockState(), new TestLogicBlockState.SubState());
+
+    fired.ShouldBeFalse();
+  }
+
+  [Fact]
   public void OutputFiresOnOutputCallback()
   {
     using var binding = LogicBlock.CreateFakeBinding();
