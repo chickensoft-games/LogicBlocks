@@ -12,7 +12,7 @@ public class AutoBlockTest
     using var logic = new SerializableBlock();
     logic.Start<SerializableBlockState>();
 
-    var saveData = logic.Save();
+    var saveData = logic.GetSaveData();
 
     saveData.ShouldNotBeNull();
     saveData.Data.StateType.ShouldBe(typeof(SerializableBlockState));

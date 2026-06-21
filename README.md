@@ -214,7 +214,7 @@ public partial class MyLogic : AutoBlock
 
 ```csharp
 // Save
-var saveData = myLogic.Save();
+var saveData = myLogic.GetSaveData();
 
 // Load (resume from saved state)
 myLogic.Start(saveData.Data);

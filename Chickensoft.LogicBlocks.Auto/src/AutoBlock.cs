@@ -11,7 +11,10 @@ using Serialization;
 public interface IAutoLogicBlock : ILogicBlock
 {
   /// <summary>Serializes the logic block's current state to save data.</summary>
-  public ILogicBlockSaveData Save();
+  public ILogicBlockSaveData GetSaveData();
+
+  /// <inheritdoc cref="ISerializableBlackboard.Save{TData}(Func{TData})" />
+  public void Save<TData>(Func<TData> factory) where TData : class, IIdentifiable;
 }
 
 /// <summary>Represents serialized save data for a logic block.</summary>
@@ -52,19 +55,18 @@ public abstract partial class AutoBlock : LogicBlock, IAutoLogicBlock
   /// provide a concrete save data type.
   /// </summary>
   /// <param name="data">The serialized logic block data.</param>
-  public virtual ILogicBlockSaveData GetSaveData(LogicBlockData data) =>
+  public virtual ILogicBlockSaveData Serialize(LogicBlockData data) =>
     throw new LogicBlockException(
-    $"GetSaveData() not implemented for {GetType().Name}, please ensure the " +
-    $"method GetSaveData() is overridden like so:\n" +
-    $"`public override ILogicBlockSaveData GetSaveData(LogicBlockData data) => " +
+    $"Serialize() not implemented for {GetType().Name}, please ensure the " +
+    $"method Serialize() is overridden like so:\n" +
+    $"`public override ILogicBlockSaveData Serialize(LogicBlockData data) => " +
     $"new {GetType().Name}SaveData {{ Data = data }};`"
   );
 
-  /// <inheritdoc cref="IAutoLogicBlock.Save"/>
-  public ILogicBlockSaveData Save() => GetSaveData(GetData());
+  /// <inheritdoc cref="IAutoLogicBlock.GetSaveData"/>
+  public ILogicBlockSaveData GetSaveData() => Serialize(GetData());
 
-  internal override void Loaded(
-  )
+  internal override void Loaded()
   {
     _serializableBlackboard.InstantiateAnyMissingSavedData();
 
