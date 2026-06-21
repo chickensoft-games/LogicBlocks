@@ -12,7 +12,7 @@ public partial class MyLogicBlockSaveData : ILogicBlockSaveData
 public class MyLogicBlock : AutoBlock
 {
   // new in logic blocks 6
-  public override ILogicBlockSaveData GetSaveData(LogicBlockData data) =>
+  public override ILogicBlockSaveData Serialize(LogicBlockData data) =>
     new MyLogicBlockSaveData { Data = data };
 }
 
@@ -36,7 +36,7 @@ public partial class SerializableBlock : AutoBlock
     Preallocate<SerializableBlockState>();
   }
 
-  public override ILogicBlockSaveData GetSaveData(LogicBlockData data) =>
+  public override ILogicBlockSaveData Serialize(LogicBlockData data) =>
     new SerializableBlockSaveData { Data = data };
 }
 
@@ -61,7 +61,7 @@ public partial class NonSerializableBlock : AutoBlock
     Preallocate<NonSerializableBlockState>();
   }
 
-  public override ILogicBlockSaveData GetSaveData(LogicBlockData data) =>
+  public override ILogicBlockSaveData Serialize(LogicBlockData data) =>
     new MyLogicBlockSaveData { Data = data };
 }
 
@@ -84,7 +84,7 @@ public partial class MissingIdBlock : AutoBlock
     Preallocate<MissingIdBlockState>();
   }
 
-  public override ILogicBlockSaveData GetSaveData(LogicBlockData data) =>
+  public override ILogicBlockSaveData Serialize(LogicBlockData data) =>
     new MyLogicBlockSaveData { Data = data };
 }
 
@@ -105,7 +105,7 @@ public partial class NotIntrospectiveStateBlock : AutoBlock
     Preallocate<NotIntrospectiveBlockState>();
   }
 
-  public override ILogicBlockSaveData GetSaveData(LogicBlockData data) =>
+  public override ILogicBlockSaveData Serialize(LogicBlockData data) =>
     new MyLogicBlockSaveData { Data = data };
 }
 
@@ -122,7 +122,7 @@ public partial class NotIdentifiableStateBlock : AutoBlock
     Preallocate<NotIdentifiableBlockState>();
   }
 
-  public override ILogicBlockSaveData GetSaveData(LogicBlockData data) =>
+  public override ILogicBlockSaveData Serialize(LogicBlockData data) =>
     new MyLogicBlockSaveData { Data = data };
 }
 
@@ -155,7 +155,7 @@ public partial class LoadableBlock : AutoBlock
 
   public override void OnLoad() => OnLoadCalled = true;
 
-  public override ILogicBlockSaveData GetSaveData(LogicBlockData data) =>
+  public override ILogicBlockSaveData Serialize(LogicBlockData data) =>
     new MyLogicBlockSaveData { Data = data };
 }
 
@@ -170,6 +170,6 @@ public partial class ParamBlock : AutoBlock
   public ParamBlock()
     : base(stateTypes: [typeof(ParamBlockState)]) { }
 
-  public override ILogicBlockSaveData GetSaveData(LogicBlockData data) =>
+  public override ILogicBlockSaveData Serialize(LogicBlockData data) =>
     new MyLogicBlockSaveData { Data = data };
 }

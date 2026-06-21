@@ -27,7 +27,7 @@ public class SerializableLogicBlockTest
     var logic = new SerializableLogicBlock();
     logic.Start<TimerState.PoweredOff>();
 
-    var saveData = logic.Save().ShouldBeOfType<SerializableLogicBlockSaveData>();
+    var saveData = logic.GetSaveData().ShouldBeOfType<SerializableLogicBlockSaveData>();
     var jsonText = JsonSerializer.Serialize(saveData, _options);
     var jsonNode = JsonNode.Parse(jsonText);
 

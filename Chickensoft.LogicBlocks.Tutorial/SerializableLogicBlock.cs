@@ -15,7 +15,7 @@ AutoBlock, ISerializableLogicBlock
     Preallocate<TimerState>();
   }
 
-  public override ILogicBlockSaveData GetSaveData(LogicBlockData data) =>
+  public override ILogicBlockSaveData Serialize(LogicBlockData data) =>
     new SerializableLogicBlockSaveData { Data = data };
 }
 
