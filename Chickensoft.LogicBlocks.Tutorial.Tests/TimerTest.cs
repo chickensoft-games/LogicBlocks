@@ -11,7 +11,7 @@ public class TimerTest
   {
     public void DoSomething()
     {
-      if (Timer.State is Timer.TimerState.PoweredOff)
+      if (Timer.State is TimerState.PoweredOff)
       {
         // Do something when the timer is off.
       }
@@ -24,7 +24,7 @@ public class TimerTest
     var timer = new Mock<ITimer>();
 
     // Make the mock logic block be in a specific state.
-    timer.Setup(t => t.State).Returns(new Timer.TimerState.PoweredOff());
+    timer.Setup(t => t.State).Returns(new TimerState.PoweredOff());
 
     var component = new MyComponent(timer.Object);
     component.DoSomething();
@@ -36,17 +36,17 @@ public class TimerTest
     var timer = new Timer();
     using var binding = timer.Bind();
 
-    binding.OnInput((in Input.ChangeDuration input) =>
+    binding.OnInput((in TimerState.Input.ChangeDuration input) =>
     {
       // Watch for duration change inputs.
     });
 
-    binding.OnOutput((in Output.PlayBeepingSound output) =>
+    binding.OnOutput((in TimerState.Output.PlayBeepingSound output) =>
     {
       // Play a beeping sound.
     });
 
-    binding.OnState<Timer.TimerState.PoweredOn.Idle>(state =>
+    binding.OnState<TimerState.PoweredOn.Idle>(state =>
     {
       // Do something when the timer becomes idle.
     });
@@ -63,11 +63,11 @@ public class TimerTest
     // Add the mocked dependencies to the blackboard.
     timer.Set(clock.Object);
 
-    timer.Start<Timer.TimerState.PoweredOff>();
+    timer.Start<TimerState.PoweredOff>();
 
     // Check that the initial state is the one we expect.
     timer.State
-      .ShouldBeOfType<Timer.TimerState.PoweredOff>();
+      .ShouldBeOfType<TimerState.PoweredOff>();
 
     // Verify the timer has set its blackboard data correctly.
     timer.Has<Data>().ShouldBeTrue();
@@ -78,7 +78,7 @@ public class TimerTest
 public class PoweredOnStateTest()
 {
   // We can't create abstract classes directly for testing, so we extend it.
-  public record TestPoweredOnState : Timer.TimerState.PoweredOn { }
+  public record TestPoweredOnState : TimerState.PoweredOn { }
 
   [Fact]
   public void TurnsOff()
@@ -87,8 +87,8 @@ public class PoweredOnStateTest()
 
     state.Test();
 
-    state.On(new Input.PowerButtonPressed())
-      .IsAssignableTo(typeof(Timer.TimerState.PoweredOff));
+    state.On(new TimerState.Input.PowerButtonPressed())
+      .IsAssignableTo(typeof(TimerState.PoweredOff));
   }
 }
 
@@ -97,15 +97,15 @@ public class IdleStateTest()
   [Fact]
   public void ChangesDuration()
   {
-    var state = new Timer.TimerState.PoweredOn.Idle();
+    var state = new TimerState.PoweredOn.Idle();
     var tester = state.Test();
 
     tester.Set(new Data() { Duration = 30.0d });
 
     var duration = 45;
 
-    state.On(new Input.ChangeDuration(duration))
-      .IsAssignableTo(typeof(Timer.TimerState.PoweredOn.Idle));
+    state.On(new TimerState.Input.ChangeDuration(duration))
+      .IsAssignableTo(typeof(TimerState.PoweredOn.Idle));
 
     tester.Get<Data>().Duration.ShouldBe(duration);
   }
@@ -113,11 +113,11 @@ public class IdleStateTest()
   [Fact]
   public void Starts()
   {
-    var state = new Timer.TimerState.PoweredOn.Idle();
+    var state = new TimerState.PoweredOn.Idle();
     _ = state.Test();
 
-    state.On(new Input.StartStopButtonPressed())
-      .IsAssignableTo(typeof(Timer.TimerState.PoweredOn.Countdown));
+    state.On(new TimerState.Input.StartStopButtonPressed())
+      .IsAssignableTo(typeof(TimerState.PoweredOn.Countdown));
   }
 }
 
@@ -126,7 +126,7 @@ public class CountdownStateTest
   [Fact]
   public void AddsTimeElapsedInputWhenClockFires()
   {
-    var state = new Timer.TimerState.PoweredOn.Countdown();
+    var state = new TimerState.PoweredOn.Countdown();
     var tester = state.Test();
 
     var clock = new Mock<IClock>();
@@ -142,31 +142,31 @@ public class CountdownStateTest
     // Fire event again to make sure it doesn't get added.
     clock.Raise(c => c.TimeElapsed += null, 1.0d);
 
-    tester.Inputs.ShouldBe([new Input.TimeElapsed(1.0d)]);
+    tester.Inputs.ShouldBe([new TimerState.Input.TimeElapsed(1.0d)]);
   }
 
   [Fact]
   public void OnTimeElapsedStartsBeeping()
   {
-    var state = new Timer.TimerState.PoweredOn.Countdown();
+    var state = new TimerState.PoweredOn.Countdown();
     var tester = state.Test();
 
     tester.Set(new Data() { TimeRemaining = 1.0d });
 
-    state.On(new Input.TimeElapsed(1.0d))
-      .IsAssignableTo(typeof(Timer.TimerState.PoweredOn.Beeping));
+    state.On(new TimerState.Input.TimeElapsed(1.0d))
+      .IsAssignableTo(typeof(TimerState.PoweredOn.Beeping));
   }
 
   [Fact]
   public void OnTimeElapsedKeepsCountingDown()
   {
-    var state = new Timer.TimerState.PoweredOn.Countdown();
+    var state = new TimerState.PoweredOn.Countdown();
     var tester = state.Test();
 
     tester.Set(new Data() { TimeRemaining = 2.0d });
 
-    state.On(new Input.TimeElapsed(1.0d))
-      .IsAssignableTo(typeof(Timer.TimerState.PoweredOn.Countdown));
+    state.On(new TimerState.Input.TimeElapsed(1.0d))
+      .IsAssignableTo(typeof(TimerState.PoweredOn.Countdown));
 
     tester.Get<Data>().TimeRemaining.ShouldBe(1.0d);
   }
@@ -174,11 +174,11 @@ public class CountdownStateTest
   [Fact]
   public void OnStartStopButtonPressedIdles()
   {
-    var state = new Timer.TimerState.PoweredOn.Countdown();
+    var state = new TimerState.PoweredOn.Countdown();
     _ = state.Test();
 
-    state.On(new Input.StartStopButtonPressed())
-      .IsAssignableTo(typeof(Timer.TimerState.PoweredOn.Idle));
+    state.On(new TimerState.Input.StartStopButtonPressed())
+      .IsAssignableTo(typeof(TimerState.PoweredOn.Idle));
   }
 }
 
@@ -187,33 +187,33 @@ public class BeepingStateTest
   [Fact]
   public void PlaysBeepingSoundOnEnter()
   {
-    var state = new Timer.TimerState.PoweredOn.Beeping();
+    var state = new TimerState.PoweredOn.Beeping();
     var tester = state.Test();
 
     state.Enter();
 
-    tester.Outputs.ShouldBe([new Output.PlayBeepingSound()]);
+    tester.Outputs.ShouldBe([new TimerState.Output.PlayBeepingSound()]);
   }
 
   [Fact]
   public void StopsBeepingSoundOnExit()
   {
-    var state = new Timer.TimerState.PoweredOn.Beeping();
+    var state = new TimerState.PoweredOn.Beeping();
     var tester = state.Test();
 
     state.Exit();
 
-    tester.Outputs.ShouldBe([new Output.StopBeepingSound()]);
+    tester.Outputs.ShouldBe([new TimerState.Output.StopBeepingSound()]);
   }
 
   [Fact]
   public void OnStartStopButtonPressedIdles()
   {
-    var state = new Timer.TimerState.PoweredOn.Beeping();
+    var state = new TimerState.PoweredOn.Beeping();
     _ = state.Test();
 
-    state.On(new Input.StartStopButtonPressed())
-      .IsAssignableTo(typeof(Timer.TimerState.PoweredOn.Idle));
+    state.On(new TimerState.Input.StartStopButtonPressed())
+      .IsAssignableTo(typeof(TimerState.PoweredOn.Idle));
   }
 }
 
@@ -222,10 +222,10 @@ public class PoweredOffStateTest()
   [Fact]
   public void TurnsOn()
   {
-    var state = new Timer.TimerState.PoweredOff();
+    var state = new TimerState.PoweredOff();
     _ = state.Test();
 
-    state.On(new Input.PowerButtonPressed())
-      .IsAssignableTo(typeof(Timer.TimerState.PoweredOn.Idle));
+    state.On(new TimerState.Input.PowerButtonPressed())
+      .IsAssignableTo(typeof(TimerState.PoweredOn.Idle));
   }
 }

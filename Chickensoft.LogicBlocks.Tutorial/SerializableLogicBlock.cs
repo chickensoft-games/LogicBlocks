@@ -7,8 +7,7 @@ using Serialization;
 public interface ISerializableLogicBlock : IAutoLogicBlock;
 
 [Meta, Id("serializable_logic")]
-public partial class SerializableLogicBlock :
-AutoBlock, ISerializableLogicBlock
+public partial class SerializableLogicBlock : AutoBlock, ISerializableLogicBlock
 {
   public SerializableLogicBlock()
   {
@@ -33,7 +32,15 @@ public abstract partial record TimerState : LogicBlockState
   public partial record PoweredOff : TimerState;
 
   [Meta, Id("serializable_logic_state_on")]
-  public partial record PoweredOn : TimerState;
+  public partial record PoweredOn : TimerState
+  {
+    [Meta, Id("serializable_logic_state_on_idle")]
+    public partial record Idle;
+    [Meta, Id("serializable_logic_state_on_countdown")]
+    public partial record Countdown;
+    [Meta, Id("serializable_logic_state_on_beeping")]
+    public partial record Beeping;
+  };
 
   [Meta, Id("serializable_logic_versioned_state")]
   public abstract partial record VersionedState : TimerState;
