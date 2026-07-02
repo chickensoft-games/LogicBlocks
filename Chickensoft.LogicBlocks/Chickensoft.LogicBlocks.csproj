@@ -55,7 +55,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Chickensoft.Sync" Version="2.4.3"/>
+    <PackageReference Include="Chickensoft.Sync" Version="3.0.0"/>
   </ItemGroup>
 
   <!-- Include the stuff inside ./buildTransitive so our props get picked up by consuming packages -->
