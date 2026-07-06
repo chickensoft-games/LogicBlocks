@@ -1,7 +1,7 @@
 namespace Chickensoft.LogicBlocks;
 
 using System.Collections;
-using DequeNet;
+using Nito.Collections;
 
 public class History : IReadOnlyCollection<Type>
 {
@@ -23,7 +23,7 @@ public class History : IReadOnlyCollection<Type>
       // drop oldest entries
       while (_deque.Count > MaxCapacity)
       {
-        _deque.PopLeft();
+        _deque.RemoveFromFront();
       }
     }
   }
@@ -36,7 +36,7 @@ public class History : IReadOnlyCollection<Type>
 
   IEnumerator IEnumerable.GetEnumerator() => _deque.GetEnumerator();
 
-  public Deque<Type>.Enumerator GetEnumerator() =>
+  public IEnumerator<Type> GetEnumerator() =>
     _deque.GetEnumerator();
 
 #pragma warning disable IDE0305
@@ -45,7 +45,7 @@ public class History : IReadOnlyCollection<Type>
 #pragma warning restore IDE0305
 
   public Type? Peek() => _deque.Count > 0
-    ? _deque.PeekRight()
+    ? _deque[_deque.Count - 1]
     : null;
 
   internal void Push(Type type)
@@ -53,14 +53,14 @@ public class History : IReadOnlyCollection<Type>
     if (MaxCapacity.HasValue && _deque.Count == MaxCapacity)
     {
       // max capacity enforced: drop oldest entry to make room
-      _deque.PopLeft();
+      _deque.RemoveFromFront();
     }
 
-    _deque.PushRight(type);
+    _deque.AddToBack(type);
   }
 
   internal Type? Pop() => _deque.Count > 0
-    ? _deque.PopRight()
+    ? _deque.RemoveFromBack()
     : null;
 
   internal void Clear() => _deque.Clear();
