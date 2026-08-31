@@ -141,10 +141,12 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator
   public static bool IsStateDiagramCandidate(SyntaxNode node)
   {
     return node is TypeDeclarationSyntax classDeclarationSyntax &&
-           CodeService.InheritsFromByName(classDeclarationSyntax, Constants.LOGIC_BLOCK_STATE) &&
            classDeclarationSyntax.AttributeLists.SelectMany(l => l.Attributes)
              .Any(attr => attr.Name.ToString() == Constants.LOGIC_BLOCK_ATTRIBUTE_NAME);
   }
+
+  private static bool InheritsFromLogicBlockState(INamedTypeSymbol symbol) =>
+    CodeService.GetAllBaseTypes(symbol).Any(baseType => baseType.Name == Constants.LOGIC_BLOCK_STATE);
 
   public T? GetGraph<T>(
     Func<TypeDeclarationSyntax, SemanticModel, CancellationToken, T?> discoverFunc,
@@ -376,6 +378,11 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator
     var semanticSymbol = model.GetDeclaredSymbol(stateClassDecl, token);
 
     if (semanticSymbol is null)
+    {
+      return null;
+    }
+
+    if (!InheritsFromLogicBlockState(semanticSymbol))
     {
       return null;
     }
