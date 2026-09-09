@@ -54,7 +54,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Text.Json" Version="10.0.11"/>
+    <PackageReference Include="System.Text.Json" Version="10.0.12"/>
     <PackageReference Include="Chickensoft.Introspection" Version="3.0.3"/>
     <PackageReference Include="Chickensoft.Serialization" Version="3.1.0"/>
     <PackageReference Include="Cyotek.CircularBuffer" Version="2.0.0"/>
