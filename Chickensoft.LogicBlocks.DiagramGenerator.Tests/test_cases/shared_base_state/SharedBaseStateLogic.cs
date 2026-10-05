@@ -19,7 +19,4 @@ public partial class SharedBaseStateLogic : LogicBlock
   {
     public readonly record struct Toggled;
   }
-
-  [StateDiagram]
-  public abstract partial record SharedState : SharedBaseState;
 }

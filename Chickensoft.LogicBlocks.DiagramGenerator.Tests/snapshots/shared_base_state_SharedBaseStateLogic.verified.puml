@@ -1,11 +1,7 @@
-﻿@startuml SharedState
-state "SharedState" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SharedBaseStateLogic_SharedState {
-  state "Dark" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SharedBaseStateLogic_SharedState_Dark
-  state "Lit" as Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SharedBaseStateLogic_SharedState_Lit
+﻿@startuml SharedBaseStateLogic
+state SharedBaseStateLogic {
+  state Dark
 }
 
-Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SharedBaseStateLogic_SharedState_Dark --> Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SharedBaseStateLogic_SharedState_Lit : Toggle
-Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SharedBaseStateLogic_SharedState_Lit --> Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SharedBaseStateLogic_SharedState_Dark : Toggle
-
-Chickensoft_LogicBlocks_DiagramGenerator_Tests_TestCases_SharedBaseStateLogic_SharedState_Lit : OnEnter → Toggled
+[*] --> Dark
 @enduml
