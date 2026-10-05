@@ -377,12 +377,7 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator
 
     var semanticSymbol = model.GetDeclaredSymbol(stateClassDecl, token);
 
-    if (semanticSymbol is null)
-    {
-      return null;
-    }
-
-    if (!InheritsFromLogicBlockState(semanticSymbol))
+    if (semanticSymbol is null || !InheritsFromLogicBlockState(semanticSymbol))
     {
       return null;
     }
