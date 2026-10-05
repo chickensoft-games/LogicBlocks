@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 /// <summary>
 /// Common code operations for syntax nodes and semantic model symbols.
@@ -62,8 +61,6 @@ public interface ICodeService
     Compilation compilation,
     Func<INamedTypeSymbol, bool> predicate
   );
-
-  bool InheritsFromByName(TypeDeclarationSyntax typeDeclarationSyntax, string logicBlockTypeName);
 }
 
 /// <summary>
@@ -155,52 +152,5 @@ public class CodeService : ICodeService
           }
       }
     }
-  }
-
-  /// <summary>
-  /// Recursively checks whether a type declaration inherits from a type with
-  /// the given simple name, walking the syntax tree of the same file for
-  /// intermediate base type declarations.
-  /// </summary>
-  public bool InheritsFromByName(
-    TypeDeclarationSyntax typeDecl,
-    string targetName
-  )
-  {
-    var root = typeDecl.SyntaxTree.GetRoot();
-    return InheritsFromByName(typeDecl, targetName, root, []);
-  }
-
-  private static bool InheritsFromByName(
-    TypeDeclarationSyntax typeDecl,
-    string targetName,
-    SyntaxNode root,
-    HashSet<string> visited
-  )
-  {
-    if (!visited.Add(typeDecl.Identifier.Text)) { return false; }
-    if (typeDecl.BaseList is null) { return false; }
-
-    foreach (var baseTypeSyntax in typeDecl.BaseList.Types)
-    {
-      // Strip generics and namespace qualifiers to get the simple name.
-      var rawName = baseTypeSyntax.Type.ToString();
-      var simpleName = rawName.Split('<')[0].Split('.').Last();
-
-      if (simpleName == targetName) { return true; }
-
-      // Try to find the base type declaration in the same file and recurse.
-      var baseDecl = root.DescendantNodes()
-        .OfType<TypeDeclarationSyntax>()
-        .FirstOrDefault(t => t.Identifier.Text == simpleName);
-
-      if (baseDecl is not null &&
-          InheritsFromByName(baseDecl, targetName, root, visited))
-      {
-        return true;
-      }
-    }
-
-    return false;
   }
 }

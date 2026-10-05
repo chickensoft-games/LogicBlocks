@@ -1,0 +1,7 @@
+﻿@startuml SharedBaseLogicBlock
+state SharedBaseLogicBlock {
+  state Idle
+}
+
+[*] --> Idle
+@enduml
