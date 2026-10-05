@@ -1,0 +1,7 @@
+﻿@startuml SharedBaseStateLogic
+state SharedBaseStateLogic {
+  state Dark
+}
+
+[*] --> Dark
+@enduml

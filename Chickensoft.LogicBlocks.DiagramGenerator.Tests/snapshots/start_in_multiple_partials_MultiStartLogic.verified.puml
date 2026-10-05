@@ -1,0 +1,9 @@
+﻿@startuml MultiStartLogic
+state MultiStartLogic {
+  state Idle
+  state Running
+}
+
+[*] --> Idle
+[*] --> Running
+@enduml

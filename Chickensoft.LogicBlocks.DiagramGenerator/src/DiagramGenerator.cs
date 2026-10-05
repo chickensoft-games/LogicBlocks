@@ -128,23 +128,53 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator
 
   public static bool IsLogicBlockCandidate(SyntaxNode node)
   {
-    //Only retrieve logic blocks that have the LogicBlock type and have the Start method called
-    return node is ClassDeclarationSyntax classDeclaration &&
-           (CodeService.InheritsFromByName(classDeclaration, Constants.LOGIC_BLOCK_TYPE_NAME) ||
-            CodeService.InheritsFromByName(classDeclaration, Constants.AUTO_BLOCK_TYPE_NAME)) &&
-           classDeclaration.DescendantNodes().OfType<InvocationExpressionSyntax>()
-             .Any(invocation =>
-               (invocation.Expression as SimpleNameSyntax)?.Identifier.Text == Constants.LOGIC_BLOCK_STATE_LOGIC_START ||
-               (invocation.Expression as GenericNameSyntax)?.Identifier.Text == Constants.LOGIC_BLOCK_STATE_LOGIC_START);
+    // Only retrieve classes that call Start; inheritance is checked in DiscoverLogicDiagram
+    return node is ClassDeclarationSyntax classDeclaration && CallsStart(classDeclaration);
+  }
+
+  // Nested types are skipped: their Start calls aren't the LogicBlock's.
+  private static bool CallsStart(SyntaxNode declaration) =>
+    declaration
+      .DescendantNodes(node => node == declaration || node is not TypeDeclarationSyntax)
+      .OfType<InvocationExpressionSyntax>()
+      .Any(invocation =>
+        invocation.Expression is SimpleNameSyntax { Identifier.Text: Constants.LOGIC_BLOCK_STATE_LOGIC_START });
+
+  /// <summary>
+  /// Determines whether this declaration owns the diagram when Start is called
+  /// from several partial declarations of the same LogicBlock
+  /// </summary>
+  private static bool OwnsLogicDiagram(
+    TypeDeclarationSyntax declaration,
+    INamedTypeSymbol symbol,
+    CancellationToken token
+  )
+  {
+    var owner = symbol.DeclaringSyntaxReferences
+      .Select(reference => reference.GetSyntax(token))
+      .OfType<TypeDeclarationSyntax>()
+      .Where(CallsStart)
+      .OrderByDescending(syntax => syntax.BaseList is not null)
+      .ThenBy(syntax => syntax.SyntaxTree.FilePath, StringComparer.Ordinal)
+      .First();
+
+    return owner.SyntaxTree == declaration.SyntaxTree &&
+           owner.SpanStart == declaration.SpanStart;
   }
 
   public static bool IsStateDiagramCandidate(SyntaxNode node)
   {
     return node is TypeDeclarationSyntax classDeclarationSyntax &&
-           CodeService.InheritsFromByName(classDeclarationSyntax, Constants.LOGIC_BLOCK_STATE) &&
            classDeclarationSyntax.AttributeLists.SelectMany(l => l.Attributes)
              .Any(attr => attr.Name.ToString() == Constants.LOGIC_BLOCK_ATTRIBUTE_NAME);
   }
+
+  private static bool InheritsFromLogicBlock(INamedTypeSymbol symbol) =>
+    CodeService.GetAllBaseTypes(symbol).Any(baseType =>
+      baseType.Name is Constants.LOGIC_BLOCK_TYPE_NAME or Constants.AUTO_BLOCK_TYPE_NAME);
+
+  private static bool InheritsFromLogicBlockState(INamedTypeSymbol symbol) =>
+    CodeService.GetAllBaseTypes(symbol).Any(baseType => baseType.Name == Constants.LOGIC_BLOCK_STATE);
 
   public T? GetGraph<T>(
     Func<TypeDeclarationSyntax, SemanticModel, CancellationToken, T?> discoverFunc,
@@ -187,12 +217,18 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator
 
     var semanticSymbol = model.GetDeclaredSymbol(logicBlockClassDecl, token);
 
-    if (semanticSymbol is null)
+    if (semanticSymbol is null ||
+        !InheritsFromLogicBlock(semanticSymbol) ||
+        !OwnsLogicDiagram(logicBlockClassDecl, semanticSymbol, token))
     {
       return null;
     }
 
     HashSet<string> initialStateIds = [];
+
+    // Start calls may live in other partial files
+    SemanticModel modelFor(SyntaxNode node) =>
+      node.SyntaxTree == model.SyntaxTree ? model : model.Compilation.GetSemanticModel(node.SyntaxTree);
 
     var startMethodArgs = semanticSymbol.DeclaringSyntaxReferences
       .SelectMany(x =>
@@ -200,16 +236,16 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator
           .DescendantNodes()
           .OfType<InvocationExpressionSyntax>()
           .Where(invocation =>
-            (invocation.Expression as SimpleNameSyntax)?.Identifier.Text == Constants.LOGIC_BLOCK_STATE_LOGIC_START &&
-            invocation.ArgumentList.Arguments is { Count: not 0 } args&&
-            model.GetTypeInfo(args[0].Expression).Type?.ToDisplayString() == Constants.SYSTEMTYPE)
+            invocation.Expression is SimpleNameSyntax { Identifier.Text: Constants.LOGIC_BLOCK_STATE_LOGIC_START } &&
+            invocation.ArgumentList.Arguments is { Count: not 0 } args &&
+            modelFor(invocation).GetTypeInfo(args[0].Expression).Type?.ToDisplayString() == Constants.SYSTEMTYPE)
           .Select(syntax => syntax.ArgumentList.Arguments[0])
         );
 
     foreach (var arg in startMethodArgs)
     {
       var initialStateVisitor = new ReturnTypeVisitor(
-        model, token, CodeService, semanticSymbol
+        modelFor(arg), token, CodeService, semanticSymbol
       );
       initialStateVisitor.Visit(arg);
       initialStateIds.UnionWith(initialStateVisitor.ReturnTypes);
@@ -231,7 +267,7 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator
 
     foreach (var typeArg in genericStartTypeArgs)
     {
-      if (model.GetTypeInfo(typeArg, token).Type is INamedTypeSymbol typeSymbol)
+      if (modelFor(typeArg).GetTypeInfo(typeArg, token).Type is INamedTypeSymbol typeSymbol)
       {
         initialStateIds.Add(
           CodeService.GetNameFullyQualifiedWithoutGenerics(typeSymbol, typeSymbol.Name)
@@ -375,7 +411,7 @@ public class DiagramGenerator : ChickensoftGenerator, IIncrementalGenerator
 
     var semanticSymbol = model.GetDeclaredSymbol(stateClassDecl, token);
 
-    if (semanticSymbol is null)
+    if (semanticSymbol is null || !InheritsFromLogicBlockState(semanticSymbol))
     {
       return null;
     }

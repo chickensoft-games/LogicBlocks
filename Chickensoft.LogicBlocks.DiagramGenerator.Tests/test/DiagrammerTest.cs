@@ -81,6 +81,19 @@ public class LogicBlocksDiagramGeneratorTest
       Assert.Fail("No generated files were found.");
     }
 
+    var testDirName = Path.GetFileName(testFolderPath);
+    var expectedDiagrams = Directory
+      .GetFiles(CurrentDir("../snapshots"), $"{testDirName}_*.verified.puml")
+      .Select(path => Path.GetFileName(path).Replace(".verified.puml", ""));
+    var generatedDiagrams = generatedPumls
+      .Select(path => $"{testDirName}_{Path.GetFileName(path).Replace(".g.puml", "")}");
+    var missingDiagrams = expectedDiagrams.Except(generatedDiagrams).ToList();
+
+    if (missingDiagrams.Count != 0)
+    {
+      Assert.Fail($"Expected diagrams were not generated: {string.Join(", ", missingDiagrams)}");
+    }
+
     foreach (var pumlPath in generatedPumls)
 		{
 			var testName = $"{Path.GetFileName(testFolderPath)}_{Path.GetFileName(pumlPath).Replace(".g.puml", "")}";
