@@ -309,3 +309,5 @@ Looking for more? **Read the ✨ [docs]! ✨**
 [state-machines]: https://en.wikipedia.org/wiki/Finite-state_machine
 [state-pattern]: https://en.wikipedia.org/wiki/State_pattern
 [tutorial]: https://chickensoft.games/docs/logic_blocks/tutorial
+[Chickensoft.Introspection]: https://github.com/chickensoft-games/Introspection
+[Chickensoft.Serialization]: https://github.com/chickensoft-games/Serialization
